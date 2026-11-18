@@ -1,0 +1,23 @@
+LIBER CANTICORUM – wolny śpiewnik dla wspólnot
+==============================================
+
+URUCHAMIANIE (dwuklik):
+  Windows:  „Liber Canticorum.bat”  – po pierwszym starcie obok pojawi się skrót
+            „Liber Canticorum” z ikoną; potem możesz używać jego.
+  Linux:    „Liber Canticorum.desktop” (ikona pojawi się po pierwszym starcie).
+            Jeśli menedżer plików pyta – wybierz „Uruchom” / „Zaufaj i uruchom”.
+            Z terminala: python3 program/uruchom.py
+  macOS:    „Liber Canticorum.command” (za pierwszym razem: prawy klik → Otwórz).
+
+PIERWSZE URUCHOMIENIE pobiera biblioteki (ok. 600 MB, kilka minut, potrzebny internet).
+Są one wspólne dla wszystkich wersji – kolejne wersje uruchamiają się od razu.
+Potrzebny jest Python 3.10 lub nowszy (python.org; w Windows zaznacz „Add python.exe to PATH”).
+
+SKRÓT W MENU I NA PULPICIE:  python3 program/uruchom.py --skrot
+  (Windows: w folderze program uruchom „start.bat skrot”).
+
+Baza pieśni (liber_canticorum.db) leży w folderze „program”. Przy pierwszym starcie
+nowej wersji program sam kopiuje bazę z poprzedniej wersji rozpakowanej obok.
+
+W folderze „program” jest wszystko inne: kod (licencja GPL-3, plik LICENSE),
+ikony, tła, dokumentacja (README.md).

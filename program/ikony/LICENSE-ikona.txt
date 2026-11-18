@@ -1,0 +1,14 @@
+Ikona programu Liber Canticorum (liber_canticorum.svg / .png / .ico) oraz pliki w ikony/zrodla/
+
+Litera: inicjał „C” z karty tytułowej rękopiśmiennego kancjonału z 1586 r.
+        („Cantional písnek rozmaitých a nábožných, napsaný roku Páně 1586”) – sam rękopis jest w domenie publicznej.
+Fotografia: Mkonik80 – praca własna, licencja CC BY-SA 4.0
+        https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360
+Zmiany: wycięcie litery, oddzielenie tuszu od tła i ornamentów piórkiem, wektoryzacja kształtu,
+        osadzenie na stylizowanej karcie pergaminu (generuj_ikone.py).
+
+Ikona i pliki źródłowe w ikony/zrodla/ są udostępnione na licencji
+Creative Commons Uznanie autorstwa – Na tych samych warunkach 4.0 (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/deed.pl
+
+Przy dalszym użyciu podaj: „Ikona Liber Canticorum na podstawie fotografii Mkonik80, CC BY-SA 4.0”.

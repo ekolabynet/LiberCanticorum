@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Liber Canticorum
+GenericName=Śpiewnik i slajdy z pieśniami
+Comment=Wolny śpiewnik dla wspólnot – slajdy, nuty, pilot w telefonie
+Exec=sh -c "cd \\"\\$(dirname \\"\\$0\\")/program\\" && exec python3 uruchom.py" %k
+Icon=liber-canticorum
+Terminal=false
+Categories=Office;Presentation;
+Keywords=śpiewnik;pieśni;slajdy;rzutnik;nuty;kościół;

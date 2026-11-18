@@ -1,0 +1,114 @@
+{
+ "kodeks": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 8,
+  "margines_y": 17
+ },
+ "iluminacja": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 12,
+  "margines_y": 9
+ },
+ "adwent": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 8,
+  "margines_y": 7
+ },
+ "boze_narodzenie": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 9,
+  "margines_y": 7
+ },
+ "maryjne": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 10,
+  "margines_y": 10
+ },
+ "wielki_post": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 10,
+  "margines_y": 7
+ },
+ "wielkanoc": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 10,
+  "margines_y": 12
+ },
+ "duch_swiety": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 8,
+  "margines_y": 12
+ },
+ "gotyk": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 8,
+  "margines_y": 20
+ },
+ "witraz": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 14,
+  "margines_y": 6
+ },
+ "czyste": {
+  "kolor_tekstu": "#ffffff",
+  "kolor_refrenu": "#ffff99",
+  "jasne": false,
+  "margines_x": 7,
+  "margines_y": 5
+ },
+ "jasny_pergamin": {
+  "kolor_tekstu": "#2b1d12",
+  "kolor_refrenu": "#a3201c",
+  "jasne": true,
+  "margines_x": 9,
+  "margines_y": 8
+ },
+ "jasny_gradual": {
+  "kolor_tekstu": "#2b1d12",
+  "kolor_refrenu": "#a3201c",
+  "jasne": true,
+  "margines_x": 8,
+  "margines_y": 19
+ },
+ "jasny_iluminacja": {
+  "kolor_tekstu": "#2b1d12",
+  "kolor_refrenu": "#a3201c",
+  "jasne": true,
+  "margines_x": 12,
+  "margines_y": 21
+ },
+ "jasny_choral_renesans": {
+  "kolor_tekstu": "#2b1d12",
+  "kolor_refrenu": "#a3201c",
+  "jasne": true,
+  "margines_x": 8,
+  "margines_y": 21
+ },
+ "jasny_kolonialny": {
+  "kolor_tekstu": "#2b1d12",
+  "kolor_refrenu": "#a3201c",
+  "jasne": true,
+  "margines_x": 8,
+  "margines_y": 23
+ }
+}

@@ -1,0 +1,3 @@
+# Opcjonalnie: odtwarzacz YouTube wbudowany w program (QtWebEngine, ok. +250 MB).
+# Bez tego nagrania otwierają się w przeglądarce.
+PySide6-Addons>=6.5
