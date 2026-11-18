@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.11.0
+# Liber Canticorum 0.12.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,14 +12,14 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.11.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.12.0 itd.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.11.0/
+LiberCanticorum_0.12.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -140,6 +140,13 @@ Inną bazę otworzysz w menu Plik.
   (H, B, moll małą literą, „is”/„es”) i angielska (B, Bb, Am). Tekst z wierszami akordów nad słowami (wklejony
   albo z pliku TXT/DOCX) zamienia się na ChordPro automatycznie przy imporcie albo przyciskiem. Slajdy pokazują
   sam tekst. Śpiewnik offline HTML (telefon) ma przycisk „🎸 Akordy” z transpozycją.
+- **ze śpiewnika PDF, w którym nuty są obrazkami** (np. śpiewnik mszalny zrobiony w calibre – tekstem są tylko
+  nagłówki): każda część staje się pieśnią „Msza Rycerska – Kyrie” z kategorią „Części stałe Mszy”, tagami
+  „kyrie” i „Msza Rycerska” (zestaw na Mszę od razu proponuje tę mszę jako motyw części stałych) i nutami
+  w załączniku PDF – wycięte są tylko systemy tej części, nie całe strony. Nagłówek największy to nazwa mszy,
+  średni – podtytuł (np. „In festis duplicibus”), najmniejszy – część; rubryki trafiają do uwag. Jeśli na komputerze
+  jest program **tesseract** (OCR, z językiem polskim), program odczytuje też autorów („m.: J. Gałuszka”) i szkic słów
+  spod nut – szkic jest zwykle niepełny, więc wstawia się go tylko po zaznaczeniu opcji w oknie importu.
 - **ze śpiewnika tekstowego PDF** (setki pieśni: „123. Tytuł”, zwrotki, refreny, akordy z boku – np. śpiewnik
   oazowy złożony w InDesignie): tytuły są rozpoznawane po kroju i wielkości pisma, a nie tylko po numerze,
   więc „1.” zwrotki nie myli się z „1.” pieśni i pieśni się nie zlewają. Akordy (także „(H7) E A H7…”, „/x2”),

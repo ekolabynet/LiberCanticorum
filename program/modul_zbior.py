@@ -323,6 +323,11 @@ class CollectionDialog(QDialog):
         self.mp3 = QCheckBox("Pobierz nagrania (mp3) jako załączniki pieśni – linki zapisują się zawsze")
         self.mp3.setEnabled(any(s.get('youtube') for s in coll['piesni']))
         form.addRow("", self.mp3)
+        self.ocr = None
+        if any(s.get('szkic') for s in coll['piesni']):
+            self.ocr = QCheckBox("Wstaw słowa odczytane z obrazków nut (OCR) – tylko szkic, zwykle niepełny; "
+                                 "do poprawienia w edytorze")
+            form.addRow("", self.ocr)
         self.pages = None
         if any(s.get('strony') for s in coll['piesni']):
             self.pages = QCheckBox("Dołącz nuty – strony śpiewnika z pieśnią jako PDF w załącznikach")
@@ -379,9 +384,12 @@ class CollectionDialog(QDialog):
             txt += "\n\n[uwagi] " + s['uwagi']
         if s.get('kategoria') or s.get('tagi'):
             txt += "\n[kategoria] " + (s.get('kategoria') or "–") + ("   [tagi] " + s['tagi'] if s.get('tagi') else "")
+        if s.get('szkic'):
+            txt += "\n\n[szkic słów z OCR]\n" + s['szkic']
         if s.get('strony'):
-            txt += "\n[nuty] strony " + ", ".join(str(p + 1) for p in s['strony']) + \
-                "\nSłowa spod nut są odczytywane z układu PDF – sprawdź je przed użyciem."
+            txt += "\n[nuty] strony " + ", ".join(str(p + 1) for p in s['strony'])
+            if not s.get('regiony'):
+                txt += "\nSłowa spod nut są odczytywane z układu PDF – sprawdź je przed użyciem."
         act, target = self.actions[row]
         if act == 'merge' and self.get_fn:
             b = self.get_fn(target)
@@ -400,6 +408,9 @@ class CollectionDialog(QDialog):
             if self.list.item(i).checkState() == Qt.Checked:
                 s = dict(self.coll['piesni'][i])
                 s['_akcja'], s['_cel'] = self.actions[i]
+                if self.ocr is not None and self.ocr.isChecked() and s.get('szkic') and not s['zwrotki_raw'].strip():
+                    s['zwrotki_raw'] = s['szkic']
+                    s['uwagi'] = " | ".join(x for x in (s['uwagi'], "słowa z OCR – sprawdź") if x)
                 if self.cat.currentText().strip():
                     s['kategoria'] = self.cat.currentText().strip()
                 if self.tags.text().strip():

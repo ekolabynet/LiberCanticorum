@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.11.0 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.12.0 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.11.0)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.12.0)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -3451,7 +3451,17 @@ class MainWindow(QMainWindow):
                 continue
             for t in (x.strip() for x in song['tagi'].split(',')):
                 if t and fold(t) not in PART_TAGS | {fold(x) for x in DEFAULT_TAGS} | {'czesci stale', 'czesci stale mszy'}:
-                    cycles.setdefault(t[:1].upper() + t[1:], {}).setdefault(part, (r['id'], r['title']))
+                    name = t[:1].upper() + t[1:]
+                    head = r['title'][:len(t)]
+                    if fold(head) == fold(t):               # pisownia z tytułu: „Msza Rycerska – Kyrie”
+                        name = head
+                    key = next((k for k in cycles if fold(k) == fold(name)), None)
+                    if key is None:
+                        key = name
+                    elif key != name and name != name[:1] + name[1:].lower():
+                        cycles[name] = cycles.pop(key)       # wolę pisownię z wielkimi literami z tytułu
+                        key = name
+                    cycles.setdefault(key, {}).setdefault(part, (r['id'], r['title']))
         return cycles
 
     def refresh_mass_combo(self):
@@ -4758,7 +4768,11 @@ class MainWindow(QMainWindow):
                 if getattr(dlg, 'pages', None) is not None and dlg.pages.isChecked() and sg.get('pdf') \
                         and sg.get('strony') and song.get('id'):
                     import modul_slowa_z_nut as sn
-                    data = sn.pdf_pages_bytes(sg['pdf'], sg['strony'])
+                    if sg.get('regiony'):                   # nuty-obrazki: tylko fragmenty stron z tą częścią
+                        import modul_pdf_obrazy as mo
+                        data = mo.render_regions(sg['pdf'], sg['regiony'])
+                    else:
+                        data = sn.pdf_pages_bytes(sg['pdf'], sg['strony'])
                     safe = re.sub(r'[\\/:*?"<>|]+', ' ', sg['title']).strip() or "nuty"
                     if (f"{safe} – nuty.pdf", len(data)) not in have:
                         self.db.add_attachment_bytes(song['id'], f"{safe} – nuty.pdf", data,
@@ -4794,6 +4808,37 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
         try:
             coll = sn.songbook_pdf(path, prog)
+        except Exception as e:
+            coll = None
+            QMessageBox.warning(self, APP_NAME, f"Nie udało się odczytać śpiewnika:\n{e}")
+        finally:
+            pd.close()
+        if not coll:
+            return False
+        self.import_collection(coll, os.path.basename(path))
+        return True
+
+    def import_image_songbook_pdf(self, path):
+        """Śpiewnik, w którym nuty są obrazkami, a tekstem tylko nagłówki (msze: Kyrie, Sanctus…)."""
+        import modul_pdf_obrazy as mo
+        from PySide6.QtWidgets import QProgressDialog
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            ok = mo.looks_like_image_songbook(path)
+        finally:
+            QApplication.restoreOverrideCursor()
+        if not ok:
+            return False
+        pd = QProgressDialog("Czytam śpiewnik (nuty są obrazkami" + (", odczyt OCR" if mo.ocr_available() else "")
+                             + ")…", None, 0, 100, self)
+        pd.setWindowTitle(APP_NAME)
+        pd.setMinimumDuration(200)
+
+        def prog(i, k):
+            pd.setValue(int(100 * i / max(k, 1)))
+            QApplication.processEvents()
+        try:
+            coll = mo.collection(path, prog)
         except Exception as e:
             coll = None
             QMessageBox.warning(self, APP_NAME, f"Nie udało się odczytać śpiewnika:\n{e}")
@@ -4844,6 +4889,8 @@ class MainWindow(QMainWindow):
             finally:
                 QApplication.restoreOverrideCursor()
             if book and self.import_songbook_pdf(paths[0]):
+                return
+            if not book and self.import_image_songbook_pdf(paths[0]):
                 return
             if not book and self.import_text_songbook_pdf(paths[0]):
                 return
