@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.10.1 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.11.0 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.10.1"
+VERSION = "0.11.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.10.1)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.11.0)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -1208,6 +1208,8 @@ def merge_song_fields(dst, src):
     have = {l.split("\t")[0] for l in yt}
     yt += [l for l in (src.get('youtube') or '').splitlines() if l.strip() and l.split("\t")[0] not in have]
     dst['youtube'] = "\n".join(yt)
+    if not (dst.get('akordy') or '').strip() and (src.get('akordy') or '').strip():
+        dst['akordy'] = src['akordy']
     src_z = src.get('zrodlo') or ''
     if src_z and src_z not in (dst.get('zrodlo') or ''):
         dst['zrodlo'] = "; ".join(x for x in (dst.get('zrodlo') or '', src_z) if x)
@@ -1215,7 +1217,7 @@ def merge_song_fields(dst, src):
 
 
 class SongDB:
-    COLUMNS = {'kategoria': 'TEXT', 'youtube': 'TEXT'}
+    COLUMNS = {'kategoria': 'TEXT', 'youtube': 'TEXT', 'akordy': 'TEXT'}
 
     def __init__(self, path):
         self.path = path
@@ -1289,6 +1291,7 @@ class SongDB:
         return {'id': r['id'], 'title': r['title'], 'refren': r['refren'] or '', 'zwrotki_raw': r['zwrotki'] or '',
                 'uwagi': r['uwagi'] or '', 'tagi': r['tagi'] or '', 'zrodlo': r['zrodlo'] or '',
                 'kategoria': r['kategoria'] or '', 'youtube': r['youtube'] or '',
+                'akordy': (r['akordy'] if 'akordy' in r.keys() else '') or '',
                 'config': json.loads(r['config'] or '{}')}
 
     def get(self, sid):
@@ -1306,15 +1309,15 @@ class SongDB:
         vals = (song.get('title') or 'Bez tytułu', song.get('refren', ''), song.get('zwrotki_raw', ''),
                 song.get('uwagi', ''), song.get('tagi', ''), song.get('zrodlo', ''),
                 json.dumps(song.get('config', {}), ensure_ascii=False), now, search, fold(song.get('title', '')),
-                song.get('kategoria', ''), song.get('youtube', ''))
+                song.get('kategoria', ''), song.get('youtube', ''), song.get('akordy', ''))
         if song.get('id'):
             self.con.execute("""UPDATE songs SET title=?, refren=?, zwrotki=?, uwagi=?, tagi=?, zrodlo=?, config=?,
-                                modified=?, search=?, search_title=?, kategoria=?, youtube=? WHERE id=?""",
+                                modified=?, search=?, search_title=?, kategoria=?, youtube=?, akordy=? WHERE id=?""",
                              vals + (song['id'],))
         else:
             cur = self.con.execute("""INSERT INTO songs(title, refren, zwrotki, uwagi, tagi, zrodlo, config, modified,
-                                      search, search_title, kategoria, youtube, created)
-                                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""", vals + (now,))
+                                      search, search_title, kategoria, youtube, akordy, created)
+                                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", vals + (now,))
             song['id'] = cur.lastrowid
         self.con.commit()
         return song['id']
@@ -1662,7 +1665,8 @@ class SongDB:
                 if sid:
                     cur = self.get(sid)
                     changed = False
-                    for key, col in (('kategoria', 'kategoria'), ('tagi', 'tagi'), ('youtube', 'youtube')):
+                    for key, col in (('kategoria', 'kategoria'), ('tagi', 'tagi'), ('youtube', 'youtube'),
+                                     ('akordy', 'akordy')):
                         if col in cols and not cur.get(key) and r[col]:
                             cur[key] = r[col]
                             changed = True
@@ -1674,6 +1678,7 @@ class SongDB:
                     'uwagi': r['uwagi'] or '', 'tagi': r['tagi'] or '', 'zrodlo': r['zrodlo'] or '',
                     'kategoria': (r['kategoria'] or '') if 'kategoria' in cols else '',
                     'youtube': (r['youtube'] or '') if 'youtube' in cols else '',
+                    'akordy': (r['akordy'] or '') if 'akordy' in cols else '',
                     'config': json.loads(r['config'] or '{}')}
             new_id = self.save(song)
             have.add(fold(song['title']))
@@ -2266,6 +2271,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.tabs.addTab(self._build_text_tab(), "Tekst")
         self.tabs.addTab(self._build_cfg_tab(), "Wygląd slajdów")
+        self.tabs.addTab(self._build_chords_tab(), "Akordy")
         self.tabs.addTab(self._build_media_tab(), "Nuty, wersje i nagrania")
 
         # ---- prawa: podgląd + miniatury
@@ -2427,6 +2433,75 @@ class MainWindow(QMainWindow):
         g.setRowStretch(r + 1, 1)
         return box
 
+    def _build_chords_tab(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        info = QLabel("Akordy w zapisie ChordPro: <b>[a]Chwalcie [E]Pana</b> – akord przed sylabą, nad którą się go gra. "
+                      "Akordy z boku wiersza po znaku <b>‖</b>: „Pozdrawiam Cię, Matko ‖ D e / A D”. "
+                      "Można też wkleić tekst z wierszami akordów nad słowami – „Zamień akordy nad tekstem” ustawi je "
+                      "nad właściwymi sylabami. Slajdy pokazują sam tekst; akordy są w widoku dla gitarzystów.")
+        info.setWordWrap(True)
+        lay.addWidget(info)
+        self.e_chords = QPlainTextEdit()
+        f = QFont("DejaVu Sans Mono")
+        f.setStyleHint(QFont.Monospace)
+        self.e_chords.setFont(f)
+        self.e_chords.setPlaceholderText("[G]Chrystus Pan, Boży Syn, Zb[a]awca nasz, zgodził się\n"
+                                         "[G]wziąć mój grzech, za mnie umrzeć c[C]hciał.")
+        self.e_chords.textChanged.connect(self.on_edit)
+        lay.addWidget(self.e_chords, 1)
+        row = QHBoxLayout()
+        for txt, fn in (("🎸 Widok dla gitarzystów…", self.show_chords),
+                        ("Zamień akordy nad tekstem na ChordPro", self.chords_from_lines),
+                        ("Wstaw tekst pieśni (bez akordów)", self.chords_from_text),
+                        ("Transponuj ±…", self.chords_transpose)):
+            b = QPushButton(txt)
+            b.clicked.connect(fn)
+            row.addWidget(b)
+        lay.addLayout(row)
+        return w
+
+    def show_chords(self, songs=None):
+        import modul_akordy as ak
+        if songs is None or isinstance(songs, bool):
+            songs = [self.editor_song()]
+        dlg = ak.ChordView(songs, self)
+        dlg.setAttribute(Qt.WA_DeleteOnClose)
+        dlg.show()
+        self._chord_view = dlg
+
+    def show_set_chords(self):
+        songs = [self.db.get(sid) for _, sid in self.set_entries()]
+        songs = [s for s in songs if s]
+        if not songs:
+            QMessageBox.information(self, APP_NAME, "Zestaw jest pusty.")
+            return
+        self.show_chords(songs)
+
+    def chords_from_lines(self):
+        import modul_akordy as ak
+        t = self.e_chords.toPlainText()
+        new = ak.chord_lines_to_chordpro(t)
+        if new == t:
+            self.statusBar().showMessage("Nie znalazłem wierszy z samymi akordami nad tekstem.", 5000)
+            return
+        self.e_chords.setPlainText(new)
+
+    def chords_from_text(self):
+        s = self.editor_song()
+        if self.e_chords.toPlainText().strip() and QMessageBox.question(
+                self, APP_NAME, "Zastąpić obecne akordy samym tekstem pieśni?") != QMessageBox.Yes:
+            return
+        import modul_akordy as ak
+        self.e_chords.setPlainText(ak.song_chordpro(dict(s, akordy="")))
+
+    def chords_transpose(self):
+        import modul_akordy as ak
+        k, ok = QInputDialog.getInt(self, APP_NAME, "Transponuj akordy o półtony (np. 2 = o całą nutę w górę, −3 = w dół):",
+                                    2, -11, 11)
+        if ok and k:
+            self.e_chords.setPlainText(ak.transpose_text(self.e_chords.toPlainText(), k))
+
     def _build_media_tab(self):
         w = QWidget()
         lay = QVBoxLayout(w)
@@ -2530,6 +2605,8 @@ class MainWindow(QMainWindow):
         act(m_song, "Zapisz w bazie", self.save_song, "Ctrl+S", True)
         act(m_song, "Duplikuj", self.duplicate_song)
         act(m_song, "Usuń z bazy", self.delete_song)
+        act(m_song, "🎸 Akordy – widok dla gitarzystów…", self.show_chords, "Ctrl+G")
+        act(m_song, "🎸 Akordy całego zestawu…", self.show_set_chords)
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
         act(m_song, "Zapisz bieżący tekst jako wersję…", self.store_text_as_version)
         m_song.addSeparator()
@@ -2739,6 +2816,7 @@ class MainWindow(QMainWindow):
         self.e_notes.setText(song.get('uwagi', ''))
         self.e_ref.setPlainText(song.get('refren', ''))
         self.e_verses.setPlainText(song.get('zwrotki_raw', ''))
+        self.e_chords.setPlainText(song.get('akordy', ''))
         cfg = song_cfg(song)
         for k, w in self.w.items():
             v = cfg[k]
@@ -2767,6 +2845,7 @@ class MainWindow(QMainWindow):
         s.update({'title': self.e_title.text().strip() or "Bez tytułu", 'tagi': norm_tags(self.e_tags.text()),
                   'kategoria': self.e_cat.currentText().strip(), 'uwagi': self.e_notes.text().strip(),
                   'refren': self.e_ref.toPlainText().strip(), 'zwrotki_raw': self.e_verses.toPlainText().strip(),
+                  'akordy': self.e_chords.toPlainText().rstrip(),
                   'config': self.cfg_from_widgets()})
         return s
 
@@ -4653,7 +4732,7 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             song = {'title': sg['title'], 'refren': sg['refren'], 'zwrotki_raw': sg['zwrotki_raw'],
                     'uwagi': sg['uwagi'], 'tagi': sg.get('tagi', ''), 'kategoria': sg.get('kategoria', ''),
-                    'zrodlo': source, 'youtube': sg.get('youtube', ''),
+                    'zrodlo': source, 'youtube': sg.get('youtube', ''), 'akordy': sg.get('akordy', ''),
                     'config': dict(self.default_cfg(), numeruj=sg['zwrotki_raw'].count("\n\n") > 0)}
             try:
                 label = (sg.get('uwagi') or '').split(" | ")[0] or source or sg['title']
@@ -4779,10 +4858,17 @@ class MainWindow(QMainWindow):
             if coll:
                 self.import_collection(coll, os.path.basename(paths[0]))
                 return
+            import modul_akordy as ak
+            text, chords = ak.separate(text)              # akordy nad słowami → osobno (widok dla gitarzystów)
             pre = best_lyrics_range(text) if not first else None
             dlg = ImportDialog(text, hint, first, pre, self)
             if dlg.exec() and self.maybe_save():
                 s = dlg.result_song()
+                if chords:
+                    cl = chords.splitlines()
+                    if cl and fold(cl[0]) == fold(s.get('title', '')):
+                        cl = cl[1:]
+                    s['akordy'] = "\n".join(cl).strip("\n")
                 s['zrodlo'] = os.path.basename(paths[0])
                 s['config'] = dict(self.default_cfg(), numeruj=s['config']['numeruj'])
                 self.new_song(ask=False, song=s)

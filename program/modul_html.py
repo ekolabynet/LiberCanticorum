@@ -84,6 +84,7 @@ def build_songbook_html(songs, title="Śpiewnik", attachments_for=None, include_
         out_songs.append({
             'id': song.get('id') or n + 1, 'title': song.get('title', ''), 'cat': song.get('kategoria', ''),
             'tags': song.get('tagi', ''), 'notes': song.get('uwagi', ''), 'lyrics': lyrics, 'scores': scores,
+            'chords': song.get('akordy', '') or '',
             'slides': [{'items': s.items, 'px': s.px} for s in deck],
             'look': {'W': W, 'H': H, 'mx': float(cfg.get('margines_x', 7)), 'my': float(cfg.get('margines_y', 5)),
                      'font': cfg['font'], 'text': cfg['kolor_tekstu'], 'ref': cfg['kolor_refrenu'], 'bgc': cfg['kolor_tla'],
@@ -132,6 +133,9 @@ h2.cat{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--
 .lyr p{margin:0 0 .8em}
 .lyr .lab{font-size:.7em;color:var(--mut);display:block}
 .meta{color:var(--mut);font-size:14px;margin:4px 2px}
+.chd .l{white-space:pre-wrap;margin:0}.chd .w{display:inline-block;position:relative;padding-top:1.15em;white-space:pre}
+.chd .w b{position:absolute;top:0;left:0;color:var(--acc);font-size:.85em}.chd .side{float:right;color:var(--acc);font-weight:700;font-size:.85em}
+.chd .gap{height:.7em}
 /* pełny ekran: slajdy i nuty */
 #stage{position:fixed;inset:0;background:#000;display:none;z-index:20;touch-action:manipulation;user-select:none}
 #slide{position:absolute;overflow:hidden;background:#000 center/cover no-repeat}
@@ -155,6 +159,7 @@ footer{color:var(--mut);font-size:12px;text-align:center;margin:30px 0}
 <div class="view act" id="vList"><div id="setbox"></div><div id="songs"></div><footer id="foot"></footer></div>
 <div class="view" id="vSong">
  <div class="tools"><button class="acc" onclick="present(cur,0)">▶ Slajdy</button><button id="bScore" onclick="scoresFull(cur)">♪ Nuty</button>
+ <button id="bCh" onclick="toggleCh()">🎸 Akordy</button><span id="trb" hidden><button onclick="tr(-1)">♭−</button><button onclick="tr(1)">♯+</button></span>
  <button onclick="fs(-2)">A−</button><button onclick="fs(2)">A+</button><button onclick="nextSong(-1)">◀ pieśń</button><button onclick="nextSong(1)">pieśń ▶</button></div>
  <div class="meta" id="smeta"></div><div class="lyr" id="lyr"></div><div class="sc" id="sc"></div>
 </div>
@@ -203,10 +208,28 @@ function openSong(id,fromSet){const s=byId[id];cur=s;if(fromSet)order=D.set.map(
   h+=`<p>${lab?`<span class="lab">${lab}</span>`:''}${lines.map(esc).join('<br>')}</p>`;
   if(L.ref.length&&L.repeat&&i<L.verses.length-1)h+=`<p class="ref"><span class="lab">Refren</span>${esc(L.ref[0])}…</p>`;});
  $('lyr').innerHTML=h||'<p class="meta">(brak tekstu)</p>';
+ $('bCh').hidden=!s.chords;if(CH&&s.chords)drawCh();else{$('trb').hidden=true;}
  $('bScore').hidden=!s.scores.length;
  $('sc').innerHTML=s.scores.map(sc=>`<h2 class="cat">${esc(sc.name)}</h2>`+sc.pages.map(k=>`<img loading="lazy" src="${A[k]}">`).join('')).join('');
  show('vSong');history.replaceState(null,'','#'+id);}
 function nextSong(d){if(!cur)return;const i=order.indexOf(cur);const n=order[i+d];if(n)openSong(n.id,order!==D.songs&&D.set.length&&order.length===D.set.length);}
+// ---- akordy (widok dla gitarzystów)
+let CH=store('sp_ch')==='1',TR=0;
+const PL=['C','Cis','D','Dis','E','F','Fis','G','Gis','A','B','H'],BASE={C:0,D:2,E:4,F:5,G:7,A:9,H:11,B:10};
+function tch(c,k){const m=c.match(/^([A-Ha-h])(is|es|s)?(.*?)(?:\/([A-Ha-h])(is|es|s)?)?$/);if(!m||!k)return c;
+ const one=(r,a)=>{let n=BASE[r.toUpperCase()];if(a==='is')n++;else if(a)n--;let x=PL[((n+k)%12+12)%12];return r===r.toLowerCase()?x.toLowerCase():x;};
+ return one(m[1],m[2])+m[3]+(m[4]?'/'+one(m[4],m[5]):'');}
+function tline(t){return t.replace(/[A-Ha-h](?:is|es|s)?[^\s\]\/]*(?:\/[A-Ha-h](?:is|es|s)?)?/g,x=>tch(x,TR));}
+function drawCh(){const s=cur;let h='';(s.chords||'').split('\n').forEach(line=>{const [body,side]=line.split('‖');
+ if(!body.trim()&&!side){h+='<div class="gap"></div>';return;}
+ let parts=body.split(/(\[[^\]]*\])/),out='',pend='';
+ parts.forEach(p=>{if(/^\[.*\]$/.test(p)){if(pend)out+=`<span class="w"><b>${esc(pend)}</b> </span>`;pend=tline(p.slice(1,-1));return;}
+  if(!p&&!pend)return;out+=pend?`<span class="w"><b>${esc(pend)}</b>${esc(p)||' '}</span>`:esc(p);pend='';});
+ if(pend)out+=`<span class="w"><b>${esc(pend)}</b> </span>`;
+ h+=`<p class="l">${side?`<span class="side">${esc(tline(side.trim()))}</span>`:''}${out}</p>`;});
+ $('lyr').innerHTML=`<div class="chd">${h}</div>`;$('trb').hidden=false;$('bCh').textContent='🎸 Tekst';}
+function toggleCh(){CH=!CH;store('sp_ch',CH?'1':'0');TR=0;$('bCh').textContent='🎸 Akordy';openSong(cur.id);}
+function tr(d){TR+=d;drawCh();}
 // ---- pełny ekran
 async function enter(){const st=$('stage');st.style.display='block';
  try{if(st.requestFullscreen)await st.requestFullscreen();else if(st.webkitRequestFullscreen)st.webkitRequestFullscreen();}catch(e){}

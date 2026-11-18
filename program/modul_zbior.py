@@ -187,7 +187,7 @@ def parse_collection(text, source="", min_songs=3, sections=True):
     songs = []
     shorts = head_lines[head_lines.index(header) + 1:] if header in head_lines else head_lines[-2:]
     shorts = [l for l in shorts if len(l) < 70 and not l.endswith(('.', ':'))]
-    section = shorts[-1] if shorts else ""
+    section = shorts[-1] if shorts and sections else ""
     for k, (i, num, title) in enumerate(starts):
         end = starts[k + 1][0] if k + 1 < len(starts) else len(lines)
         block = lines[i + 1:end]

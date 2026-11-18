@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.10.1
+# Liber Canticorum 0.11.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -19,7 +19,7 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.10.1/
+LiberCanticorum_0.11.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -133,11 +133,20 @@ Inną bazę otworzysz w menu Plik.
 - **Cofnij ostatnie zmiany w bazie** (Plik, Ctrl+Shift+Z): przed każdym importem, łączeniem, zamianą tekstu
   i usunięciem pieśni program robi kopię bazy (ostatnie 8, w ukrytym folderze obok bazy). Z listy wybiera się
   zmianę – baza wraca do stanu sprzed niej; bieżący stan też zostaje zachowany, więc cofnięcie można cofnąć.
+- **Akordy – widok dla gitarzystów** (zakładka „Akordy”, Pieśń → Akordy, Ctrl+G): tekst z akordami w zapisie
+  ChordPro – „[a]Chwalcie [E]Pana” (akord przed sylabą) albo z boku wiersza po „‖”: „Pozdrawiam Cię, Matko ‖ D e / A D”.
+  Widok pokazuje akordy nad sylabami, ma transpozycję (± półtony, krzyżyki albo bemole), wielkość pisma, pełny
+  ekran, przechodzenie po pieśniach zestawu (Pieśń → Akordy całego zestawu) i zapis do PDF. Polska notacja
+  (H, B, moll małą literą, „is”/„es”) i angielska (B, Bb, Am). Tekst z wierszami akordów nad słowami (wklejony
+  albo z pliku TXT/DOCX) zamienia się na ChordPro automatycznie przy imporcie albo przyciskiem. Slajdy pokazują
+  sam tekst. Śpiewnik offline HTML (telefon) ma przycisk „🎸 Akordy” z transpozycją.
 - **ze śpiewnika tekstowego PDF** (setki pieśni: „123. Tytuł”, zwrotki, refreny, akordy z boku – np. śpiewnik
   oazowy złożony w InDesignie): tytuły są rozpoznawane po kroju i wielkości pisma, a nie tylko po numerze,
   więc „1.” zwrotki nie myli się z „1.” pieśni i pieśni się nie zlewają. Akordy (także „(H7) E A H7…”, „/x2”),
   żywa pagina, numery stron, litery działów na marginesie, sentencje w stopce i ramki z boku (np. wersja
-  hiszpańska) są pomijane. Numer pieśni trafia do uwag („…, nr 356”).
+  hiszpańska) są pomijane – akordy trafiają do zakładki „Akordy” (nad sylabami, gdy stały nad tekstem, albo
+  z boku wiersza). Śpiewniki bez numerów (tytuły kapitalikami, np. „Woda Życia”) też są rozpoznawane – tytuły
+  sprawdzane ze spisem treści. Numer pieśni trafia do uwag („…, nr 356”).
 - **ze śpiewnika PDF z nutami** (np. śpiewnik oazowy – wiele pieśni, każda z tytułem, autorami, nutami ze słowami
   i dalszymi zwrotkami pod spodem): wystarczy zaimportować plik PDF. Program sam rozpoznaje, że to śpiewnik,
   i pokazuje listę pieśni do zaznaczenia. Z każdej strony bierze tytuł (wiersz nad „t.: … m.: …”), autorów

@@ -19,6 +19,50 @@ RE_CHORD_TOK = re.compile(r"^[(\[]*([A-Ha-h](is|es|s|#|b)?(m|moll|maj|dim|aug|su
 RE_REPEAT_TOK = re.compile(r"^(/?\s*x\d+|/x\d+|/|\(bis\)|bis|\.\.\.|…|–|-|\|)$", re.I)
 
 
+RE_TOC = re.compile(r"^(\S.*?\S)\s*(\.\s?){4,}\s*\d{1,4}$")
+
+
+def _fold(t):
+    import unicodedata
+    t = unicodedata.normalize("NFKD", (t or "").replace("ł", "l").replace("Ł", "L"))
+    t = "".join(ch for ch in t if not unicodedata.combining(ch)).lower()
+    return re.sub(r"[^a-z0-9]+", " ", t).strip()
+
+
+def _nice_case(t):
+    """„CHRYSTUS PAN, BOŻY SYN” → „Chrystus pan, boży syn” (gdy tytuł zapisano kapitalikami)."""
+    letters = [ch for ch in t if ch.isalpha()]
+    if letters and sum(1 for ch in letters if ch.isupper()) > 0.8 * len(letters):
+        t = t.lower()
+        return t[:1].upper() + t[1:]
+    return t
+
+
+def _smallcaps(row):
+    """Tytuł pisany kapitalikami („CHRYSTUS PAN, BOŻY SYN”): wielkie zostają tylko litery naprawdę wyższe."""
+    cs = [c for c in row['chars'] if c[4].isalpha()]
+    if not cs or any(c[4].islower() for c in cs):
+        return ""
+    plain = [c[8] for c in cs if c[4] in "ABCDEFGHIJKLMNOPRSTUWYZ"]   # bez znaków diakrytycznych
+    if not plain:
+        return ""
+    hi, lo = max(plain), min(plain)
+    if hi - lo < 0.12 * hi:
+        return ""                                      # wszystkie równe – zwykłe wersaliki
+    cut = (hi + lo) / 2
+    txt, prev = "", None
+    for c in row['chars']:
+        if prev is not None and (prev[7] or c[0] - prev[2] > 0.3 * row['h']) and c[4] not in ",.;:!?)":
+            txt += " "
+        ch = c[4]
+        if ch.isalpha():
+            base = c[8] - (0.18 * hi if ch in "ĄĆĘŁŃÓŚŹŻ" else 0)
+            ch = ch if base >= cut else ch.lower()
+        txt += ch
+        prev = c
+    return txt.strip()
+
+
 def _font(name):
     return re.sub(r"^[A-Z]{6}\+", "", name or "")
 
@@ -104,7 +148,7 @@ def _segments(row):
     segs.append(cur)
     out = []
     for k, s in enumerate(segs):
-        if len(s) == 1 and s[0][4].isalpha() and len(segs) > 1:
+        if len(s) == 1 and s[0][4].isalpha() and len(segs) > 1 and s[0][2] < 0.08 * row.get('pw', 1e9):
             continue                                     # litera działu na marginesie („A”, „B”)
         txt = ""
         for k, c in enumerate(s):
@@ -171,6 +215,8 @@ def text_songbook(path, progress=None):
             progress(pi, n)
         page = doc[pi]
         rows = _lines(_page_chars(page))
+        for r in rows:
+            r['pw'] = page.get_width()
         pages.append({'w': page.get_width(), 'h': page.get_height(), 'rows': rows})
     doc.close()
     # krój i wysokość tekstu podstawowego
@@ -219,65 +265,210 @@ def text_songbook(path, progress=None):
         score = len(nums) * up * uniq
         if up >= 0.75 and uniq >= 0.8 and score > best_score:
             best, best_score = key, score
-    if not best:
-        return None
-    # tytuł musi się wyróżniać krojem albo wielkością – inaczej to zwykłe numerowane zwrotki
-    if best[0] == body_font and not best[1] and best[2] <= 1.0:
-        return None
-    titles = {(pi, ri) for pi, ri, _ in groups[best]}
-    # tekst
-    out, book = [], ""
+    # spis treści („Tytuł ........ 51”) – do sprawdzania tytułów i ich zapisu (małe/wielkie litery)
+    toc = {}
+    for pg in pages:
+        for r in pg['rows']:
+            t = " ".join(s[2] for s in _segments(r))
+            m = RE_TOC.match(t)
+            if m:
+                toc[_fold(m.group(1))] = m.group(1).strip()
+    if best and best[0] == body_font and not best[1] and best[2] <= 1.0:
+        best = None                     # tytuł musi się wyróżniać krojem albo wielkością – to zwykłe zwrotki
+    names = {}
+    if best:
+        titles = {(pi, ri) for pi, ri, _ in groups[best]}
+    else:
+        # tytuły bez numerów: wiersze innym (grubszym / większym) pismem, które nie są akordami
+        ugroups = defaultdict(list)
+        for pi, pg in enumerate(pages):
+            for ri, r in enumerate(pg['rows']):
+                segs = _segments(r)
+                if not segs:
+                    continue
+                t = " ".join(x[2] for x in segs)
+                letters = [c for c in r['chars'] if c[4].isalpha()]
+                ws = _words(r['chars'], max(r['h'], 3))
+                if len(letters) < 3 or _is_chord_text(t) or RE_TOC.match(t) or _head_key(r) in running \
+                        or (ws and all(_chordish(w) for _, w in ws)):
+                    continue
+                f = Counter(c[5] for c in letters).most_common(1)[0][0]
+                bold = sum(1 for c in letters if c[6]) > 0.6 * len(letters)
+                ratio = round(r['lh'] / max(body_h, 1) * 10) / 10
+                if f == body_font and not bold and ratio <= 1.05:
+                    continue
+                if re.match(r"(?i)^(ref|refren|ant|k\.|w\.|\d+\.)", t):
+                    continue
+                ugroups[(f, bold, ratio)].append((pi, ri, t))
+        cand = [(k, v) for k, v in ugroups.items() if len(v) >= 3]
+        if not cand:
+            return None
+
+        def uscore(kv):
+            k, v = kv
+            in_toc = sum(1 for _, _, t in v if _fold(t) in toc)
+            return (in_toc, len(v))
+        key, items = max(cand, key=uscore)
+        if toc and uscore((key, items))[0] < 0.3 * len(items):
+            return None
+        titles = {(pi, ri) for pi, ri, _ in items}
+        for pi, ri, t in items:
+            names[(pi, ri)] = toc.get(_fold(t)) or _smallcaps(pages[pi]['rows'][ri]) or _nice_case(t)
+    # tekst (out) i ten sam tekst z akordami w zapisie ChordPro (outc)
+    out, outc, book = [], [], ""
     for pi, pg in enumerate(pages):
-        prev_y, gaps = None, []
         rows = pg['rows']
-        for a, b in zip(rows, rows[1:]):
-            gaps.append(a['y'] - b['y'])
-        step = sorted(gaps)[len(gaps) // 2] if gaps else body_h * 1.5
+        kept = []                    # (y, tekst, czy_tytuł, ile_pominiętych_wierszy_przed, tekst_z_akordami)
+        skipped, pending = 0, None   # pending: akordy z wiersza nad tekstem [(x, akord)]
         for ri, r in enumerate(rows):
             raw_t = "".join(c[4] for c in r['chars'])
             if _head_key(r) in running and len(_head_key(r)) >= 6:
                 if not book and len(raw_t) > 8:
                     book = re.sub(r"\s*\d+\s*", " ", " ".join(s[2] for s in _segments(r))).strip()
                 continue
-            if re.fullmatch(r"\d{1,4}", raw_t.strip()) or len(raw_t.strip()) <= 1:
+            words = _words(r['chars'], max(r['h'], 3))
+            if words and all(_chordish(w) for _, w in words) and any(RE_CHORD_TOK.match(w) for _, w in words) \
+                    and (pi, ri) not in titles and not (len(words) == 1 and words[0][0] < 0.08 * pg['w']):
+                if pending:                                  # dwa wiersze akordów z rzędu – pierwszy osobno
+                    kept.append((r['y'], "", False, skipped, " ".join(f"[{w}]" for _, w in pending)))
+                pending = [(x, w) for x, w in words]
+                skipped += 1
+                continue
+            if re.fullmatch(r"[|\s]*\d{1,4}[|\s]*", raw_t) or len(raw_t.strip()) <= 1:
                 continue                                    # numer strony, litera działu na marginesie
             if r['lh'] < 0.8 * body_h and (pi, ri) not in titles:
                 continue                                    # stopka / przypis drobnym pismem
             if (pi, ri) in titles:
-                segs = _segments(r)
-                if prev_y is not None:
-                    out.append("")
-                out.append(MARK + _first_text(segs)[0])
-                prev_y = r['y']
+                t = MARK + (names.get((pi, ri)) or _first_text(_segments(r))[0])
+                kept.append((r['y'], t, True, skipped, t))
+                skipped, pending = 0, None
                 continue
-            keep = []
+            if RE_TOC.match(" ".join(x[2] for x in _segments(r))):
+                continue                                    # wiersz spisu treści
+            keep_chars, side = [], []
             for x0, x1, t, cs in _segments(r):
                 if _is_chord_text(t):
+                    if keep_chars or x0 > 0.3 * pg['w']:
+                        side.append(t)                      # akordy z boku wiersza
                     continue
-                if x0 > 0.55 * pg['w'] and keep == []:
+                if x0 > 0.55 * pg['w'] and not keep_chars:
                     continue                                # ramka z boku strony (np. wersja obcojęzyczna)
-                cs = _strip_chords(cs, body_font, max(r['h'], 3))
-                if not cs:
-                    continue
-                seg = _segments({'chars': cs, 'h': r['h']})
-                keep.append(" ".join(s[2] for s in seg))
-            if not keep:
+                kept_cs = _strip_chords(cs, body_font, max(r['h'], 3))
+                if len(kept_cs) < len(cs):
+                    tail = _segments({'chars': cs[len(kept_cs):], 'h': r['h']})
+                    side.append(" ".join(x[2] for x in tail))
+                if kept_cs:
+                    if keep_chars:
+                        keep_chars.append(None)             # przerwa między odcinkami = spacja
+                    keep_chars += kept_cs
+            line, pos = _text_pos(keep_chars, max(r['h'], 3))
+            line = re.sub(r"\s+([,.;:!?])", r"\1", line).strip()
+            if line:
+                cl, _ = _text_pos(keep_chars, max(r['h'], 3))
+                if pending:
+                    pm = re.match(r"^\s*(\d{1,2}\.|ref(ren)?\.?:?|r\.:?|ant\.?:?|k\.:?|w\.:?)\s*", cl, re.I)
+                    pre = pm.end() if pm else 0               # akord nie przed numerem zwrotki / „Ref.:”
+                    ins = []
+                    for x, ch in pending:
+                        k = next((idx for (cx0, cx1, idx) in pos if cx1 > x + 0.5), None)
+                        ins.append((len(cl) if k is None else max(k, pre), ch))
+                    cl = _insert(cl, ins)
+                cl = re.sub(r"\s+([,.;:!?])", r"\1", cl).strip()
+                if side:
+                    cl += " ‖ " + " ".join(side)
+                kept.append((r['y'], line, False, skipped, cl))
+                skipped, pending = 0, None
+            else:
+                skipped += 1                                # wiersz akordów – nie jest przerwą między zwrotkami
+        if pending:
+            kept.append((kept[-1][0] if kept else 0, "", False, 0, " ".join(f"[{w}]" for _, w in pending)))
+        # odstęp między zwrotkami: przerwa wyraźnie większa niż zwykła między wierszami tekstu
+        gaps = sorted((a[0] - b[0]) / (b[3] + 1) for a, b in zip(kept, kept[1:]) if not a[2] and not b[2] and a[1] and b[1])
+        step = gaps[len(gaps) // 4] if gaps else body_h * 1.5
+        prev = None
+        for y, line, is_t, sk, cl in kept:
+            if not line:                                   # sam wiersz akordów (np. przygrywka)
+                outc.append(cl)
                 continue
-            line = " ".join(keep).strip()
-            line = re.sub(r"\s+([,.;:!?])", r"\1", line)
-            if prev_y is not None and prev_y - r['y'] > 1.6 * step:
+            if prev is not None and (is_t or (prev - y) / (sk + 1) > 1.45 * step):
                 out.append("")
+                outc.append("")
             out.append(line)
-            prev_y = r['y']
+            outc.append(cl)
+            prev = y
         out.append("")
+        outc.append("")
+    if not book:
+        try:
+            first = [" ".join(s[2] for s in _segments(r)) for r in pages[0]['rows']]
+            book = " ".join(first)[:80] if 0 < len(" ".join(first)) <= 80 else ""
+            book = re.sub(r"(\d) (?=\d)", r"\1", book)
+        except Exception:
+            book = ""
     # „1.” samo w wierszu (numer w osobnej kolumnie) – dołącz do następnego wiersza
-    fixed = []
-    for line in out:
-        if fixed and re.fullmatch(r"\d{1,2}\.", fixed[-1].strip()) and line.strip():
-            fixed[-1] = fixed[-1].strip() + " " + line
-        else:
-            fixed.append(line)
-    return "\n".join(fixed), book, len(titles)
+    def fix(lines):
+        fixed = []
+        for line in lines:
+            if fixed and re.fullmatch(r"\d{1,2}\.", fixed[-1].strip()) and line.strip():
+                fixed[-1] = fixed[-1].strip() + " " + line
+            else:
+                fixed.append(line)
+        return "\n".join(fixed)
+    global LAST_CHORDS
+    spaced = []
+    for line in outc:                                  # zwrotka / refren od nowego akapitu (jak w tekście)
+        if spaced and spaced[-1].strip() and re.match(r"^(\[[^\]]*\])*\s*(\d{1,2}\.\s|ref(ren)?\.?:)", line, re.I):
+            spaced.append("")
+        spaced.append(line)
+    LAST_CHORDS = fix(spaced)
+    return fix(out), book, len(titles)
+
+
+LAST_CHORDS = ""
+
+
+def _words(chars, h):
+    """Znaki wiersza → słowa [(x0, tekst)]."""
+    out, cur = [], []
+    for c in chars:
+        if cur and (cur[-1][7] or c[0] - cur[-1][2] > 0.3 * h):
+            out.append((cur[0][0], "".join(x[4] for x in cur)))
+            cur = []
+        cur.append(c)
+    if cur:
+        out.append((cur[0][0], "".join(x[4] for x in cur)))
+    return out
+
+
+def _chordish(w):
+    return bool(RE_CHORD_TOK.match(w) or RE_REPEAT_TOK.match(w)
+                or re.fullmatch(r"[(\[]?x?\d{1,2}[+\-]?[)\]]?|/x\d|[_I|]+", w)
+                or re.fullmatch(r"[(\[]*([A-Ha-h](is|es)?(m|sus|maj|add|dim|aug)?\d{0,2}[+\-]?/?)+[)\]]*[.…]*", w)
+                and len(w) <= 12)
+
+
+def _text_pos(chars, h):
+    """Znaki (None = przerwa) → (tekst, [(x0, x1, indeks_w_tekście)])."""
+    txt, pos, prev = "", [], None
+    for c in chars:
+        if c is None:
+            if txt and not txt.endswith(" "):
+                txt += " "
+            prev = None
+            continue
+        if prev is not None and (prev[7] or c[0] - prev[2] > 0.3 * h) and c[4] not in ",.;:!?…)" \
+                and prev[4] not in "(" and not txt.endswith(" "):
+            txt += " "
+        pos.append((c[0], c[2], len(txt)))
+        txt += c[4]
+        prev = c
+    return txt, pos
+
+
+def _insert(line, ins):
+    for k, ch in sorted(ins, key=lambda t: -t[0]):
+        line = line[:k] + f"[{ch}]" + line[k:]
+    return line
 
 
 def collection(path, progress=None):
@@ -290,9 +481,24 @@ def collection(path, progress=None):
     text, book, n = r
     if n < 3:
         return None
-    book = book or os.path.splitext(os.path.basename(path))[0]
+    book = book or re.sub(r"^[0-9a-f]{8}-", "", os.path.splitext(os.path.basename(path))[0])
     coll = zb.parse_collection(text, book, min_songs=3, sections=False)
     if coll:
+        # akordy: ten sam podział na pieśni po oznaczonych tytułach
+        import modul_akordy as ak
+        blocks, cur = [], None
+        for line in LAST_CHORDS.split("\n"):
+            if line.startswith(zb.MARK):
+                cur = []
+                blocks.append(cur)
+            elif cur is not None:
+                cur.append(line)
+        if len(blocks) == len(coll['piesni']):
+            for sg, b in zip(coll['piesni'], blocks):
+                t = "\n".join(b).strip("\n")
+                t = re.sub(r"\n{3,}", "\n\n", t)
+                if ak.has_chords(t):
+                    sg['akordy'] = t
         coll['naglowek'] = coll.get('naglowek') or book
         for sg in coll['piesni']:
             sg['uwagi'] = sg['uwagi'].replace(f"{book} nr ", f"{book}, nr ")

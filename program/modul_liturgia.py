@@ -118,7 +118,7 @@ _STOP_RE = re.compile(r"^(homilie|polecamy|rozwa[żz]ania|je[żz]eli chcesz|czyt
 _REF_RE = re.compile(r"^\(?\s*(por\.\s*)?[1-3]?\s?[A-ZŁŚŻ][a-ząćęłńóśźż]{0,5}\.?\s*\d+\s*(\(\d+\))?\s*[,:]\s*\d")
 
 UA = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 "
-                    "LiberCanticorum/0.10.1", 'Accept-Language': "pl,en;q=0.8"}
+                    "LiberCanticorum/0.11.0", 'Accept-Language': "pl,en;q=0.8"}
 
 
 class _Lines(HTMLParser):
