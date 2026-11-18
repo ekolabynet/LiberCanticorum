@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.12.0 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.12.1 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.12.0"
+VERSION = "0.12.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.12.0)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.12.1)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -2517,7 +2517,7 @@ class MainWindow(QMainWindow):
                 ('add', "Dodaj pliki… (lub przeciągnij tutaj)", self.add_attachments), ('view', "👁 Podgląd nut", self.preview_attachment),
                 ('open', "Otwórz w programie (MuseScore…)", self.open_attachment), ('save', "Zapisz jako…", self.save_attachment),
                 ('midi', "MIDI – odtwarzanie głosów…", self.play_midi), ('del', "Usuń", self.delete_attachment),
-                ('search', "Szukaj nut w sieci…", self.search_scores),
+                ('search', "Szukaj nut w MuseScore…", self.search_scores),
                 ('lyrics', "Słowa z tych nut → do tekstu pieśni…", self.lyrics_from_attachment),
                 ('desc', "Wersja / aranżacja (opis)…", self.describe_attachment),
                 ('merge', "Połącz z inną pieśnią…", self.merge_song_dialog)]):
@@ -2605,6 +2605,7 @@ class MainWindow(QMainWindow):
         act(m_song, "Zapisz w bazie", self.save_song, "Ctrl+S", True)
         act(m_song, "Duplikuj", self.duplicate_song)
         act(m_song, "Usuń z bazy", self.delete_song)
+        act(m_song, "Szukaj nut w MuseScore (po tytule)…", self.search_scores, "Ctrl+M")
         act(m_song, "🎸 Akordy – widok dla gitarzystów…", self.show_chords, "Ctrl+G")
         act(m_song, "🎸 Akordy całego zestawu…", self.show_set_chords)
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
@@ -4336,7 +4337,8 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, APP_NAME, f"Brak modułu nut:\n{e}")
             return
         if getattr(self, 'score_dlg', None) and self.score_dlg.isVisible():
-            self.score_dlg.q.setText(self.editor_song()['title'])
+            self.score_dlg.q.setText(re.sub(r"\s+[–—-]\s+", " ", self.editor_song()['title']))
+            self.score_dlg.search_musescore()
             self.score_dlg.raise_()
             self.score_dlg.activateWindow()
             return
@@ -5253,6 +5255,12 @@ def main():
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LiberCanticorum.LiberCanticorum")
         except Exception:
             pass
+    try:                                       # wbudowana przeglądarka (MuseScore w oknie programu) – jeśli jest
+        from PySide6.QtCore import QCoreApplication
+        QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+        import PySide6.QtWebEngineWidgets      # noqa: F401 – musi być wczytany przed QApplication
+    except Exception:
+        pass
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)

@@ -21,7 +21,7 @@ import urllib.parse
 import urllib.request
 
 UA = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 "
-                    "LiberCanticorum/0.12.0", 'Accept-Language': "pl,en;q=0.8",
+                    "LiberCanticorum/0.12.1", 'Accept-Language': "pl,en;q=0.8",
       'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
 _TR = str.maketrans("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ", "acelnoszzACELNOSZZ")
 

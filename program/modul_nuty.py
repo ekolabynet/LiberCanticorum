@@ -34,12 +34,12 @@ from PySide6.QtGui import (QColor, QDesktopServices, QFont, QImage, QKeySequence
                            QShortcut)
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog,
                                QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
-                               QPushButton, QScrollArea, QSlider, QSpinBox, QVBoxLayout, QWidget,
+                               QMessageBox, QPushButton, QScrollArea, QTabWidget, QSlider, QSpinBox, QVBoxLayout, QWidget,
                                QApplication)
 
-USER_AGENT = "LiberCanticorum/0.12.0 (program parafialny; GPL)"
+USER_AGENT = "LiberCanticorum/0.12.1 (program parafialny; GPL)"
 BROWSER_HEADERS = {
-    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.12.0",
+    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.12.1",
     'Accept': "application/json,text/html;q=0.9,*/*;q=0.8", 'Accept-Language': "pl,en;q=0.8",
 }
 VOICE_COLORS = ['#e05656', '#e0a030', '#4caf50', '#3f7fd9', '#a05ad9', '#30b0b0', '#c0c040', '#d070a0']
@@ -352,6 +352,18 @@ def is_pdf(data):
 # Wyszukiwanie nut
 # =====================================================================
 
+_WEB_PROFILE = None
+
+
+def webengine_available():
+    """Czy jest wbudowana przeglądarka (QtWebEngine z PySide6-Addons)."""
+    try:
+        import importlib.util
+        return importlib.util.find_spec("PySide6.QtWebEngineWidgets") is not None
+    except Exception:
+        return False
+
+
 def web_search_urls(q):
     e = urllib.parse.quote_plus
     return {
@@ -441,72 +453,111 @@ class ScoreSearchDialog(QDialog):
         self.setWindowTitle("Szukaj i dołącz nuty")
         self.setModal(False)
         self.setAcceptDrops(True)
-        self.resize(820, 680)
+        self.resize(1000, 820)
         self.opened_at = time.time() - 5
         self.dl_dir = downloads_dir()
         lay = QVBoxLayout(self)
         row = QHBoxLayout()
+        query = re.sub(r"\s+[–—-]\s+", " ", query or "")      # „Msza Rycerska – Kyrie” → „Msza Rycerska Kyrie”
         self.q = QLineEdit(query)
-        self.q.returnPressed.connect(self.search_cpdl)
-        row.addWidget(QLabel("Szukaj:"))
+        self.q.setPlaceholderText("Tytuł pieśni")
+        self.q.returnPressed.connect(self.search_musescore)
+        row.addWidget(QLabel("Tytuł:"))
         row.addWidget(self.q, 1)
-        b = QPushButton("Szukaj w CPDL")
-        b.clicked.connect(self.search_cpdl)
+        b = QPushButton("🔎 Szukaj w MuseScore")
+        b.setDefault(True)
+        b.clicked.connect(self.search_musescore)
         row.addWidget(b)
         lay.addLayout(row)
+
+        self.tabs = QTabWidget()
+        lay.addWidget(self.tabs, 5)
+        # --- MuseScore (najważniejsze)
+        ms = QWidget()
+        ml = QVBoxLayout(ms)
+        ml.setContentsMargins(0, 4, 0, 0)
+        self.web = None
+        if webengine_available():
+            self._build_web(ml)
+        else:
+            steps = QLabel(
+                "<b>Jak to działa:</b><ol>"
+                "<li>Kliknij <b>„Szukaj w MuseScore”</b> – otworzy się przeglądarka z wynikami dla tytułu.</li>"
+                "<li>Wybierz nuty: <i>melodia</i> (melody, lead sheet, „śpiew”), <i>chór</i> (SATB, choir), "
+                "<i>organy / fortepian</i> (organ, piano).</li>"
+                "<li>Kliknij <b>Download</b> i wybierz <b>PDF</b> albo <b>MuseScore</b> (.mscz – da się z niego "
+                "zrobić MIDI i odczytać słowa). Pobieranie wymaga darmowego konta w MuseScore.</li>"
+                "<li>Pobrany plik pojawi się poniżej na liście sam – kliknij <b>„Dołącz zaznaczone do pieśni”</b>.</li>"
+                "</ol>", wordWrap=True)
+            ml.addWidget(steps)
+            inst = QPushButton("Wygodniej: otwieraj MuseScore w oknie programu (jednorazowo pobierze ok. 150 MB)…")
+            inst.clicked.connect(self.install_webengine)
+            ml.addWidget(inst)
+            ml.addStretch(1)
+        self.tabs.addTab(ms, "MuseScore")
+        # --- inne źródła
+        other = QWidget()
+        ol = QVBoxLayout(other)
+        ol.addWidget(QLabel("<b>CPDL</b> – darmowe nuty chóralne (głównie dawna muzyka, łacina). Szuka się tu bez "
+                            "przeglądarki: wybierz utwór, potem plik, i „Pobierz z CPDL i dołącz”.<br>"
+                            "<b>IMSLP</b> – nuty klasyczne w domenie publicznej. <b>Google</b> – wszystko inne "
+                            "(PDF, MIDI ze stron parafii, chórów).", wordWrap=True))
         web = QHBoxLayout()
-        web.addWidget(QLabel("W przeglądarce:"))
-        for name in web_search_urls(""):
+        b = QPushButton("Szukaj w CPDL")
+        b.clicked.connect(self.search_cpdl)
+        web.addWidget(b)
+        for name in ('IMSLP', 'Google: nuty PDF / MIDI'):
             bb = QPushButton(name)
             bb.clicked.connect(lambda _=False, n=name: self.open_web(n))
             web.addWidget(bb)
         web.addStretch()
-        lay.addLayout(web)
-
-        # --- pobrane pliki (najważniejsze: tu trafiają nuty z przeglądarki)
-        box = QLabel(f"<b>Pobrane w przeglądarce</b> – pliki z nutami zapisane w folderze <i>{self.dl_dir}</i> "
-                     "pojawią się poniżej same. Możesz też <b>przeciągnąć plik do tego okna</b>.", wordWrap=True)
-        lay.addWidget(box)
-        self.local = QListWidget()
-        self.local.setSelectionMode(QListWidget.ExtendedSelection)
-        self.local.setMinimumHeight(110)
-        lay.addWidget(self.local, 2)
-        lrow = QHBoxLayout()
-        b_att = QPushButton("Dołącz zaznaczone do pieśni")
-        b_att.setDefault(True)
-        b_att.clicked.connect(self.attach_local)
-        b_pick = QPushButton("Wskaż plik…")
-        b_pick.clicked.connect(self.pick_files)
-        b_all = QPushButton("Pokaż też starsze pobrane")
-        b_all.clicked.connect(lambda: self.scan_downloads(all_recent=True))
-        lrow.addWidget(b_att)
-        lrow.addWidget(b_pick)
-        lrow.addWidget(b_all)
-        lrow.addStretch()
-        lay.addLayout(lrow)
-
-        lay.addWidget(QLabel("CPDL – Choral Public Domain Library (nuty chóralne w domenie publicznej):", wordWrap=True))
+        ol.addLayout(web)
         self.results = QListWidget()
         self.results.currentItemChanged.connect(self.load_files)
         self.results.itemDoubleClicked.connect(self.open_page)
-        lay.addWidget(self.results, 1)
+        ol.addWidget(self.results, 1)
         self.files = QListWidget()
         self.files.setSelectionMode(QListWidget.ExtendedSelection)
-        lay.addWidget(self.files, 1)
+        ol.addWidget(self.files, 1)
         bb = QHBoxLayout()
         self.b_page = QPushButton("Otwórz stronę utworu")
         self.b_page.clicked.connect(lambda: self.open_page(self.results.currentItem()))
         self.b_get = QPushButton("Pobierz z CPDL i dołącz")
         self.b_get.clicked.connect(self.download_selected)
-        close = QPushButton("Zamknij")
-        close.clicked.connect(self.close)
         bb.addWidget(self.b_page)
         bb.addStretch()
         bb.addWidget(self.b_get)
-        bb.addWidget(close)
-        lay.addLayout(bb)
+        ol.addLayout(bb)
+        self.tabs.addTab(other, "Inne źródła")
+
+        # --- pobrane pliki (tu trafiają nuty z przeglądarki)
+        box = QLabel(f"<b>Pobrane pliki</b> – nuty zapisane w folderze <i>{self.dl_dir}</i> pojawią się tu same. "
+                     "Możesz też <b>przeciągnąć plik do tego okna</b>.", wordWrap=True)
+        lay.addWidget(box)
+        self.local = QListWidget()
+        self.local.setSelectionMode(QListWidget.ExtendedSelection)
+        self.local.setMinimumHeight(80)
+        lay.addWidget(self.local, 1)
+        lrow = QHBoxLayout()
+        b_att = QPushButton("Dołącz zaznaczone do pieśni")
+        b_att.clicked.connect(self.attach_local)
+        b_pick = QPushButton("Wskaż plik…")
+        b_pick.clicked.connect(self.pick_files)
+        b_all = QPushButton("Pokaż też starsze pobrane")
+        b_all.clicked.connect(lambda: self.scan_downloads(all_recent=True))
+        close = QPushButton("Zamknij")
+        close.clicked.connect(self.close)
+        lrow.addWidget(b_att)
+        lrow.addWidget(b_pick)
+        lrow.addWidget(b_all)
+        lrow.addStretch()
+        lrow.addWidget(close)
+        lay.addLayout(lrow)
         self.status = QLabel(wordWrap=True)
         lay.addWidget(self.status)
+        lay.setStretchFactor(self.tabs, 5 if self.web is not None else 2)
+        if self.web is not None and query:
+            QTimer.singleShot(100, self.search_musescore)
 
         _icons(self)
         self.watcher = QFileSystemWatcher([self.dl_dir], self)
@@ -604,6 +655,118 @@ class ScoreSearchDialog(QDialog):
             self.status.setText(f"Dołączono: {', '.join(n for n, _ in got)}")
         e.acceptProposedAction()
 
+    # --- MuseScore
+    def _build_web(self, lay):
+        from PySide6.QtWebEngineWidgets import QWebEngineView
+        from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
+        from PySide6.QtCore import QStandardPaths
+        nav = QHBoxLayout()
+        self.web = QWebEngineView(self)
+        root = os.path.join(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) or
+                            os.path.expanduser("~/.local/share/LiberCanticorum"), "przegladarka")
+        os.makedirs(root, exist_ok=True)
+        global _WEB_PROFILE
+        if _WEB_PROFILE is None:            # jeden profil na cały program – logowanie w MuseScore zostaje
+            _WEB_PROFILE = QWebEngineProfile("LiberCanticorum", QApplication.instance())
+            _WEB_PROFILE.setPersistentStoragePath(root)
+            _WEB_PROFILE.setCachePath(os.path.join(root, "cache"))
+            _WEB_PROFILE.setDownloadPath(tempfile.mkdtemp(prefix="lc_nuty_"))
+        self.web.setPage(QWebEnginePage(_WEB_PROFILE, self.web))
+        _WEB_PROFILE.downloadRequested.connect(self._web_download)
+        for txt, fn in (("◀", self.web.back), ("▶", self.web.forward), ("⟳", self.web.reload)):
+            b = QPushButton(txt)
+            b.setFixedWidth(36)
+            b.clicked.connect(fn)
+            nav.addWidget(b)
+        self.addr = QLabel()
+        self.addr.setStyleSheet("color: gray;")
+        nav.addWidget(self.addr, 1)
+        b = QPushButton("Otwórz w zwykłej przeglądarce")
+        b.clicked.connect(lambda: QDesktopServices.openUrl(self.web.url()))
+        nav.addWidget(b)
+        lay.addLayout(nav)
+        lay.addWidget(self.web, 1)
+        hint = QLabel("Wybierz nuty i kliknij <b>Download</b> (PDF albo MuseScore) – plik od razu trafi do pieśni. "
+                      "Pobieranie wymaga darmowego konta w MuseScore; zalogujesz się raz, program to zapamięta.",
+                      wordWrap=True)
+        lay.addWidget(hint)
+        self.web.urlChanged.connect(lambda u: self.addr.setText(u.toString()[:120]))
+
+    def search_musescore(self):
+        q = self.q.text().strip()
+        if not q:
+            return
+        url = web_search_urls(q)['MuseScore']
+        self.tabs.setCurrentIndex(0)
+        if self.web is not None:
+            self.web.load(QUrl(url))
+            self.status.setText("Szukam w MuseScore…")
+        else:
+            QDesktopServices.openUrl(QUrl(url))
+            self.status.setText("Otworzyłem MuseScore w przeglądarce. Pobierz nuty (Download → PDF albo MuseScore) – "
+                                "plik pojawi się poniżej.")
+
+    def _web_download(self, req):
+        if req.page() is not None and self.web is not None and req.page() is not self.web.page():
+            return                                    # pobieranie z innego okna
+        try:
+            req.setDownloadDirectory(tempfile.mkdtemp(prefix="lc_nuty_"))
+        except Exception:
+            pass
+        req.isFinishedChanged.connect(lambda r=req: self._web_done(r))
+        req.accept()
+        self.status.setText(f"Pobieram: {req.downloadFileName()}…")
+
+    def _web_done(self, req):
+        from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
+        if req.state() != QWebEngineDownloadRequest.DownloadCompleted:
+            self.status.setText(f"Pobieranie przerwane: {req.downloadFileName()}")
+            return
+        path = os.path.join(req.downloadDirectory(), req.downloadFileName())
+        try:
+            with open(path, 'rb') as f:
+                data = f.read()
+        except OSError as e:
+            self.status.setText(f"Nie można odczytać pobranego pliku: {e}")
+            return
+        self.add_local(path)
+        if self.local.count():
+            self.local.item(0).setText("✓ " + self.local.item(0).text())
+        self.files_downloaded.emit([(req.downloadFileName(), data)])
+        self.status.setText(f"Dołączono do pieśni: {req.downloadFileName()}")
+
+    def install_webengine(self):
+        """Doinstaluj QtWebEngine (PySide6-Addons w tej samej wersji co PySide6) do środowiska programu."""
+        import sys
+        import PySide6
+        from PySide6.QtCore import QProcess
+        if QMessageBox.question(self, "MuseScore w programie",
+                                "Program pobierze i zainstaluje moduł przeglądarki (PySide6-Addons, ok. 150 MB).\n"
+                                "Potrzebny jest internet. Po instalacji uruchom program ponownie.\n\nZainstalować teraz?") \
+                != QMessageBox.Yes:
+            return
+        self.proc = QProcess(self)
+        self.status.setText("Instaluję moduł przeglądarki… (to potrwa kilka minut)")
+        log = []
+        self.proc.readyReadStandardOutput.connect(lambda: log.append(bytes(self.proc.readAllStandardOutput()).decode(
+            'utf-8', 'replace')) or self.status.setText("Instaluję… " + log[-1].strip().splitlines()[-1][:100]
+                                                         if log[-1].strip() else self.status.text()))
+        self.proc.readyReadStandardError.connect(lambda: log.append(bytes(self.proc.readAllStandardError()).decode(
+            'utf-8', 'replace')))
+
+        def done(code, _status):
+            if code == 0:
+                QMessageBox.information(self, "MuseScore w programie",
+                                        "Zainstalowano. Zamknij i uruchom program ponownie – MuseScore otworzy się "
+                                        "w oknie „Szukaj nut”.")
+                self.status.setText("Zainstalowano – uruchom program ponownie.")
+            else:
+                QMessageBox.warning(self, "MuseScore w programie", "Instalacja się nie udała:\n" +
+                                    "".join(log)[-1500:])
+        self.proc.finished.connect(done)
+        self.proc.start(sys.executable, ["-m", "pip", "install", "--disable-pip-version-check",
+                                         f"PySide6-Addons=={PySide6.__version__}"])
+
     # --- sieć
     def open_web(self, name):
         QDesktopServices.openUrl(QUrl(web_search_urls(self.q.text())[name]))
@@ -680,6 +843,11 @@ class ScoreSearchDialog(QDialog):
 
     def closeEvent(self, e):
         self.poll.stop()
+        if self.web is not None and _WEB_PROFILE is not None:
+            try:
+                _WEB_PROFILE.downloadRequested.disconnect(self._web_download)
+            except Exception:
+                pass
         super().closeEvent(e)
 
 

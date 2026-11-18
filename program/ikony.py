@@ -75,7 +75,7 @@ BY_LABEL = {
     "DOCX": "align-left", "HTML (telefon)": "mobile-screen-button",
     "Dodaj pliki": "paperclip", "Podgląd nut": "eye", "Otwórz w programie": "arrow-up-right-from-square",
     "Zapisz jako": "download", "Odtwarzacz głosów": "headphones", "MIDI – odtwarzanie głosów": "headphones",
-    "Test MuseScore": "gear", "Szukaj nut w sieci": "magnifying-glass",
+    "Test MuseScore": "gear", "Szukaj nut w sieci": "magnifying-glass", "Szukaj nut w MuseScore": "magnifying-glass",
     "Szukaj na YouTube": "youtube", "Dodaj link": "link", "Wideo": "play", "Tylko dźwięk": "headphones",
     "Otwórz w przeglądarce": "globe", "Ustaw jako domyślne": "floppy-disk",
     # okna modułów

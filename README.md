@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.12.0
+# Liber Canticorum 0.12.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,14 +12,14 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.12.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.12.1 itd.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.12.0/
+LiberCanticorum_0.12.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -212,6 +212,14 @@ i **nagrania do nauki** z nut. Przy nagraniach wybierasz **głosy** (S, A, T, B,
 głos z delikatnym podkładem harmonii, sam głos, oraz tempo z nut i/lub wolniejsze. Okno od razu pokazuje,
 ile plików powstanie, i ostrzega, gdy jest ich za dużo. **♿ Dla niewidomych** to ten sam eksport z wersją
 tekstów dla czytników ekranu (większa czcionka, DOCX + TXT, bez slajdów i obrazków).
+
+**Szukaj nut w MuseScore po tytule** (Pieśń → „Szukaj nut w MuseScore”, Ctrl+M, albo przycisk w zakładce „Nuty,
+wersje i nagrania”): okno od razu szuka tytułu bieżącej pieśni na musescore.com („Msza Rycerska – Kyrie” → „Msza
+Rycerska Kyrie”). Jeśli jest wbudowana przeglądarka (moduł PySide6-Addons – program proponuje doinstalowanie,
+ok. 150 MB), MuseScore otwiera się w oknie programu: wybierasz nuty, klikasz *Download* (PDF albo MuseScore) i plik
+od razu trafia do pieśni; logowanie w MuseScore (darmowe konto) program pamięta. Bez niej MuseScore otwiera się
+w zwykłej przeglądarce, a pobrany plik pojawia się w oknie sam (folder Pobrane). CPDL, IMSLP i Google są w zakładce
+„Inne źródła”. (MuseScore chroni wyszukiwarkę przed programami, dlatego wyniki ogląda się w przeglądarce.)
 
 **Szukaj w sieci** (Plik → „Szukaj w śpiewnikach internetowych i nut w MuseScore”, Ctrl+Shift+F):
 1. *Teksty w śpiewnikach* – program pobiera spisy pieśni (Śpiewnik ks. Siedleckiego z tekstami, Śpiewnik
