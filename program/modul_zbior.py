@@ -142,7 +142,8 @@ def guess_category(text):
 
 def parse_collection(text, source="", min_songs=3, sections=True):
     """Tekst strony/pliku → {'piesni': [...], 'naglowek', 'kategoria'} albo None, gdy to nie zbiór."""
-    lines = [l.rstrip() for l in (text or "").replace('\r', '').split("\n")]
+    # znaki z czcionek ikon (strzałki akordeonów, U+E000–F8FF) nie są częścią tekstu
+    lines = [re.sub(r"[\ue000-\uf8ff]", "", l).rstrip() for l in (text or "").replace('\r', '').split("\n")]
     # stopka strony (zgoda na ciasteczka, tłumacz…) nie należy do ostatniej pieśni
     for k, l in enumerate(lines):
         if re.match(r"(?i)^\s*(korzystając z tej witryny|ta strona (używa|wykorzystuje) (plików )?cookies|translate »|"
@@ -156,6 +157,24 @@ def parse_collection(text, source="", min_songs=3, sections=True):
             t = lines[i].strip().lstrip(MARK).strip()
             m = re.match(r"^(\d{1,4}(?:\s?[A-Za-z])?)\.\s*(.+)$", t)
             starts.append((i, re.sub(r"\s", "", m.group(1)) if m else str(len(starts) + 1), (m.group(2) if m else t).strip()))
+        # strona może mieć część pieśni w innym akordeonie (bez oznaczenia): kolejny numer + tekst od „1.”/„Refren”
+        mset = set(marked)
+        extra = []
+        last = max((int(re.match(r"\d+", str(n)).group()) for _, n, _ in starts if re.match(r"\d+", str(n))), default=0)
+        for i, l in enumerate(lines):
+            if i in mset or i <= marked[0]:
+                continue
+            m = re.match(r"^\s*(\d{1,4})\.\s+(\S.{0,90})$", l.replace(MARK, ""))
+            if not m or " * " in l:
+                continue
+            nxt = next((x.strip() for x in lines[i + 1:] if x.strip()), "")
+            prev_num = max([int(re.match(r"\d+", str(n)).group()) for j, n, _ in starts + extra
+                            if j < i and re.match(r"\d+", str(n))] or [0])
+            if int(m.group(1)) == prev_num + 1 and int(m.group(1)) > 1 and \
+                    re.match(r"(?i)^(1\.|ref|antyfona|ant\.)", nxt):
+                extra.append((i, m.group(1), m.group(2).strip()))
+        if extra:
+            starts = sorted(starts + extra)
         lines = [l.replace(MARK, "") for l in lines]
     else:
         lines = [l.replace(MARK, "") for l in lines]
@@ -231,6 +250,18 @@ def html_for_collection(raw):
             return f"<h4>{MARK}{inner}</h4>"
         return f"<h4>{inner}</h4>" if inner else ""
     raw = re.sub(r"(?is)<button\b[^>]*>(.*?)</button>", title, raw)
+    raw = re.sub(r"(?is)<summary\b[^>]*>(.*?)</summary>", title, raw)          # blok „szczegóły” (details/summary)
+
+    # tytuły akordeonów z innych wtyczek: role="button", klasy *title*, *toggle*, *spoiler*, *accordion*, *tab*
+    def other(m):
+        inner = re.sub(r"(?is)<[^>]+>", " ", m.group(3))
+        inner = re.sub(r"[\ue000-\uf8ff]", "", H.unescape(inner))
+        inner = re.sub(r"^[^\w„\"(]+", "", re.sub(r"\s+", " ", inner)).strip()
+        if re.match(r"^\d{1,4}(?:\s?[A-Za-z])?\.\s+\S", inner) and len(inner) < 120:
+            return f"<h4>{MARK}{inner}</h4>"
+        return m.group(0)
+    raw = re.sub(r"(?is)<(div|span|h[1-6]|a|p|li|dt)\b([^>]*(?:role=[\"']button|class=[\"'][^\"']*"
+                 r"(?:title|toggle|spoiler|accordion|tab-|heading|question))[^>]*)>((?:(?!<\1\b).)*?)</\1>", other, raw)
 
     def audio(m):
         src = re.search(r'''(?i)(?:src|href)=["']([^"']+\.(?:mp3|ogg|m4a|wav)[^"']*)''', m.group(0))

@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.19.2
+# Liber Canticorum 0.19.3
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -30,7 +30,7 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 Okno ma u dołu pięć zakładek. Pierwsze cztery są proste, dla każdego, piąta to pełny edytor.
 
-- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, **Edytor melodii**, Nowa pieśń,
+- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, **Edytor melodii**, Nowa pieśń, **Porządki w bazie** (duplikaty, menedżer kategorii, cofanie zmian),
   Importuj śpiewnik lub plik, Akordy, Pilot w telefonie, Zaawansowane. Na górze liczba pieśni w bazie.
 - **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+),
   akordy jednym przyciskiem, „Slajdy tej pieśni”, „Edytuj”.
@@ -81,7 +81,8 @@ Nuty rysuje czcionka **Leland** – ta sama, której używa MuseScore 4 – a s�
 rodzaj PDF-a – śpiewnik z nutami, śpiewnik z nutami jako obrazkami albo śpiewnik tekstowy (także z akordami
 nad tekstem lub z boku) – i pokazuje listę pieśni do zaznaczenia. Pieśni, które już są w bazie, można połączyć
 (inny tekst zostaje wersją, plik nut – aranżacją). Strony WWW: Plik → „Importuj ze strony WWW” (np. dział
-Śpiewnika ks. Siedleckiego – program pobiera wszystkie pieśni działu ze zwrotkami i linkami do nagrań).
+Śpiewnika ks. Siedleckiego – program pobiera wszystkie pieśni działu ze zwrotkami i linkami do nagrań, także gdy
+dział ma kilka części zrobionych różnymi akordeonami, np. Adwent: „Część pierwsza” i „Część druga”).
 
 **Cofnąć import.** Plik → „Cofnij ostatnie zmiany w bazie” (Ctrl+Shift+Z) – wybierasz zmianę z listy.
 
@@ -147,7 +148,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.19.2/
+LiberCanticorum_0.19.3/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

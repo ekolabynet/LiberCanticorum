@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.19.2"
+VERSION = "0.19.3"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -3076,6 +3076,7 @@ class MainWindow(QMainWindow):
             ("🎵", "Edytor melodii", "Wpisz nuty, słowa i akordy jak w MuseScore; posłuchaj (chór i organy) i zapisz w pieśni.",
              self._go_melody),
             ("✚", "Nowa pieśń", "Wpisz albo wklej tekst nowej pieśni.", self._go_new),
+            ("🧹", "Porządki w bazie", "Duplikaty, kategorie, cofanie ostatnich zmian.", self.tidy_dialog),
             ("📥", "Importuj śpiewnik lub plik", "PDF, DOCX, TXT, nuty MuseScore – także całe śpiewniki.",
              self.import_files),
             ("🎸", "Akordy", "Tekst z akordami dla gitarzystów, z transpozycją.", self._go_chords),
@@ -3808,6 +3809,42 @@ class MainWindow(QMainWindow):
             self.find_duplicates()
         elif action == 'categories':
             self.category_manager()
+        self._refresh_pickers()
+
+    def tidy_dialog(self):
+        """Kafel „Porządki w bazie”: duże przyciski do najczęstszych porządków."""
+        d = QDialog(self)
+        d.setWindowTitle("Porządki w bazie")
+        lay = QVBoxLayout(d)
+        lay.addWidget(QLabel(f"<b>W bazie: {self.db.count()} pieśni.</b> Każdą zmianę można cofnąć."))
+        for txt, tip, fn in (
+                ("🔗  Znajdź i połącz duplikaty pieśni", "Te same pieśni zapisane kilka razy – połącz w jedną "
+                 "(teksty jako wersje, nuty, nagrania, zestawy)", self.find_duplicates),
+                ("🏷  Menedżer kategorii", "Zmiana nazw, łączenie podobnych („Adwent” / „adwentowe”), nowe, usuwanie",
+                 self.category_manager),
+                ("↶  Cofnij ostatnie zmiany w bazie", "Import, łączenie, kategorie, usuwanie – powrót do stanu sprzed zmiany",
+                 self.undo_db_dialog)):
+            b = QPushButton(txt)
+            b.setObjectName("big")
+            b.setToolTip(tip)
+            b.setMinimumHeight(44)
+            b.clicked.connect(lambda _=False, fn=fn: (d.accept(), fn()))
+            lay.addWidget(b)
+            hint = QLabel(tip)
+            hint.setWordWrap(True)
+            hint.setStyleSheet("color: gray;")
+            lay.addWidget(hint)
+            lay.addSpacing(10)
+        tip = QLabel("Kilka pieśni naraz: na liście w Tekstach, Slajdach albo Nutach zaznacz je <b>Shift+klik</b> "
+                     "(zakres) lub <b>Ctrl+klik</b> – pod listą pojawią się „Połącz”, „Kategoria…” i „Tagi…”.")
+        tip.setWordWrap(True)
+        lay.addWidget(tip)
+        bb = QPushButton("Zamknij")
+        bb.clicked.connect(d.reject)
+        lay.addWidget(bb)
+        d.setMinimumWidth(560)
+        d.adjustSize()
+        d.exec()
         self._refresh_pickers()
 
     def category_manager(self):
