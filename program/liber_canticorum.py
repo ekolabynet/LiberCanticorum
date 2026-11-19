@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła"
-VERSION = "0.27.3"
+VERSION = "0.27.4"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -144,11 +144,7 @@ SUPPORT = [
       'tytul': "Ofiara na rzecz parafii",
       'zrodlo': "parafiawlaskach.pl/kontakt"}),
     ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
-     "Schola Liturgiczna adHoc działa przy parafii Matki Bożej Królowej Meksyku w Laskach – tam śpiewamy na Mszy "
-     "i tam mamy próby. "
-     "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
-     "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-). "
-     "Mieszkasz daleko, np. na innym kontynencie? Módl się z nami i przyślij swoją intencję ;-).",
+     "Schola Liturgiczna adHoc – śpiewamy na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
      {'zaangazuj': "Najlepiej wesprzesz nas, śpiewając razem z nami. Schola adHoc działa przy parafii Matki Bożej Królowej Meksyku w Laskach (ul. 3 Maja 40/42): śpiewamy na Mszy w I niedzielę miesiąca w samo południe, a próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! Mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – polecimy ją Bogu na Mszy.",
       'baner': "ikony/adhoc_baner.png"}),

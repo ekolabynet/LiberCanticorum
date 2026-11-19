@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.3
+# Liber Canticorum 0.27.4
 *A free songbook for church musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -76,7 +76,7 @@ in **Latin** the window shows the *Proprium Missae* of the 1962 Missal directly 
 Evangelium, Offertorium, Secreta, Communio, Postcommunio – in Latin, from Missale Meum) and suggests songs from it.
 Dates are shown in the interface language.
 
-**Pages with readings (0.27.3).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
+**Pages with readings (0.27.4).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
 pages with the readings of the chosen day: Vatican News in all its languages (the “Word of the day” pages in English,
 Italian, French, German, Spanish and Portuguese open directly on that day; the others open the language's home page),
 national missals, Polish missals, the 1962 Ordo. You can add **your own address** with the date in it
@@ -127,7 +127,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.27.3.zip` and run:
+Unpack `LiberCanticorum_0.27.4.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

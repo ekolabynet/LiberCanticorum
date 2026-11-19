@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.3
+# Liber Canticorum 0.27.4
 *Wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła*  
 *A free songbook for church musicians, choirs and Church communities*
 
@@ -85,7 +85,7 @@ Program jest darmowy. Jeśli Ci się przydaje, wesprzyj – kafle u dołu ekranu
 |---|---|---|
 | **Ośrodek dla Niewidomych w Laskach** – założony przez bł. Matkę Elżbietę Różę Czacką; Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin | mBank S.A. **02 1140 1010 0000 4399 5800 1002**; BLIK na telefon 572 896 588; 1,5% podatku: KRS 0000054086 | [laski.edu.pl](https://laski.edu.pl/) (darowizny: [wpłać darowiznę](https://laski.edu.pl/wplac-darowizne/)) |
 | **Parafia M.B. Królowej Meksyku** (z Guadalupe), ul. 3 Maja 40/42, 05-080 Laski | PKO BP **18 1020 1026 0000 1102 0016 9920** | [parafiawlaskach.pl](https://parafiawlaskach.pl/) (konto: [kontakt](https://parafiawlaskach.pl/kontakt)) |
-| **Schola Liturgiczna adHoc** przy parafii Matki Bożej Królowej Meksyku w Laskach – tam śpiewamy na Mszy i tam mamy próby. Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-). Mieszkasz daleko, np. na innym kontynencie? Módl się z nami i przyślij swoją intencję ;-) | bez konta – **przyjdź i śpiewaj z nami**: Msza w I niedzielę miesiąca o 12:00 w kościele M.B. Królowej Meksyku w Laskach (ul. 3 Maja 40/42), próby we wtorki o 19:00 w domu parafialnym tej parafii | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
+| **Schola Liturgiczna adHoc** – śpiewamy na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-) | bez konta – **śpiewaj z nami**: schola działa przy parafii M.B. Królowej Meksyku w Laskach (ul. 3 Maja 40/42) – Msza w I niedzielę miesiąca o 12:00, próby we wtorki o 19:00 w domu parafialnym. Mieszkasz daleko, np. na innym kontynencie? Módl się z nami i przyślij swoją intencję ;-) | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
 | **Guadalupe500.org** – nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu) | bez konta – **włącz się**: komponujesz, śpiewasz, grasz, piszesz teksty, tłumaczysz? | guadalupe500.org |
 
 Numery kont pochodzą ze stron odbiorców (stan: listopad 2026) – przed przelewem sprawdź je u źródła.
@@ -126,7 +126,7 @@ CEI (IT), Dominicos (ES). **Po łacinie** okno pokazuje wprost *Proprium Missae*
 Lectio, Graduale, Evangelium, Offertorium, Secreta, Communio, Postcommunio – po łacinie, z Missale Meum) i według niego
 proponuje pieśni. Daty wyświetlają się w języku interfejsu.
 
-**Strony z czytaniami (0.27.3).** W oknie „Liturgia z dnia” przycisk „📋 Strony z czytaniami – wybierz…” otwiera
+**Strony z czytaniami (0.27.4).** W oknie „Liturgia z dnia” przycisk „📋 Strony z czytaniami – wybierz…” otwiera
 listę stron z czytaniami na wybrany dzień: Vatican News we wszystkich językach serwisu (strony „Słowo na dziś”
 po angielsku, włosku, francusku, niemiecku, hiszpańsku i portugalsku – wprost na ten dzień, pozostałe – strona
 główna języka), krajowe mszaliki, polskie mszaliki, Ordo 1962. Można dopisać **własny adres** z datą w adresie
@@ -277,7 +277,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.27.3/
+LiberCanticorum_0.27.4/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
