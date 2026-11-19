@@ -2066,6 +2066,9 @@ class MidiPlayerDialog(QDialog):
         views.addWidget(self.show_score)
         views.addWidget(self.show_roll)
         views.addWidget(self.show_kbd)
+        self.show_lyr = QCheckBox("Słowa na dole")
+        self.show_lyr.setToolTip("Duże słowa bieżącej frazy pod nutami (wszystkie zwrotki)")
+        views.addWidget(self.show_lyr)
         views.addStretch()
         from PySide6.QtCore import QSettings
         self._qs = QSettings("LiberCanticorum", "LiberCanticorum")
@@ -2144,7 +2147,15 @@ class MidiPlayerDialog(QDialog):
         self.lyr_lbl.setTextFormat(Qt.RichText)
         self.lyr_lbl.setStyleSheet(f"font-size: {self.lyr_size}px; padding: 8px;")
         self.lyr_lbl.setWordWrap(True)
-        self.lyr_lbl.setVisible(bool(self.lyrics))
+        want_lyr = self._qs.value("show_lyrics_bottom", "true") == "true"
+        self.lyr_lbl.setVisible(bool(self.lyrics) and want_lyr)
+        self.show_lyr.setChecked(want_lyr)
+        self.show_lyr.setEnabled(bool(self.lyrics))
+        if not self.lyrics:
+            self.show_lyr.setToolTip("Ten plik nie ma słów zapisanych w MIDI")
+        self.show_lyr.toggled.connect(lambda on: (self.lyr_lbl.setVisible(on and bool(self.lyrics)),
+                                                  self._qs.setValue("show_lyrics_bottom", on),
+                                                  [b.setEnabled(on) for b in self.lyr_buttons]))
         for b in self.lyr_buttons:
             b.setVisible(bool(self.lyrics))
         lay.addWidget(self.lyr_lbl)

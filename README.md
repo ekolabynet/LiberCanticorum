@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.17.1
+# Liber Canticorum 0.17.2
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -109,13 +109,14 @@ w kolorach głosów – dobre do nauki partii i do szukania dźwięków na organ
 znakami i symbolami akordów (G → A, D7 → E7); powrót do 0 pokazuje oryginał od razu. Działa dla plików MuseScore
 i MusicXML (także z edytora melodii).
 **⛶ Pełny ekran** (F11, Esc – wyjście): zostają tylko nuty, pasek odtwarzania, słowa i klawiatura.
+Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy pod nutami (program pamięta wybór).
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.17.1/
+LiberCanticorum_0.17.2/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
