@@ -154,6 +154,33 @@ def split_side_chords(line):
     return line, ""
 
 
+_GLUED = re.compile(r"[A-Ha-h](?:is|es|s(?!us)|#|b(?![a-z]))?(?:m(?!aj)|moll)?(?:maj7|maj|dim|aug|sus[24]?|add9|7\+|[2-9]|11|13|\+)*")
+
+
+def split_glued(tok):
+    """„FBad” → [F, B, a, d] (akordy zapisane bez spacji, np. z importu PDF); inaczej [tok]."""
+    if is_chord(tok) or len(tok) < 2:
+        return [tok]
+    out, i = [], 0
+    while i < len(tok):
+        m = _GLUED.match(tok, i)
+        if not m or m.end() == i:
+            return [tok]
+        out.append(tok[i:m.end()])
+        i = m.end()
+    return out if all(is_chord(t) for t in out) else [tok]
+
+
+def side_html(side):
+    """Akordy boczne z wyraźnymi odstępami: „F B a d / g C F”."""
+    toks = []
+    for t in re.split(r"\s+", side.replace("/", " / ")):
+        if t:
+            toks += split_glued(t)
+    sep = "&nbsp;&nbsp;&nbsp;"
+    return sep.join("<span style='color:#999'>/</span>" if t == "/" else H.escape(t) for t in toks)
+
+
 # ---------------------------------------------------------------------
 # widok
 # ---------------------------------------------------------------------
@@ -177,8 +204,8 @@ def chordpro_html(title, text, k=0, size=16, flat=False, show=True, color="#b222
         if not show or lyrics_only or len(parts) == 1:
             txt = H.escape(re.sub(r"\[[^\]]*\]", "", body)) or "&nbsp;"
             rows.append(f"<tr><td style='white-space:pre'>{txt}</td>" +
-                        (f"<td align='right' class='c' style='white-space:pre'>{H.escape(side)}</td>"
-                         if show and side and not lyrics_only else "<td></td>") + "</tr>")
+                        (f"<td align='center' width='100%' class='c' style='white-space:pre'>{side_html(side)}</td>"
+                         if show and side and not lyrics_only else "<td width='100%'></td>") + "</tr>")
             continue
         # wiersz z akordami nad sylabami: tabela wewnętrzna – akord w górnym wierszu nad swoim kawałkiem tekstu
         cells_top, cells_bot = [], []
@@ -203,7 +230,8 @@ def chordpro_html(title, text, k=0, size=16, flat=False, show=True, color="#b222
             for t in cells_top) + "</tr><tr>" + "".join(
             f"<td style='white-space:pre'>{H.escape(b) or '&nbsp;'}</td>" for b in cells_bot) + "</tr></table>"
         rows.append(f"<tr><td>{inner}</td>" +
-                    (f"<td align='right' class='c' style='white-space:pre'>{H.escape(side)}</td>" if side else "<td></td>")
+                    (f"<td align='center' width='100%' class='c' style='white-space:pre'>{side_html(side)}</td>"
+                     if side else "<td width='100%'></td>")
                     + "</tr>")
     rows.append("</table>")
     return f"<html><head><style>{css}</style></head><body>{''.join(rows)}</body></html>"

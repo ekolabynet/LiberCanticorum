@@ -125,7 +125,10 @@ def song_chords(text, k=0, flat=False):
     names = re.findall(r"\[([^\]\s]{1,12})\]", text or "")
     for line in (text or "").splitlines():
         if "‖" in line:
-            names += [t for t in re.split(r"[\s/()]+", line.split("‖", 1)[1]) if t]
+            from modul_akordy import split_glued
+            for t in re.split(r"[\s/()]+", line.split("‖", 1)[1]):
+                if t:
+                    names += split_glued(t)
     out = []
     for n in names:
         n = n.strip().strip("()[].,")

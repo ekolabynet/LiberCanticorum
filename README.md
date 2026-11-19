@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.21.3
+# Liber Canticorum 0.21.4
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -184,7 +184,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.21.3/
+LiberCanticorum_0.21.4/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -319,7 +319,8 @@ Inną bazę otworzysz w menu Plik.
   zmianę – baza wraca do stanu sprzed niej; bieżący stan też zostaje zachowany, więc cofnięcie można cofnąć.
 - **Akordy – widok dla gitarzystów** (zakładka „Akordy”, Pieśń → Akordy, Ctrl+G): tekst z akordami w zapisie
   ChordPro – „[a]Chwalcie [E]Pana” (akord przed sylabą) albo z boku wiersza po „‖”: „Pozdrawiam Cię, Matko ‖ D e / A D”.
-  Widok pokazuje akordy nad sylabami, ma transpozycję (± półtony, krzyżyki albo bemole), wielkość pisma, pełny
+  Akordy z boku stoją na środku wolnego miejsca za tekstem, z wyraźnymi odstępami (zapis sklejony z importu PDF,
+np. „FBad/gCF”, program rozdziela na „F B a d / g C F”). Widok pokazuje akordy nad sylabami, ma transpozycję (± półtony, krzyżyki albo bemole), wielkość pisma, pełny
   ekran, przechodzenie po pieśniach zestawu (Pieśń → Akordy całego zestawu) i zapis do PDF. Polska notacja
   (H, B, moll małą literą, „is”/„es”) i angielska (B, Bb, Am). Tekst z wierszami akordów nad słowami (wklejony
   albo z pliku TXT/DOCX) zamienia się na ChordPro automatycznie przy imporcie albo przyciskiem. Slajdy pokazują
