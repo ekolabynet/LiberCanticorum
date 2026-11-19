@@ -1,7 +1,7 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
 # Liber Canticorum 0.27.2
-*a free songbook for communities*
+*A free songbook for church musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
 

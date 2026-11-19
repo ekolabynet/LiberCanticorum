@@ -1,7 +1,7 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
 # Liber Canticorum 0.27.2
-*un cancionero libre para las comunidades*
+*Un cancionero libre para músicos de iglesia, coros y comunidades de la Iglesia*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
 

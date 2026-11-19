@@ -1094,5 +1094,6 @@
  "czytania dnia": "",
  "Strony z czytaniami": "",
  "Nazwa strony (np. „Mszalik mojej diecezji”):": "",
- "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": ""
+ "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": "",
+ "wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła": ""
 }

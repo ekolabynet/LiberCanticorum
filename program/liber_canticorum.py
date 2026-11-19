@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.15.1 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła, wersja 0.15.1 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
                                QToolBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView)
 
 APP_NAME = "Liber Canticorum"
-APP_MOTTO = "wolny śpiewnik dla wspólnot"
+APP_MOTTO = "wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła"
 VERSION = "0.27.2"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")

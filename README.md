@@ -1,7 +1,8 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
 # Liber Canticorum 0.27.2
-*wolny śpiewnik dla wspólnot*
+*Wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła*  
+*A free songbook for church musicians, choirs and Church communities*
 
 🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
 

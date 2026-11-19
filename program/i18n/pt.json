@@ -1163,6 +1163,7 @@
   "czytania dnia": "leituras do dia",
   "Strony z czytaniami": "Páginas com leituras",
   "Nazwa strony (np. „Mszalik mojej diecezji”):": "",
-  "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": ""
+  "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": "",
+  "wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła": "um cancioneiro livre para músicos de igreja, coros e comunidades da Igreja"
  }
 }

@@ -1,7 +1,7 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
 # Liber Canticorum 0.27.2
-*un recueil de chants libre pour les communautés*
+*Un recueil de chants libre pour les musiciens d'église, les chorales et les communautés de l'Église*
 
 🌐 [Polski](README.md) · [English](README.en.md) · **Français** · [Español](README.es.md)
 

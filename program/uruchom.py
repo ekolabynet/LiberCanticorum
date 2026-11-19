@@ -242,7 +242,7 @@ def refresh_shortcuts(venv, menu=False):
                 continue
             ps = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{lnk}'); $s.TargetPath='{py}'; "
                   "$s.Arguments='\"{script}\"'; $s.WorkingDirectory='{wd}'; $s.IconLocation='{ico}'; "
-                  "$s.Description='Liber Canticorum – wolny śpiewnik dla wspólnot'; $s.Save()").format(
+                  "$s.Description='Liber Canticorum – wolny śpiewnik dla muzyków kościelnych, chórów i wspólnot Kościoła'; $s.Save()").format(
                 lnk=t.replace("'", "''"), py=vpy(venv, gui=True).replace("'", "''"),
                 script=os.path.join(PROG, "uruchom.py").replace("'", "''"), wd=PROG.replace("'", "''"),
                 ico=os.path.join(PROG, "ikony", "liber_canticorum.ico").replace("'", "''"))
