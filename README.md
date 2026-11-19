@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.21.2
+# Liber Canticorum 0.21.3
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -184,7 +184,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.21.2/
+LiberCanticorum_0.21.3/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -391,7 +391,8 @@ Jedno kliknięcie dodaje pieśń do zestawu. **Dzień wybierasz w nagłówku okn
 ◀◀ / ▶▶ – tydzień, „Dziś”, „Najbliższa niedziela” (okres liturgiczny i teksty zmieniają się same; pobrane dni
 program pamięta). **Dopasowanie** pieśni do liturgii: *Szeroko* (także pojedyncze wspólne słowa – więcej propozycji),
 *Zrównoważone* (zalecane), *Frazy* (co najmniej 3 kolejne słowa z liturgii), *Ściśle* (tylko długie frazy, 4+ słowa);
-do tego „Tylko pieśni z kategorii okresu”. Program pamięta wybór. Teksty liturgiczne należą do wydawców (Pallottinum/KEP) –
+do tego „Tylko pieśni z kategorii okresu”. Program pamięta wybór. Propozycje pomijają części stałe (Kyrie, Gloria, Sanctus, Agnus Dei – po kategorii, tagach i tytule),
+a pieśni z kategorii bieżącego okresu liturgicznego (★) są na liście najpierw. Teksty liturgiczne należą do wydawców (Pallottinum/KEP) –
 program ich nie rozpowszechnia, tylko wyświetla je ze stron źródłowych.
 
 **📦 Materiały…** (zestaw) i Pieśń → „Eksport materiałów” – wszystko do jednego folderu: teksty (DOCX, TXT, HTML),

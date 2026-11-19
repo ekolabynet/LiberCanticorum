@@ -322,6 +322,26 @@ SECTION_WEIGHT = {'ant_wej': 1.3, 'psalm': 1.4, 'ewangelia': 1.3, 'ant_kom': 1.3
                   'sekwencja': 1.0}
 
 
+_ORDINARY_WORDS = ("kyrie", "gloria", "sanctus", "agnus dei", "baranku bozy", "panie zmiluj sie", "chwala na wysokosci",
+                   "swiety, swiety", "swiety swiety", "czesci stale", "ordinarium")
+
+
+def is_ordinary(song):
+    """Część stała Mszy (Kyrie, Gloria, Sanctus, Agnus Dei) – po kategorii, tagach albo tytule."""
+    kat = _norm(song.get('kategoria') or "")
+    if "czesci stale" in kat or "ordinarium" in kat:
+        return True
+    def key(x):
+        return " " + re.sub(r"\s+", " ", re.sub(r"[^\w]+", " ", _norm(x or ""))).strip()
+    tags = key(song.get('tagi'))
+    title = key(song.get('title'))
+    words = [key(w) for w in _ORDINARY_WORDS]
+    # tytuł zaczyna się od słów części stałej albo zawiera je po myślniku („Msza Rycerska – Kyrie”)
+    return any(w in tags for w in words) or any(title.startswith(w) or (w in title and ("–" in (song.get('title') or "")
+                                                                                         or " - " in (song.get('title') or "")))
+                                                for w in words)
+
+
 MATCH_MODES = [  # (nazwa, min. długość frazy w słowach, waga pojedynczych słów, próg)
     ("Szeroko – pojedyncze słowa i krótkie frazy (więcej propozycji)", 2, 1.3, 0.08),
     ("Zrównoważone – słowa i frazy (zalecane)", 2, 1.0, 0.15),
@@ -337,6 +357,7 @@ def suggest(liturgy, songs, okres=None, limit=40, mode=1, okres_only=False):
     _, min_run, word_w, thr = MATCH_MODES[max(0, min(len(MATCH_MODES) - 1, mode))]
     docs = []
     df = {}
+    songs = [s for s in songs if s and not is_ordinary(s)]       # części stałe (Kyrie, Gloria…) nie są propozycjami
     for s in songs:
         text = " \n".join([s.get('title') or "", s.get('refren') or "", s.get('zwrotki_raw') or s.get('zwrotki') or ""])
         tk = tokens(text)
@@ -407,7 +428,7 @@ def suggest(liturgy, songs, okres=None, limit=40, mode=1, okres_only=False):
         out.append({'id': s.get('id'), 'title': s.get('title'), 'score': round(score, 2),
                     'parts': [p for p, _ in sorted(parts.items(), key=lambda x: -x[1])][:2],
                     'frazy': frazy[:4], 'okres': is_okres})
-    out.sort(key=lambda r: -r['score'])
+    out.sort(key=lambda r: (not r['okres'], -r['score']))        # najpierw pieśni z okresu liturgicznego
     return out[:limit]
 
 
