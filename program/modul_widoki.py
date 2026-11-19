@@ -212,7 +212,14 @@ class SongPicker(QWidget):
         self.cat = QComboBox()
         self.cat.setToolTip("Kategoria pieśni")
         self.cat.currentIndexChanged.connect(self.refresh)
-        lay.addWidget(self.cat)
+        crow = QHBoxLayout()
+        crow.addWidget(self.cat, 1)
+        b_cat = QPushButton("⚙")
+        b_cat.setFixedWidth(32)
+        b_cat.setToolTip("Menedżer kategorii: zmiana nazw, łączenie podobnych, usuwanie")
+        b_cat.clicked.connect(lambda: self.bulk.emit('categories', []))
+        crow.addWidget(b_cat)
+        lay.addLayout(crow)
         self.q = QLineEdit()
         self.q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
         self.q.setClearButtonEnabled(True)
@@ -306,6 +313,7 @@ class SongPicker(QWidget):
         m.addAction(f"Tagi dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('tags', ids))
         m.addSeparator()
         m.addAction("Znajdź duplikaty w całej bazie…", lambda: self.bulk.emit('duplicates', ids))
+        m.addAction("Menedżer kategorii…", lambda: self.bulk.emit('categories', []))
         m.exec(self.list.viewport().mapToGlobal(pos))
 
     def current(self):

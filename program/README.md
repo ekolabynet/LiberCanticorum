@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.18.4
+# Liber Canticorum 0.19.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.18.x, 0.19.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.19.x, 0.20.0 itd.
 
 ## Jak wygląda
 
@@ -94,6 +94,16 @@ przyciski **„🔗 Połącz”** (wybierasz pieśń główną; teksty pozostał
 i zestawy przechodzą do niej), **„🏷 Kategoria…”** i **„Tagi…”** – te same polecenia są pod prawym przyciskiem myszy,
 razem z „Znajdź duplikaty w całej bazie…”. Wszystko można cofnąć: Plik → Cofnij ostatnie zmiany.
 
+**Menedżer kategorii** (przycisk **⚙** obok wyboru kategorii nad każdą listą pieśni, Plik → „Menedżer kategorii”
+albo prawy przycisk myszy na liście): lista kategorii z liczbą pieśni i podglądem pieśni w zaznaczonych.
+- **✎ Zmień nazwę** – nowa nazwa dla wszystkich pieśni kategorii (także dwuklik),
+- **🔗 Połącz zaznaczone** – kilka kategorii (Shift/Ctrl+klik) w jedną, z wyborem albo wpisaniem nazwy,
+- **🔍 Znajdź podobne** – zaznacza kategorie, które wyglądają na tę samą („Adwent” / „adwent” / „Adwentowe”,
+  „Maryjne” / „Maryjna”), kolejne kliknięcie – następna grupa,
+- **✚ Nowa kategoria** – pojawi się na liście wyboru kategorii, zanim przypiszesz jej pieśni,
+- **🗑 Usuń kategorię** – pieśni zostają, tylko bez kategorii.
+Każdą zmianę można cofnąć: Plik → Cofnij ostatnie zmiany.
+
 **Akordy dla gitarzystów.** Kafel „Akordy”, przycisk „Akordy” w Tekstach albo Ctrl+G: akordy nad sylabami,
 transpozycja, pełny ekran, PDF. Nad tekstem są **chwyty na gryfie** wszystkich akordów pieśni (pole „chwyty”) –
 w kolejności, w jakiej się pojawiają, i zmieniają się razem z transpozycją: chwyty otwarte (C, a, G, D7, e…),
@@ -135,7 +145,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.18.4/
+LiberCanticorum_0.19.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

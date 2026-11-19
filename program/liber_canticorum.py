@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.18.4"
+VERSION = "0.19.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -2020,6 +2020,183 @@ class MergeChoiceDialog(QDialog):
         return self.result_id if self.exec() else None
 
 
+def similar_categories(names):
+    """Grupy podobnych kategorii: ta sama nazwa bez wielkości liter i ogonków, literówki, „Adwent” / „Adwentowe”."""
+    import difflib
+    def key(n):
+        return re.sub(r"[^a-z0-9]", "", fold(n))
+    names = [n for n in names if n]
+    groups, used = [], set()
+    for i, a in enumerate(names):
+        if a in used:
+            continue
+        g = [a]
+        for b in names[i + 1:]:
+            if b in used:
+                continue
+            ka, kb = key(a), key(b)
+            if not ka or not kb:
+                continue
+            short, long_ = sorted((ka, kb), key=len)
+            cp = len(os.path.commonprefix([ka, kb]))
+            if ka == kb or difflib.SequenceMatcher(None, ka, kb).ratio() >= 0.86 or \
+                    (len(short) >= 5 and long_.startswith(short) and len(long_) - len(short) <= 4) or \
+                    (cp >= 5 and len(ka) - cp <= 3 and len(kb) - cp <= 3):     # Maryjne / Maryjna
+                g.append(b)
+        if len(g) > 1:
+            used.update(g)
+            groups.append(g)
+    return groups
+
+
+class CategoryManagerDialog(QDialog):
+    """Menedżer kategorii: zmiana nazwy, łączenie (także podobnych), usuwanie; podgląd pieśni w kategorii."""
+
+    def __init__(self, db, parent=None):
+        super().__init__(parent)
+        self.db, self.changed = db, False
+        self.setWindowTitle("Menedżer kategorii")
+        self.resize(820, 560)
+        lay = QHBoxLayout(self)
+        left = QVBoxLayout()
+        left.addWidget(QLabel("Kategorie (Shift/Ctrl+klik – kilka):"))
+        self.list = QListWidget()
+        self.list.setSelectionMode(QListWidget.ExtendedSelection)
+        self.list.itemSelectionChanged.connect(self.show_songs)
+        self.list.itemDoubleClicked.connect(lambda _: self.rename())
+        left.addWidget(self.list, 1)
+        self.info = QLabel()
+        self.info.setWordWrap(True)
+        left.addWidget(self.info)
+        lay.addLayout(left, 1)
+        right = QVBoxLayout()
+        for txt, fn, tip in (("✎ Zmień nazwę…", self.rename, "Nowa nazwa kategorii (dla wszystkich jej pieśni)"),
+                             ("🔗 Połącz zaznaczone…", self.merge, "Kilka kategorii w jedną (np. „Adwent” i „adwentowe”)"),
+                             ("🔍 Znajdź podobne", self.find_similar, "Zaznacza grupy kategorii, które wyglądają na tę samą"),
+                             ("✚ Nowa kategoria…", self.new_cat, "Kategoria na liście wyboru – pieśni dodasz potem"),
+                             ("🗑 Usuń kategorię", self.delete, "Pieśni z tej kategorii zostaną bez kategorii")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            b.clicked.connect(fn)
+            right.addWidget(b)
+        right.addWidget(QLabel("Pieśni w zaznaczonych kategoriach:"))
+        self.songs = QListWidget()
+        right.addWidget(self.songs, 1)
+        close = QPushButton("Zamknij")
+        close.clicked.connect(self.accept)
+        right.addWidget(close)
+        lay.addLayout(right, 1)
+        self._groups, self._gi = [], 0
+        self.fill()
+
+    def extra(self):
+        try:
+            return json.loads(QSettings("LiberCanticorum", "LiberCanticorum").value("extra_categories", "[]") or "[]")
+        except ValueError:
+            return []
+
+    def fill(self, select=()):
+        self.list.clear()
+        used = dict(self.db.categories())
+        for c in self.extra():
+            used.setdefault(c, 0)
+        for name in sorted(used, key=lambda n: (n == "", fold(n))):
+            it = QListWidgetItem(f"{name or '(bez kategorii)'}   ({used[name]})")
+            it.setData(Qt.UserRole, name)
+            self.list.addItem(it)
+            if name in select:
+                it.setSelected(True)
+        self.info.setText(f"Kategorii: {len([n for n in used if n])}.  Zmiany można cofnąć: Plik → Cofnij ostatnie zmiany.")
+
+    def selected(self):
+        return [it.data(Qt.UserRole) for it in self.list.selectedItems()]
+
+    def show_songs(self):
+        self.songs.clear()
+        cats = self.selected()
+        if not cats:
+            return
+        for r in self.db.con.execute("SELECT title, COALESCE(kategoria, '') AS k FROM songs ORDER BY title").fetchall():
+            if r['k'] in cats:
+                self.songs.addItem(r['title'] + (f"   [{r['k']}]" if len(cats) > 1 else ""))
+
+    def _set(self, cats, new, label):
+        ids = [r['id'] for r in self.db.con.execute("SELECT id, COALESCE(kategoria, '') AS k FROM songs").fetchall()
+               if r['k'] in cats]
+        if ids:
+            self.db.snapshot(label)
+        for sid in ids:
+            s = self.db.get(sid)
+            s['kategoria'] = new
+            self.db.save(s)
+        ex = [c for c in self.extra() if c not in cats]
+        QSettings("LiberCanticorum", "LiberCanticorum").setValue("extra_categories", json.dumps(ex, ensure_ascii=False))
+        self.changed = True
+        self.fill(select=[new])
+        return len(ids)
+
+    def rename(self):
+        cats = [c for c in self.selected() if c]
+        if len(cats) != 1:
+            QMessageBox.information(self, APP_NAME, "Zaznacz jedną kategorię.")
+            return
+        new, ok = QInputDialog.getText(self, APP_NAME, f"Nowa nazwa kategorii „{cats[0]}”:", text=cats[0])
+        if ok and new.strip() and new.strip() != cats[0]:
+            n = self._set(cats, new.strip(), f"Zmiana nazwy kategorii „{cats[0]}” na „{new.strip()}”")
+            self.info.setText(f"Zmieniono nazwę – {n} pieśni.")
+
+    def merge(self):
+        cats = self.selected()
+        if len(cats) < 2:
+            QMessageBox.information(self, APP_NAME, "Zaznacz co najmniej dwie kategorie (Shift/Ctrl+klik).")
+            return
+        counts = dict(self.db.categories())
+        opts = sorted([c for c in cats if c], key=lambda c: -counts.get(c, 0)) or [""]
+        new, ok = QInputDialog.getItem(self, APP_NAME, f"Połączyć {len(cats)} kategorie w jedną.\n"
+                                       "Wybierz nazwę albo wpisz nową:", opts, 0, True)
+        if ok and new.strip():
+            n = self._set(cats, new.strip(), f"Połączenie kategorii {', '.join(c or '(bez)' for c in cats)} w „{new.strip()}”")
+            self.info.setText(f"Połączono – {n} pieśni ma teraz kategorię „{new.strip()}”.")
+            self._gi = 0
+
+    def find_similar(self):
+        self._groups = similar_categories([n for n, _ in self.db.categories()] + self.extra())
+        if self._gi >= len(self._groups):
+            self._gi = 0
+        if not self._groups:
+            self.info.setText("Nie znalazłem podobnych kategorii.")
+            return
+        g = self._groups[self._gi]
+        self._gi += 1
+        self.list.clearSelection()
+        for i in range(self.list.count()):
+            if self.list.item(i).data(Qt.UserRole) in g:
+                self.list.item(i).setSelected(True)
+                self.list.scrollToItem(self.list.item(i))
+        self.info.setText(f"Podobne ({self._gi}/{len(self._groups)}): {', '.join(g)} – kliknij „🔗 Połącz zaznaczone…”, "
+                          "albo „🔍 Znajdź podobne”, żeby przejść do następnej grupy.")
+
+    def new_cat(self):
+        new, ok = QInputDialog.getText(self, APP_NAME, "Nazwa nowej kategorii:")
+        if ok and new.strip():
+            ex = self.extra()
+            if new.strip() not in ex:
+                ex.append(new.strip())
+            QSettings("LiberCanticorum", "LiberCanticorum").setValue("extra_categories", json.dumps(ex, ensure_ascii=False))
+            self.changed = True
+            self.fill(select=[new.strip()])
+
+    def delete(self):
+        cats = [c for c in self.selected() if c]
+        if not cats:
+            return
+        n = sum(cnt for c, cnt in self.db.categories() if c in cats)
+        if QMessageBox.question(self, APP_NAME, f"Usunąć kategorie: {', '.join(cats)}?\n{n} pieśni zostanie bez kategorii "
+                                "(pieśni nie są usuwane).") != QMessageBox.Yes:
+            return
+        self._set(cats, "", f"Usunięcie kategorii {', '.join(cats)}")
+
+
 class DuplicatesDialog(QDialog):
     """Szukanie i łączenie duplikatów w bazie."""
 
@@ -3186,6 +3363,7 @@ class MainWindow(QMainWindow):
         m_file.addSeparator()
         act(m_file, "↶ Cofnij ostatnie zmiany w bazie (import, łączenie, usuwanie)…", self.undo_db_dialog, "Ctrl+Shift+Z")
         act(m_file, "Znajdź i połącz duplikaty pieśni…", self.find_duplicates)
+        act(m_file, "🏷 Menedżer kategorii (zmiana nazw, łączenie, usuwanie)…", self.category_manager)
         m_file.addSeparator()
         act(m_file, "Eksport śpiewnika offline HTML (telefon, tablet)…", lambda: self.export_html(None), "Ctrl+H")
         m_file.addSeparator()
@@ -3304,6 +3482,10 @@ class MainWindow(QMainWindow):
             combo.setCurrentIndex(max(0, idx))
             combo.blockSignals(False)
         used = [c for c, _ in cats if c]
+        try:
+            used += json.loads(self.settings.value("extra_categories", "[]") or "[]")   # nowe z menedżera kategorii
+        except ValueError:
+            pass
         cur = self.e_cat.currentText()
         self.e_cat.blockSignals(True)
         self.e_cat.clear()
@@ -3624,7 +3806,24 @@ class MainWindow(QMainWindow):
             self.bulk_tags(ids)
         elif action == 'duplicates':
             self.find_duplicates()
+        elif action == 'categories':
+            self.category_manager()
         self._refresh_pickers()
+
+    def category_manager(self):
+        if self.dirty and not self.maybe_save():
+            return
+        dlg = CategoryManagerDialog(self.db, self)
+        dlg.exec()
+        if dlg.changed:
+            sid = (self.song or {}).get('id')
+            if sid and self.db.get(sid):
+                self.dirty = False
+                self.load_into_editor(self.db.get(sid))
+            self.refresh_filters()
+            self.refresh_list()
+            self._refresh_pickers()
+            self.pilot_invalidate()
 
     def _refresh_pickers(self):
         for page in (self.v_texts, self.v_slides, self.v_scores):
@@ -3677,7 +3876,11 @@ class MainWindow(QMainWindow):
             return
         if self.dirty and not self.maybe_save():
             return
-        cats = sorted({c for c, _ in self.db.categories() if c} | set(DEFAULT_CATEGORIES))
+        try:
+            extra = json.loads(self.settings.value("extra_categories", "[]") or "[]")
+        except ValueError:
+            extra = []
+        cats = sorted({c for c, _ in self.db.categories() if c} | set(DEFAULT_CATEGORIES) | set(extra))
         cat, ok = QInputDialog.getItem(self, APP_NAME, f"Kategoria dla {len(ids)} zaznaczonych pieśni\n"
                                        "(wybierz albo wpisz nową; „(bez kategorii)” usuwa kategorię):",
                                        ["(bez kategorii)"] + cats, 1 if cats else 0, True)
