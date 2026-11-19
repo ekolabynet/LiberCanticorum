@@ -10,6 +10,7 @@ niedostępne – OGG albo WAV. Licencja: GPL-3.0-or-later.
 """
 import os
 import re
+import shutil
 
 DEFAULT_OPTS = {'full': True, 'voices': True, 'bg': 0.22, 'voice_instr': 'sf:0:52', 'bg_instr': 'sf:0:19',
                 'tempo': 1.0, 'format': 'mp3', 'split': True}
@@ -27,7 +28,10 @@ def audio_formats():
         av = sf.available_formats()
     except Exception:
         return ['wav']
-    return [f for f in ('mp3', 'ogg', 'wav') if f.upper() in av]
+    out = [f for f in ('mp3', 'ogg', 'flac', 'wav') if f.upper() in av]
+    if 'mp3' not in out and shutil.which('ffmpeg'):
+        out.insert(0, 'mp3')                           # MP3 przez ffmpeg, gdy libsndfile go nie ma
+    return out
 
 
 def soundfont():
@@ -69,8 +73,19 @@ def _write(path, buf, sr, fmt):
         write_wav(path, buf, sr)
         return path
     import soundfile as sf
-    sf.write(path, np.clip(buf, -1, 1), sr, format=fmt.upper())
-    return path
+    if fmt.upper() in sf.available_formats():
+        sf.write(path, np.clip(buf, -1, 1), sr, format=fmt.upper())
+        return path
+    if fmt == 'mp3' and shutil.which('ffmpeg'):           # zapas: WAV → MP3 przez ffmpeg
+        import subprocess
+        import tempfile
+        from modul_nuty import write_wav
+        with tempfile.TemporaryDirectory() as tmp:
+            w = os.path.join(tmp, "a.wav")
+            write_wav(w, buf, sr)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", w, "-b:a", "192k", path], check=True)
+        return path
+    raise RuntimeError(f"Format {fmt.upper()} nie jest dostępny na tym komputerze.")
 
 
 ROLE_NAMES = {'S': "Sopran", 'A': "Alt", 'T': "Tenor", 'B': "Bas", 'X': "Głos"}

@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.19.1
+# Liber Canticorum 0.19.2
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -147,7 +147,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.19.1/
+LiberCanticorum_0.19.2/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -440,7 +440,8 @@ oraz wielkość czcionki dla słabowidzących.
   - tryb **„Ćwicz głos”**: wybrany głos gra głośno, pozostałe ciszej,
   - tempo od 25 do 200 % i transpozycja,
   - wałek pianoli z kursorem; kliknięcie przewija utwór,
-  - zapis do WAV,
+  - zapis tego, co słychać (wybrane głosy, brzmienia, tempo, transpozycja) do **MP3**, OGG, FLAC albo WAV
+    – przycisk „Zapisz MP3 / WAV…” na pasku odtwarzania; program pamięta format i folder,
 - **YouTube:**
   - wyszukiwanie w programie przez oficjalne API; potrzebny jest własny, darmowy klucz
     („YouTube Data API v3” z Google Cloud Console). Bez klucza wyszukiwanie otwiera się w przeglądarce

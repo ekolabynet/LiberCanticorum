@@ -2572,7 +2572,8 @@ class MidiPlayerDialog(QDialog):
         bar.addWidget(self.time_lbl)
         self.pos_lbl = QLabel()
         bar.addWidget(self.pos_lbl)
-        btn("Zapisz WAV…", "Zapisz nagranie w pliku WAV", self.save_wav)
+        btn("Zapisz MP3 / WAV…", "Zapisz to, co słychać (wybrane głosy, brzmienia, tempo, transpozycja):\n"
+            "MP3, OGG, FLAC albo WAV", self.save_wav)
         return bar
 
     def total_time(self):
@@ -2874,9 +2875,36 @@ class MidiPlayerDialog(QDialog):
         return bisect.bisect_right(self.lyr_times, t) if hasattr(self, 'lyr_times') else 0
 
     def save_wav(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Zapisz WAV", os.path.expanduser("~/glosy.wav"), "WAV (*.wav)")
-        if path:
-            write_wav(path, self.render(), self.sr)
+        """Zapis nagrania tego, co słychać (głosy, brzmienia, tempo, transpozycja): MP3, OGG, FLAC albo WAV."""
+        import modul_audio as MA
+        fmts = MA.audio_formats()
+        names = {'mp3': "MP3 – do telefonu i wysyłki (*.mp3)", 'ogg': "OGG Vorbis (*.ogg)",
+                 'flac': "FLAC – bez strat jakości (*.flac)", 'wav': "WAV – bez kompresji (*.wav)"}
+        filters = [names[f] for f in fmts]
+        last = self._qs.value("audio_format", "mp3")
+        first = last if last in fmts else fmts[0]
+        title = re.sub(r'[\\/:*?"<>|]+', " ", self.windowTitle().split(" – ", 1)[-1]).strip() or "nagranie"
+        if self.tempo.value() != 100:
+            title += f" (tempo {self.bpm.value()})" if hasattr(self, 'bpm') else f" (tempo {self.tempo.value()}%)"
+        start = os.path.join(self._qs.value("audio_dir", os.path.expanduser("~")), f"{title}.{first}")
+        path, flt = QFileDialog.getSaveFileName(self, "Zapisz nagranie", start, ";;".join(filters), names[first])
+        if not path:
+            return
+        fmt = os.path.splitext(path)[1].lower().lstrip('.')
+        if fmt not in fmts:
+            fmt = fmts[filters.index(flt)] if flt in filters else first
+            path = os.path.splitext(path)[0] + "." + fmt
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            MA._write(path, self.render(), self.sr, fmt)
+        except Exception as e:
+            QMessageBox.warning(self, "Zapisz nagranie", f"Nie udało się zapisać:\n{e}")
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+        self._qs.setValue("audio_format", fmt)
+        self._qs.setValue("audio_dir", os.path.dirname(path))
+        self.pos_lbl.setText(f"Zapisano: {os.path.basename(path)}")
 
     def closeEvent(self, e):
         self.stop()
