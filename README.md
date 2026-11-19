@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.16.2
+# Liber Canticorum 0.16.3
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -107,7 +107,7 @@ w pliku MuseScore pięciolinie (np. akompaniament).
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.16.2/
+LiberCanticorum_0.16.3/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -331,6 +331,12 @@ skład) bywają chronione – rozpoznane nuty do użytku we własnej parafii, be
 do dokładnej wysokości – w popularnych SoundFontach bywają rozstrojone o 5–30 centów, przez co chór z organami
 „fałszował” – i wyrównuje wolne początki próbek (chór „aa” potrafi narastać 0,1–0,3 s, więc niektóre nuty wchodziły
 za późno). Nuty brzmią teraz równo z rytmem i z kursorem w nutach.
+
+**Akordy z symboli w plikach MuseScore (od 0.16.3).** MuseScore 4 zapisuje odtwarzanie symboli akordów (Bb, Gm, F7…)
+jako osobny kanał tego samego instrumentu – akordy grały więc głosem chóru, w tej samej wysokości co melodia,
+i krzyżowały się z nią. Odtwarzacz rozpoznaje teraz taki kanał jako **„Akordy (symbole akordów)”**: nie dzieli go
+na głosy, gra go na organach i ciszej (60%), a dźwięki akordu sięgające ponad melodię przenosi o oktawę w dół
+(bas zostaje). Brzmienie i głośność akordów zmienisz jak dla każdego głosu, a wyłączysz je odznaczając pole.
 
 **Odtwarzacz głosów:** pasek odtwarzania nad nutami – ⏮ od początku, ⏪ / ⏩ 5 s, Odtwórz/Pauza, ⏹, suwak położenia
 i czas (spacja – odtwórz/pauza, strzałki – przewijanie). **👁 Pięciolinie** – pokaż albo ukryj pięciolinie w nutach,

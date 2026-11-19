@@ -1199,6 +1199,7 @@ class Voice:
     volume: float = 1.0
     instrument: str = None                           # None = brzmienie wspólne
     program: int = None                              # program GM zapisany w pliku (gdy plik o to prosi)
+    chords: bool = False                             # podkład z symboli akordów (MuseScore: osobny kanał)
 
     @property
     def mean_pitch(self):
@@ -1254,6 +1255,7 @@ def load_midi(data):
                 open_notes[key] = (t, msg.velocity)
     for (ti, ch, note), (start, vel) in open_notes.items():
         groups.setdefault((ti, ch), []).append((start, 0.5, note, vel))
+    chord_keys = _chord_channels(groups)
     voices = []
     per_track = {}
     for ti, ch in groups:
@@ -1262,9 +1264,32 @@ def load_midi(data):
         name = names.get(ti, f"Ścieżka {ti + 1}")
         if per_track[ti] > 1:
             name += f" (kanał {ch + 1})"
+        if (ti, ch) in chord_keys:
+            voices.append(Voice("Akordy (symbole akordów)", sorted(notes), program=PROG_CHORDS, chords=True))
+            continue
         voices.append(Voice(name, sorted(notes), program=progs.get((ti, ch))))
     length = max((n[0] + n[1] for v in voices for n in v.notes), default=0)
     return voices, length
+
+
+PROG_CHORDS = 19                                     # podkład akordowy gra na organach (Church Organ)
+
+
+def _chord_channels(groups):
+    """Kanały, które są podkładem z symboli akordów: w tej samej ścieżce jest inny kanał (melodia),
+    a ten gra prawie wyłącznie akordy (≥ 3 dźwięki naraz) – tak MuseScore 4 zapisuje odtwarzanie symboli akordów."""
+    out = set()
+    for (ti, ch), notes in groups.items():
+        others = [k for k in groups if k[0] == ti and k != (ti, ch)]
+        if not others or len(notes) < 6:
+            continue
+        starts = {}
+        for n in notes:
+            starts.setdefault(round(n[0], 2), []).append(n)
+        chordal = sum(1 for g in starts.values() if len(g) >= 3)
+        if chordal >= 0.7 * len(starts):
+            out.add((ti, ch))
+    return out
 
 
 def midi_timing(data):
@@ -1390,15 +1415,54 @@ def split_chords(voice, n=None):
     return [v for v in out if v.notes]
 
 
-def prepare_voices(raw, split=True):
-    voices = []
+def _revoice_below(notes, sung):
+    """Akordy pod melodią: bas zostaje, wyższe dźwięki akordu, które sięgają ponad najniższy śpiewany
+    w tym czasie dźwięk, schodzą o oktawę (aż będą pod nim, ale nad basem). Dźwięki się nie dublują."""
+    groups = {}
+    for n in notes:
+        groups.setdefault(round(n[0], 2), []).append(n)
+    out = []
+    for t0, g in sorted(groups.items()):
+        end = max(n[0] + n[1] for n in g)
+        during = [n[2] for n in sung if n[0] < end - 0.02 and n[0] + n[1] > t0 + 0.02]
+        g = sorted(g, key=lambda n: n[2])
+        bass = g[0][2]
+        used = {bass}
+        out.append(g[0])
+        lim = min(during) if during else None
+        for a, b, p, c in g[1:]:
+            if lim is not None:
+                while p >= lim and p - 12 > bass:
+                    p -= 12
+            if p not in used:
+                used.add(p)
+                out.append((a, b, p, int(c * 0.85)))
+    return sorted(out)
+
+
+def prepare_voices(raw, split=True, chords_low=True):
+    """Głosy do odtwarzania. Podkład z symboli akordów nie jest dzielony; gdy wchodzi w zakres melodii,
+    gra oktawę niżej i ciszej, żeby nie zagłuszał i nie krzyżował się z głosami śpiewanymi."""
+    voices, acc = [], []
     for v in raw:
+        if v.chords:
+            acc.append(v)
+            continue
         voices += split_chords(v) if split else [Voice(v.name, list(v.notes), program=v.program)]
     voices = [Voice(v.name, sorted(v.notes), program=v.program) for v in voices]
-    if len(voices) == 4:                       # czterogłos: nazwij S A T B wg średniej wysokości
-        for name, v in zip(SATB, sorted(voices, key=lambda v: -v.mean_pitch)):
+    sung = sorted((n for v in voices for n in v.notes), key=lambda n: n[0])
+    for v in acc:
+        notes = sorted(v.notes)
+        if chords_low and sung:
+            notes = _revoice_below(notes, sung)
+        nv = Voice(v.name, notes, program=v.program, chords=True)
+        nv.volume = 0.6
+        voices.append(nv)
+    sing = [v for v in voices if not v.chords]
+    if len(sing) == 4:                         # czterogłos: nazwij S A T B wg średniej wysokości
+        for name, v in zip(SATB, sorted(sing, key=lambda v: -v.mean_pitch)):
             v.name = f"{name}  ({v.name})" if not v.name.startswith(tuple(SATB)) else v.name
-        voices.sort(key=lambda v: -v.mean_pitch)
+        voices = sorted(sing, key=lambda v: -v.mean_pitch) + [v for v in voices if v.chords]
     return voices
 
 
@@ -1948,7 +2012,7 @@ class MidiPlayerDialog(QDialog):
             cb.setChecked(True)
             cb.setStyleSheet(f"QCheckBox {{ color: {c}; font-weight: bold; }}")
             cb.toggled.connect(lambda on, v=v: (setattr(v, 'enabled', on), self.params_changed()))
-            sl = QSlider(Qt.Horizontal, minimum=0, maximum=100, value=100)
+            sl = QSlider(Qt.Horizontal, minimum=0, maximum=100, value=int(v.volume * 100))
             sl.setMaximumWidth(140)
             sl.sliderReleased.connect(lambda sl=sl, v=v: (setattr(v, 'volume', sl.value() / 100), self.params_changed()))
             vc = QComboBox()
