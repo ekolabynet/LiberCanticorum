@@ -9,6 +9,8 @@ Licencja: GPL-3.0-or-later.
 """
 import html as H
 
+import os
+
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QColor, QFont, QPalette, QPixmap, QIcon, QPainter
 from PySide6.QtWidgets import (QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QGridLayout, QLineEdit,
@@ -134,7 +136,14 @@ class Tile(QFrame):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         lay = QHBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
-        ic = QLabel(icon)
+        ic = QLabel()
+        if icon.lower().endswith('.png'):                   # obrazek zamiast emoji (np. znak Scholi adHoc)
+            path = icon if os.path.isabs(icon) else os.path.join(os.path.dirname(os.path.abspath(__file__)), icon)
+            pm = QPixmap(path)
+            if not pm.isNull():
+                ic.setPixmap(pm.scaledToHeight(64, Qt.SmoothTransformation))
+        else:
+            ic.setText(icon)
         ic.setObjectName("tileIcon")
         ic.setAlignment(Qt.AlignTop)
         lay.addWidget(ic)

@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.4"
+VERSION = "0.20.5"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -79,13 +79,14 @@ SUPPORT = [
       'konta': [("PKO BP", "18 1020 1026 0000 1102 0016 9920")],
       'tytul': "Ofiara na rzecz parafii",
       'zrodlo': "parafiawlaskach.pl/kontakt"}),
-    ("🎶", "Wesprzyj Scholę adHoc",
+    ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
      "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
      "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
      {'zaangazuj': "Najlepiej wesprzesz nas, przychodząc i śpiewając razem z nami: w I niedzielę miesiąca, "
                    "w samo południe, w kościele Matki Bożej Królowej Meksyku w Laskach (ul. 3 Maja 40/42). "
-                   "Nie trzeba znać nut – wystarczy chęć. Zaproś też znajomych i rodzinę!"}),
+                   "Zaproś też znajomych i rodzinę!",
+      'baner': "ikony/adhoc_baner.png"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
      "https://guadalupe500.org/",
@@ -3861,6 +3862,13 @@ class MainWindow(QMainWindow):
         d = QDialog(self)
         d.setWindowTitle(title)
         lay = QVBoxLayout(d)
+        if acc and acc.get('baner'):
+            pm = QPixmap(os.path.join(APP_DIR, acc['baner']))
+            if not pm.isNull():
+                b = QLabel()
+                b.setPixmap(pm.scaledToWidth(620, Qt.SmoothTransformation))
+                b.setAlignment(Qt.AlignCenter)
+                lay.addWidget(b)
         h = QLabel(f"<h2>{H.escape(title)}</h2><p>{H.escape(desc)}</p>")
         h.setWordWrap(True)
         lay.addWidget(h)
@@ -3900,7 +3908,7 @@ class MainWindow(QMainWindow):
         c.clicked.connect(d.accept)
         row.addWidget(c)
         lay.addLayout(row)
-        d.setMinimumWidth(560)
+        d.setMinimumWidth(640 if acc and acc.get('baner') else 560)
         d.exec()
 
     def tidy_dialog(self):
