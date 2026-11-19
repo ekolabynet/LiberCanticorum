@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.13.0 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.14.0 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.13.0"
+VERSION = "0.14.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.13.0)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.14.0)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -2121,6 +2121,9 @@ class MainWindow(QMainWindow):
         self.restore_set()
         self.new_song(ask=False)
         self.resize(1440, 900)
+        v = self.settings.value("view", self.V_START, type=int)
+        self.views.setCurrentIndex(v if 0 <= v < self.views.count() else self.V_START)
+        self._view_changed(self.views.currentIndex())
 
     # ================= budowa interfejsu =================
     def _build_ui(self):
@@ -2296,7 +2299,8 @@ class MainWindow(QMainWindow):
         sp.addWidget(self.tabs)
         sp.addWidget(right)
         sp.setSizes([320, 520, 600])
-        self.setCentralWidget(sp)
+        self.advanced = sp
+        self._build_views()
 
     def _build_text_tab(self):
         w = QWidget()
@@ -2570,6 +2574,147 @@ class MainWindow(QMainWindow):
         lay.addWidget(self.media_hint)
         return w
 
+    # ---- widoki proste (zakładki u dołu): Start, Teksty, Slajdy, Nuty, Zaawansowane
+    V_START, V_TEXTS, V_SLIDES, V_SCORES, V_ADV = range(5)
+
+    def _build_views(self):
+        import modul_widoki as mw
+        self.views = QTabWidget()
+        self.views.setObjectName("views")
+        self.views.setTabPosition(QTabWidget.South)
+        self.views.setDocumentMode(True)
+        tiles = [
+            ("📖", "Teksty pieśni", "Przeglądaj i czytaj słowa – duże litery, wyszukiwanie po tytule i słowach.",
+             lambda: self.views.setCurrentIndex(self.V_TEXTS)),
+            ("🖥", "Slajdy i pokaz", "Wybierz pieśń i pokaż ją na rzutniku jednym przyciskiem.",
+             lambda: self.views.setCurrentIndex(self.V_SLIDES)),
+            ("🎼", "Nuty", "Zobacz nuty pieśni i posłuchaj melodii; poszukaj nut w MuseScore.",
+             lambda: self.views.setCurrentIndex(self.V_SCORES)),
+            ("⛪", "Zestaw na Mszę", "Zaplanuj pieśni na Mszę: części, liturgia dnia, eksport i pokaz.",
+             self._go_set),
+            ("✚", "Nowa pieśń", "Wpisz albo wklej tekst nowej pieśni.", self._go_new),
+            ("📥", "Importuj śpiewnik lub plik", "PDF, DOCX, TXT, nuty MuseScore – także całe śpiewniki.",
+             self.import_files),
+            ("🎸", "Akordy", "Tekst z akordami dla gitarzystów, z transpozycją.", self._go_chords),
+            ("📱", "Pilot w telefonie", "Przełączaj slajdy z telefonu albo tabletu.", self.open_pilot),
+            ("⚙", "Zaawansowane", "Pełny edytor: wygląd slajdów, załączniki, wersje, eksport, ustawienia.",
+             lambda: self.views.setCurrentIndex(self.V_ADV)),
+        ]
+        self.home = mw.HomePage(tiles)
+        self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
+        self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
+                                      lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
+        self.v_scores = mw.ScoresPage(self.db, self.set_entries, self._attachment_pages, self._v_play,
+                                      self._v_open, self._v_search, self._v_omr)
+        for w, name in ((self.home, "Start"), (self.v_texts, "Teksty"), (self.v_slides, "Slajdy"),
+                        (self.v_scores, "Nuty"), (self.advanced, "Zaawansowane")):
+            self.views.addTab(w, name)
+        self.views.setCornerWidget(mw.Monogram(26), Qt.BottomRightCorner)
+        self.views.currentChanged.connect(self._view_changed)
+        self.setCentralWidget(self.views)
+        self.setWindowIcon(mw.monogram_icon())
+
+    def _view_changed(self, i):
+        if hasattr(self, 'toolbar'):
+            self.toolbar.setVisible(i == self.V_ADV)
+        self.settings.setValue("view", i)
+        if i == self.V_START:
+            self.home.set_info(f"Śpiewnik, slajdy i nuty dla scholi i chóru  ·  w bazie: {self.db.count()} pieśni")
+        elif i in (self.V_TEXTS, self.V_SLIDES, self.V_SCORES):
+            page = self.views.widget(i)
+            if self.song and self.song.get('id') and page.sid != self.song['id'] and page.sid is None:
+                page.sid = self.song['id']
+            page.refresh()
+            if page.sid:
+                page.picker.select(page.sid)
+
+    def _show_in(self, view, sid):
+        page = self.views.widget(view)
+        page.sid = sid
+        self.views.setCurrentIndex(view)
+        page.picker.q.clear()
+        page.picker.refresh()
+        page.picker.select(sid)
+        page.show_song(sid)
+
+    def _go_slides(self, sid):
+        self._show_in(self.V_SLIDES, sid)
+
+    def _go_edit(self, sid):
+        self.views.setCurrentIndex(self.V_ADV)
+        self.open_song(sid)
+        self.tabs.setCurrentIndex(0)
+
+    def _go_set(self):
+        self.views.setCurrentIndex(self.V_ADV)
+        self.setlist.setFocus()
+
+    def _go_new(self):
+        self.views.setCurrentIndex(self.V_ADV)
+        self.new_song()
+        self.tabs.setCurrentIndex(0)
+        self.e_title.setFocus()
+
+    def _go_chords(self):
+        page = self.v_texts
+        self.views.setCurrentIndex(self.V_TEXTS)
+        page.b_ch.setChecked(True)
+
+    def _ensure_open(self, sid, aid=None):
+        """Pieśń z widoku prostego → otwarta w edytorze (i zaznaczony załącznik)."""
+        if not self.song or self.song.get('id') != sid:
+            if not self.maybe_save():
+                return False
+            s = self.db.get(sid)
+            if not s:
+                return False
+            self.load_into_editor(s)
+        self.refresh_media()
+        if aid:
+            for i in range(self.att_list.count()):
+                if self.att_list.item(i).data(Qt.UserRole) == aid:
+                    self.att_list.setCurrentRow(i)
+        return True
+
+    def _v_play(self, sid, aid):
+        if self._ensure_open(sid, aid):
+            self.play_midi()
+
+    def _v_open(self, sid, aid):
+        if self._ensure_open(sid, aid):
+            self.open_attachment()
+
+    def _v_search(self, sid):
+        if self._ensure_open(sid):
+            self.search_scores()
+
+    def _v_omr(self, sid):
+        if self._ensure_open(sid):
+            self.omr_from_file()
+            self.v_scores.show_song(sid)
+
+    def _attachment_pages(self, sid, aid):
+        """Strony nut do podglądu: ([jpeg…], opis, czy da się odtworzyć)."""
+        import modul_nuty
+        a = self.db.attachment(aid)
+        if not a:
+            return [], "", False
+        name, data, low = a['name'], a['data'], a['name'].lower()
+        if low.endswith('.pdf'):
+            return modul_nuty.pdf_pages_to_jpeg(data, width=1600, quality=85), "", False
+        if low.endswith(('.png', '.jpg', '.jpeg')):
+            return [data], "", False
+        if low.endswith(SCORE_EXT):
+            pdf, midi, pos = self._derived_now(a['id'], name, data)
+            if pdf:
+                return modul_nuty.pdf_pages_to_jpeg(pdf, width=1600, quality=85), "", True
+            thumb = modul_nuty.mscz_thumbnail(data)
+            return ([thumb] if thumb else []), ("Pokazuję miniaturę 1. strony – pełny podgląd wymaga MuseScore "
+                                               "(Zaawansowane → Ustawienia → Ścieżka do MuseScore)."), True
+        if low.endswith(('.mid', '.midi', '.kar')):
+            return [], "Plik MIDI – kliknij „Posłuchaj”.", True
+        return [], "", False
+
     TB_SHORT = {"Nowa pieśń": "Nowa", "Zapisz w bazie": "Zapisz", "Eksport do PDF…": "PDF", "Eksport do PPTX…": "PPTX",
                 "Eksport do DOCX…": "DOCX", "♿ Eksport dla niewidomych (DOCX, TXT, HTML, MP3)…": "Niewidomi", "Importuj z pliku (DOCX, ODT, PDF, TXT, HTML)…": "Import",
                 "Importuj ze strony WWW…": "Z WWW", "Szukaj w śpiewnikach internetowych i nut w MuseScore…": "Szukaj w sieci", "Pokaz od początku": "Pokaz", "📱 Pilot w telefonie / tablecie…": "Pilot"}
@@ -2643,6 +2788,11 @@ class MainWindow(QMainWindow):
         self.screen_menu.aboutToShow.connect(self.fill_screen_menu)
         act(m_set, "Ścieżka do MuseScore (AppImage, .exe…) – podgląd plików .mscz…", self.set_musescore_path)
         act(m_set, "Ścieżka do Audiveris (rozpoznawanie nut ze skanu)…", self.set_audiveris_path)
+        a_perg = QAction("Wygląd: jasny pergamin (po ponownym uruchomieniu)", self, checkable=True)
+        a_perg.setChecked(self.settings.value("pergamin", True, type=bool))
+        a_perg.toggled.connect(lambda v: (self.settings.setValue("pergamin", v), self.settings.sync(),
+                                          self.statusBar().showMessage("Zmiana wyglądu po ponownym uruchomieniu.", 6000)))
+        m_set.addAction(a_perg)
         act(m_set, "Test MuseScore (próbna konwersja z raportem)…", self.test_musescore)
         m_tb = m_set.addMenu("Pasek narzędzi")
         m_tb.setIcon(ikony.fa_icon("sliders") if os.path.exists(os.path.join(ikony.ICON_DIR, "sliders.svg")) else QIcon())
@@ -5377,6 +5527,11 @@ def main():
     app.setApplicationDisplayName(APP_NAME)
     app.setOrganizationName("LiberCanticorum")
     app.setWindowIcon(app_icon())
+    try:
+        import modul_widoki
+        modul_widoki.apply_theme(app, QSettings("LiberCanticorum", "LiberCanticorum").value("pergamin", True, type=bool))
+    except Exception:
+        pass
     migrate_settings()
     w = MainWindow(default_db_path())
     w.show()

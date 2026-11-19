@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.13.0
+# Liber Canticorum 0.14.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,14 +12,27 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.13.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.14.x, 0.15.0 itd.
+
+## Widoki (zakładki u dołu okna)
+
+- **Start** – kafle najważniejszych funkcji: Teksty, Slajdy i pokaz, Nuty, Zestaw na Mszę, Nowa pieśń,
+  Import śpiewnika lub pliku, Akordy, Pilot w telefonie, Zaawansowane.
+- **Teksty** – przeglądanie słów: wyszukiwanie po tytule i słowach, duże litery (A− / A+), akordy jednym przyciskiem.
+- **Slajdy** – wybierz pieśń, zobacz slajdy i pokaż je na rzutniku jednym przyciskiem; także pokaz całego zestawu.
+- **Nuty** – nuty pieśni do przewijania i powiększania, odsłuch, „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”.
+- **Zaawansowane** – pełny edytor jak dotąd: wygląd slajdów, załączniki, wersje, akordy, zestaw, eksport.
+
+We wszystkich prostych widokach lista pieśni może pokazywać wszystkie pieśni albo tylko pieśni z bieżącego zestawu.
+Wygląd: jasny pergamin bez ozdobników, monogram „C” w rogu (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
+Program pamięta ostatnio otwartą zakładkę.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.13.0/
+LiberCanticorum_0.14.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -83,6 +96,7 @@ python3 -m venv .venv
 | Plik | Co to jest |
 |---|---|
 | `liber_canticorum.py` | program główny |
+| `modul_widoki.py` | proste widoki (Start, Teksty, Slajdy, Nuty), wygląd „pergamin”, monogram |
 | `modul_akordy.py` | akordy (ChordPro), transpozycja, widok dla gitarzystów |
 | `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
 | `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
