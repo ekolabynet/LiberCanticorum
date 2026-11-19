@@ -131,6 +131,15 @@ def rasterize_pdf(path, out_path, pages=None, dpi=300):
     return len(imgs)
 
 
+def sandbox_cmd(cmd, dirs):
+    """Audiveris z Flatpaka widzi tylko część katalogu domowego (np. nie ~/.cache): przy uruchomieniu
+    dajemy mu dostęp do folderu z plikiem wejściowym i do folderu wyników (flatpak run --filesystem=…)."""
+    if len(cmd) >= 3 and os.path.basename(cmd[0]) == "flatpak" and cmd[1] == "run":
+        extra = [f"--filesystem={d}" for d in dict.fromkeys(os.path.abspath(d) for d in dirs if d)]
+        return cmd[:2] + extra + cmd[2:]
+    return list(cmd)
+
+
 def args_for(src, out_dir, sheets="", lang="pol", variant=0):
     """Argumenty Audiveris. variant: 0 – język OCR przez -constant (5.3+), 1 – przez -option (starsze), 2 – bez."""
     a = ["-batch", "-export", "-output", out_dir]
@@ -190,8 +199,9 @@ class OmrDialog(QDialog):
 
     def _start(self):
         a = args_for(self.src, self.out, self.sheets, self.lang, self.variant)
-        self.log.appendPlainText("$ " + " ".join(self.cmd + a))
-        self.proc.start(self.cmd[0], self.cmd[1:] + a)
+        cmd = sandbox_cmd(self.cmd, [os.path.dirname(os.path.abspath(self.src)), self.out])
+        self.log.appendPlainText("$ " + " ".join(cmd + a))
+        self.proc.start(cmd[0], cmd[1:] + a)
 
     def _read(self):
         t = bytes(self.proc.readAllStandardOutput()).decode('utf-8', 'replace')
