@@ -58,7 +58,8 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.3"
+VERSION = "0.29.4"
+GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -4188,6 +4189,8 @@ class MainWindow(QMainWindow):
             "→ / spacja / PgDn – dalej\n← / PgUp – wstecz\nHome / End – początek / koniec\n"
             "B – czarny ekran\nC – czyste tło (bez tekstu)\nEsc – koniec pokazu\n\n"
             "Pilot w telefonie: Pokaz → Pilot w telefonie (Ctrl+P), zeskanuj kod QR.")))
+        act(m_help, "🌐 Strona programu na GitHubie (pobieranie, nowe wersje)", lambda: QDesktopServices.openUrl(QUrl(GITHUB_URL)))
+        act(m_help, "🐞 Zgłoś błąd albo pomysł…", lambda: QDesktopServices.openUrl(QUrl(GITHUB_URL + "/issues")))
         act(m_help, "O programie i licencja", self.about)
         act(m_help, "© Prawa autorskie do pieśni, dobre źródła, dokumenty Kościoła…", self.copyright_info)
         act(m_help, "🌍 Udostępnij swoje melodie i aranżacje na MuseScore.com…",
@@ -4234,7 +4237,9 @@ class MainWindow(QMainWindow):
             "(<i>Cancional pyosnek rozmaitich a naboznych</i>; Opactwo Mniszek Benedyktynek w Staniątkach), fot. Mkonik80, "
             "<a href='https://commons.wikimedia.org/wiki/File:Staniatki-kanc-A-001.jpg'>Wikimedia Commons</a>, "
             "CC BY-SA 4.0; ikona: CC BY-SA 4.0.<br><br>"
-            "Teksty pieśni, nuty i nagrania dodaje użytkownik – za prawa do nich odpowiada on sam."))
+            "Teksty pieśni, nuty i nagrania dodaje użytkownik – za prawa do nich odpowiada on sam.<br><br>"
+            f"🌐 <a href='{GITHUB_URL}'>{GITHUB_URL.replace('https://', '')}</a> · "
+            f"<a href='{GITHUB_URL}/issues'>zgłoś błąd albo pomysł</a>"))
 
     # ================= lista / wyszukiwanie / filtry =================
     def refresh_filters(self):
