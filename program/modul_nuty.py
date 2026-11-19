@@ -535,6 +535,129 @@ def _transpose_musicxml(xml, k):
     return xml
 
 
+def _voice_base(nm):
+    """'Sopran (kanał 2) – głos 3' → ('sopran', 3)."""
+    m = re.search(r"\s+–\s+głos\s+(\d+)\s*$", nm)
+    k = int(m.group(1)) if m else 1
+    base = re.sub(r"\s+–\s+głos\s+\d+\s*$", "", nm)
+    base = re.sub(r"\s*\(kanał \d+\)\s*$", "", base)
+    base = re.sub(r"^(Sopran|Alt|Tenor|Bas)\s+\((.*)\)$", r"\2", base)    # nazwy SATB nadane przez odtwarzacz
+    return base.strip().lower(), k
+
+
+def _hex(c):
+    c = c.lstrip('#')
+    return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
+
+
+def voice_color_map(part_names, voice_specs):
+    """[(nazwa partii)] + [(nazwa głosu z MIDI, kolor)] → {indeks partii: {głos 1–4: kolor}}.
+    Dopasowanie po nazwie (bez „(kanał n)”, z „– głos k” jako głosem w pięciolinii), a gdy nic nie pasuje – po kolei."""
+    parts = [n.strip().lower() for n in part_names]
+    out = {}
+    for nm, col in voice_specs:
+        if nm.lower().startswith("akordy (symbole"):
+            continue
+        base, k = _voice_base(nm)
+        idx = next((i for i, p in enumerate(parts) if p and (p == base or base.startswith(p) or p.startswith(base))), None)
+        if idx is not None:
+            out.setdefault(idx, {}).setdefault(k, col)
+    if not out:                                           # nazwy się nie zgadzają – po kolei
+        groups = []
+        for nm, col in voice_specs:
+            if nm.lower().startswith("akordy (symbole"):
+                continue
+            base, k = _voice_base(nm)
+            if not groups or groups[-1][0] != base:
+                groups.append((base, {}))
+            groups[-1][1].setdefault(k, col)
+        out = {i: g for i, (_, g) in enumerate(groups[:len(parts)])}
+    return out
+
+
+def color_score(name, data, voice_specs):
+    """Kopia pliku nut z główkami nut w kolorach głosów z odtwarzacza (MuseScore i MusicXML)."""
+    low = name.lower()
+    if low.endswith(('.mscz', '.mscx')):
+        xml, inner = _mscx_of(name, data)
+        if not xml:
+            return None
+        names = [n for n, _ in staves_visibility(name, data)]
+        cmap = voice_color_map(names, voice_specs)
+        cut = xml.rfind("</Part>")
+        cut = cut + len("</Part>") if cut >= 0 else -1
+        head, body = (xml[:cut], xml[cut:]) if cut >= 0 else (xml, "")
+        staff_part = {}
+        for pi, m in enumerate(_RE_PART.finditer(head)):
+            for sid in re.findall(r'<Staff id="(\d+)"', m.group(0)):
+                staff_part[sid] = pi
+
+        def staff(m):
+            pcols = cmap.get(staff_part.get(m.group(1)), {})
+            if not pcols:
+                return m.group(0)
+            first = pcols[min(pcols)]
+
+            def measure(mm):
+                vi = [0]
+
+                def voice(vm):
+                    vi[0] += 1
+                    r, g, b = _hex(pcols.get(vi[0], first))
+                    tag = f'<color r="{r}" g="{g}" b="{b}" a="255"/>'
+                    return re.sub(r"<Note>(?!\s*<color)", "<Note>\n" + tag, vm.group(0))
+                return re.sub(r"<voice>.*?</voice>", voice, mm.group(0), flags=re.S)
+            return re.sub(r"<Measure\b.*?</Measure>", measure, m.group(0), flags=re.S)
+        body = re.sub(r'<Staff id="(\d+)">.*?</Staff>', staff, body, flags=re.S)
+        new = head + body
+        if inner is None:
+            return new.encode('utf-8')
+        buf = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(data)) as zin, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for it in zin.infolist():
+                if it.filename == inner:
+                    zout.writestr(it, new.encode('utf-8'))
+                elif not it.filename.lower().startswith('thumbnails/'):
+                    zout.writestr(it, zin.read(it.filename))
+        return buf.getvalue()
+
+    def color_xml(xml):
+        names = re.findall(r"<score-part\b.*?<part-name[^>]*>([^<]*)</part-name>", xml, re.S)
+        cmap = voice_color_map(names, voice_specs)
+        ids = re.findall(r'<score-part\s+id="([^"]+)"', xml)
+
+        def part(m):
+            try:
+                pcols = cmap.get(ids.index(m.group(1)), {})
+            except ValueError:
+                pcols = {}
+            if not pcols:
+                return m.group(0)
+            first = pcols[min(pcols)]
+
+            def note(nm):
+                block = nm.group(0)
+                if "<rest" in block:
+                    return block
+                v = re.search(r"<voice>(\d+)</voice>", block)
+                col = pcols.get(int(v.group(1)) if v else 1, first)
+                return re.sub(r"^<note\b", f'<note color="{col.upper()}"', re.sub(r'\s+color="[^"]*"', "", block, count=1), count=1)
+            return re.sub(r"<note\b.*?</note>", note, m.group(0), flags=re.S)
+        return re.sub(r'<part\s+id="([^"]+)">.*?</part>', part, xml, flags=re.S)
+    if low.endswith(('.musicxml', '.xml')):
+        return color_xml(data.decode('utf-8', 'replace')).encode('utf-8')
+    if low.endswith('.mxl'):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(data)) as zin, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for it in zin.infolist():
+                raw = zin.read(it.filename)
+                if it.filename.lower().endswith(('.xml', '.musicxml')) and not it.filename.upper().startswith('META-INF'):
+                    raw = color_xml(raw.decode('utf-8', 'replace')).encode('utf-8')
+                zout.writestr(it, raw)
+        return buf.getvalue()
+    return None
+
+
 def _icons(widget):
     try:
         import ikony
@@ -2066,6 +2189,9 @@ class MidiPlayerDialog(QDialog):
         views.addWidget(self.show_score)
         views.addWidget(self.show_roll)
         views.addWidget(self.show_kbd)
+        self.show_col = QCheckBox("Kolory głosów")
+        self.show_col.setToolTip("Nuty każdego głosu w kolorze z listy głosów (nuty przelicza MuseScore – chwilę to trwa)")
+        views.addWidget(self.show_col)
         self.show_lyr = QCheckBox("Słowa na dole")
         self.show_lyr.setToolTip("Duże słowa bieżącej frazy pod nutami (wszystkie zwrotki)")
         views.addWidget(self.show_lyr)
@@ -2133,7 +2259,14 @@ class MidiPlayerDialog(QDialog):
         split.addWidget(self.scroll)
         lay.addWidget(split, 1)
         lay.addWidget(self.kbd)                        # klawiatura pod nutami
+        self.show_col.setEnabled(bool(self.transposer and self.follow))
+        if not self.show_col.isEnabled():
+            self.show_col.setToolTip("Kolorowanie nut działa dla plików MuseScore i MusicXML (potrzebny MuseScore)")
         if self.transposer and self.follow:
+            self.show_col.setChecked(self._qs.value("score_colors", "false") == "true")
+            self.show_col.toggled.connect(lambda on: (self._qs.setValue("score_colors", on), self._rerender()))
+            if self.show_col.isChecked():
+                QTimer.singleShot(400, lambda: self._rerender())
             self._tr_timer = QTimer(self)
             self._tr_timer.setSingleShot(True)
             self._tr_timer.setInterval(700)
@@ -2232,6 +2365,8 @@ class MidiPlayerDialog(QDialog):
             # nowe wiersze głosów też schowane (Qt pokazuje nowo dodane widżety z opóźnieniem – stąd timer)
             QTimer.singleShot(0, lambda: hasattr(self, '_settings_on') and not self._settings_on
                               and self.set_settings_visible(False))
+        if getattr(self, '_tr_timer', None) is not None and self.show_col.isChecked():
+            self._tr_timer.start()                     # inny podział na głosy – inne kolory w nutach
         self.params_changed()
 
     def _voice_key(self):
@@ -2569,17 +2704,21 @@ class MidiPlayerDialog(QDialog):
             self.cur_want = want
         want = self.cur_want
         k = self.transpose.value()
-        key = (k, tuple(want) if want else None)
+        colors = None
+        if getattr(self, 'show_col', None) is not None and self.show_col.isChecked():
+            colors = tuple((getattr(v, 'orig_name', v.name), VOICE_COLORS[i % len(VOICE_COLORS)])
+                           for i, v in enumerate(self.voices))
+        key = (k, tuple(want) if want else None) + ((colors,) if colors else ())
         res = self._score_cache.get(key)
         if res is None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.pos_lbl.setText("MuseScore przelicza nuty…")
             QApplication.processEvents()
             try:
-                if k == 0 and want is not None and self.staves:
+                if k == 0 and want is not None and self.staves and not colors:
                     res = self.staves[1](want)              # zapamiętuje widoczność na stałe
                 elif self.transposer:
-                    res = self.transposer(k, want)
+                    res = self.transposer(k, want, list(colors) if colors else None)
             except Exception as e:
                 res = None
                 print("Przeliczanie nut:", e)

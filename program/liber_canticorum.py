@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.18.0"
+VERSION = "0.18.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -5018,9 +5018,11 @@ class MainWindow(QMainWindow):
         if score and self.musescore():
             name, raw, exe = a['name'], a['data'], self.musescore()
 
-            def transposer(k, want):
+            def transposer(k, want, colors=None):
                 import modul_nuty as mn
                 new = mn.transpose_score(name, raw, k, want)
+                if new and colors:
+                    new = mn.color_score(name, new, colors) or new
                 if not new:
                     return None
                 res = mn.convert_score(exe, name, new, outs=('pdf', 'spos'))

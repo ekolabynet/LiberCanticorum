@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.18.0
+# Liber Canticorum 0.18.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -113,6 +113,9 @@ Tempo, transpozycja, „Ćwicz głos”, brzmienie, podkład organowy, SoundFont
 **„⚙ Więcej ustawień”**. „⛶ Pełny ekran” / F11 / Esc przełącza pełny ekran (program pamięta wybór).
 **Nazwy głosów:** przycisk ✎ przy głosie (w „Więcej ustawień”) zmienia jego nazwę, np. „Soprano (kanał 1)” →
 „Melodia”; program pamięta nazwy dla tego pliku, a pusta nazwa przywraca nazwę z pliku.
+Pole **„Kolory głosów”** koloruje nuty każdego głosu w nutach na kolor z listy głosów (sopran czerwony, alt
+pomarańczowy…) – tak samo jak na klawiaturze i wałku pianoli. Nuty przelicza MuseScore (chwilę to trwa); głosy
+w jednej pięciolinii (np. S i A) dostają osobne kolory. Działa razem z transpozycją i ukrywaniem pięciolinii.
 Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy pod nutami (program pamięta wybór).
 
 ## Instalacja i uruchomienie
@@ -120,7 +123,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.18.0/
+LiberCanticorum_0.18.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
