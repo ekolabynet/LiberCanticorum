@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.18.3
+# Liber Canticorum 0.18.4
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -88,8 +88,11 @@ nad tekstem lub z boku) – i pokazuje listę pieśni do zaznaczenia. Pieśni, k
 **Usunąć duplikaty.** Plik → „Znajdź i połącz duplikaty pieśni” – dla każdej grupy wybierasz pieśń główną,
 „Połącz” albo „To nie są duplikaty”; jednym przyciskiem łączysz pieśni o identycznym tekście.
 
-**Nadać kategorię wielu pieśniom.** W „Zaawansowanych” zaznacz pieśni (Ctrl+klik, Shift+klik, Ctrl+A),
-prawy przycisk myszy → „Kategoria dla zaznaczonych…” albo „Tagi dla zaznaczonych…”.
+**Połączyć kilka pieśni albo nadać im kategorię – w każdym widoku.** Na liście pieśni (Teksty, Slajdy, Nuty
+i „Zaawansowane”) zaznacz kilka pieśni: **Shift+klik** – zakres, **Ctrl+klik** – pojedyncze. Pod listą pojawią się
+przyciski **„🔗 Połącz”** (wybierasz pieśń główną; teksty pozostałych zostają wersjami, nuty, nagrania, tagi
+i zestawy przechodzą do niej), **„🏷 Kategoria…”** i **„Tagi…”** – te same polecenia są pod prawym przyciskiem myszy,
+razem z „Znajdź duplikaty w całej bazie…”. Wszystko można cofnąć: Plik → Cofnij ostatnie zmiany.
 
 **Akordy dla gitarzystów.** Kafel „Akordy”, przycisk „Akordy” w Tekstach albo Ctrl+G: akordy nad sylabami,
 transpozycja, pełny ekran, PDF. Nad tekstem są **chwyty na gryfie** wszystkich akordów pieśni (pole „chwyty”) –
@@ -132,7 +135,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.18.3/
+LiberCanticorum_0.18.4/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

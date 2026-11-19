@@ -198,6 +198,7 @@ class HomePage(QWidget):
 class SongPicker(QWidget):
     """Szukaj + lista pieśni (wszystkie albo z bieżącego zestawu). Sygnał chosen(id)."""
     chosen = Signal(int)
+    bulk = Signal(str, list)        # ('merge' | 'category' | 'tags', [id…]) – działania na kilku zaznaczonych pieśniach
 
     def __init__(self, db, set_ids=None, parent=None):
         super().__init__(parent)
@@ -220,7 +221,30 @@ class SongPicker(QWidget):
         self.list = QListWidget()
         self.list.setObjectName("picker")
         self.list.currentItemChanged.connect(self._pick)
+        self.list.setSelectionMode(QListWidget.ExtendedSelection)
+        self.list.setToolTip("Shift+klik – zaznacz zakres, Ctrl+klik – pojedyncze pieśni; potem: połącz albo nadaj kategorię")
+        self.list.itemSelectionChanged.connect(self._sel_changed)
+        self.list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.list.customContextMenuRequested.connect(self._menu)
         lay.addWidget(self.list, 1)
+        self.multi = QWidget()
+        ml = QVBoxLayout(self.multi)
+        ml.setContentsMargins(0, 2, 0, 2)
+        ml.setSpacing(3)
+        self.multi_lbl = QLabel()
+        self.multi_lbl.setStyleSheet("font-weight: bold;")
+        ml.addWidget(self.multi_lbl)
+        row = QHBoxLayout()
+        for txt, act, tip in (("🔗 Połącz", 'merge', "To ta sama pieśń – połącz w jedną (teksty jako wersje, nuty, nagrania, zestawy)"),
+                              ("🏷 Kategoria…", 'category', "Ta sama kategoria dla wszystkich zaznaczonych"),
+                              ("Tagi…", 'tags', "Dodaj albo usuń tagi zaznaczonym pieśniom")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            b.clicked.connect(lambda _=False, a=act: self.bulk.emit(a, self.selected_ids()))
+            row.addWidget(b)
+        ml.addLayout(row)
+        self.multi.setVisible(False)
+        lay.addWidget(self.multi)
         self.count = QLabel()
         self.count.setStyleSheet(f"color: {MUTED};")
         lay.addWidget(self.count)
@@ -259,7 +283,30 @@ class SongPicker(QWidget):
             if sid == cur:
                 self.list.setCurrentItem(it)
         self.list.blockSignals(False)
+        self._sel_changed()
         self.count.setText(f"{len(rows)} pieśni")
+
+    def selected_ids(self):
+        return [it.data(Qt.UserRole) for it in self.list.selectedItems() if it.data(Qt.UserRole)]
+
+    def _sel_changed(self):
+        n = len(self.list.selectedItems())
+        self.multi.setVisible(n > 1)
+        self.multi_lbl.setText(f"Zaznaczone pieśni: {n}")
+
+    def _menu(self, pos):
+        from PySide6.QtWidgets import QMenu
+        ids = self.selected_ids()
+        if not ids:
+            return
+        m = QMenu(self)
+        if len(ids) > 1:
+            m.addAction(f"🔗 Połącz zaznaczone ({len(ids)}) w jedną pieśń…", lambda: self.bulk.emit('merge', ids))
+        m.addAction(f"🏷 Kategoria dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('category', ids))
+        m.addAction(f"Tagi dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('tags', ids))
+        m.addSeparator()
+        m.addAction("Znajdź duplikaty w całej bazie…", lambda: self.bulk.emit('duplicates', ids))
+        m.exec(self.list.viewport().mapToGlobal(pos))
 
     def current(self):
         it = self.list.currentItem()
@@ -561,6 +608,8 @@ class ScoresPage(QWidget):
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
                 pages, info, has_play = self.pages_fn(self.sid, aid)
+            except Exception as e:                         # uszkodzony plik – nie wywracaj widoku
+                pages, info, has_play = [], f"Nie da się pokazać tego pliku: {e}", False
             finally:
                 QApplication.restoreOverrideCursor()
             for data in pages:

@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.18.3"
+VERSION = "0.18.4"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -2919,6 +2919,7 @@ class MainWindow(QMainWindow):
         self.cur_sid, self._prev_view = None, None
         for page in (self.v_texts, self.v_slides, self.v_scores):
             page.picker.chosen.connect(self._set_cur)
+            page.picker.bulk.connect(self._picker_bulk)
         self.views.currentChanged.connect(self._view_changed)
         self.setCentralWidget(self.views)
         self.setWindowIcon(app_icon())
@@ -3613,8 +3614,65 @@ class MainWindow(QMainWindow):
             self.results.setFocus()
         return ids
 
-    def bulk_category(self):
-        ids = self._bulk_ids()
+    def _picker_bulk(self, action, ids):
+        """Działania na pieśniach zaznaczonych w prostych widokach (Teksty, Slajdy, Nuty)."""
+        if action == 'merge':
+            self.merge_ids(ids)
+        elif action == 'category':
+            self.bulk_category(ids)
+        elif action == 'tags':
+            self.bulk_tags(ids)
+        elif action == 'duplicates':
+            self.find_duplicates()
+        self._refresh_pickers()
+
+    def _refresh_pickers(self):
+        for page in (self.v_texts, self.v_slides, self.v_scores):
+            page.picker.fill_categories()
+            page.picker.refresh()
+
+    def merge_ids(self, ids):
+        """Kilka zaznaczonych pieśni to ta sama pieśń: wybierz główną, reszta do niej dołącza."""
+        ids = [i for i in ids if self.db.get(i)]
+        if len(ids) < 2:
+            return
+        if self.dirty and not self.maybe_save():
+            return
+        songs = [self.db.get(i) for i in ids]
+        labels = []
+        for s in songs:
+            first = next((l.strip() for l in (s['refren'] + "\n" + s['zwrotki_raw']).splitlines() if l.strip()), "")
+            n_att = len(self.db.attachments(s['id']))
+            labels.append(f"{s['title']}   – {first[:40]}" + (f"   [nuty/pliki: {n_att}]" if n_att else ""))
+        choice, ok = QInputDialog.getItem(
+            self, "Połącz pieśni",
+            f"Połączyć {len(ids)} pieśni w jedną? Wybierz pieśń GŁÓWNĄ (zostanie jej tytuł i tekst).\n"
+            "Teksty pozostałych zostaną zapisane jako wersje, a nuty, nagrania, tagi, uwagi i zestawy przejdą do głównej.\n"
+            "Można to cofnąć: Plik → Cofnij ostatnie zmiany.", labels, 0, False)
+        if not ok:
+            return
+        dst = ids[labels.index(choice)]
+        self.db.snapshot(f"Połączenie {len(ids)} pieśni w „{self.db.get(dst)['title']}”")
+        for sid in ids:
+            if sid != dst:
+                self.db.merge_songs(sid, dst)
+        if self.song and self.song.get('id') in ids:
+            self.dirty = False
+            self.load_into_editor(self.db.get(dst))
+        self.cur_sid = dst
+        self.refresh_filters()
+        self.refresh_list()
+        self.restore_set()
+        self.pilot_invalidate()
+        self._refresh_pickers()
+        for page in (self.v_texts, self.v_slides, self.v_scores):
+            if page.picker.select(dst):
+                page.show_song(dst)
+        self.statusBar().showMessage(f"Połączono {len(ids)} pieśni w „{self.db.get(dst)['title']}”. "
+                                     "Można cofnąć: Plik → Cofnij ostatnie zmiany.", 8000)
+
+    def bulk_category(self, ids=None):
+        ids = ids if isinstance(ids, list) and ids else self._bulk_ids()
         if not ids:
             return
         if self.dirty and not self.maybe_save():
@@ -3634,8 +3692,8 @@ class MainWindow(QMainWindow):
                 self.db.save(s)
         self._after_bulk(f"Ustawiono kategorię „{cat or '(bez kategorii)'}” dla {len(ids)} pieśni.")
 
-    def bulk_tags(self):
-        ids = self._bulk_ids()
+    def bulk_tags(self, ids=None):
+        ids = ids if isinstance(ids, list) and ids else self._bulk_ids()
         if not ids:
             return
         if self.dirty and not self.maybe_save():
