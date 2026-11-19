@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.3"
+VERSION = "0.20.4"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -82,10 +82,16 @@ SUPPORT = [
     ("🎶", "Wesprzyj Scholę adHoc",
      "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
      "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
-     "https://dowiaryprzezliturgie.pl/adhoc/", None),
+     "https://dowiaryprzezliturgie.pl/adhoc/",
+     {'zaangazuj': "Najlepiej wesprzesz nas, przychodząc i śpiewając razem z nami: w I niedzielę miesiąca, "
+                   "w samo południe, w kościele Matki Bożej Królowej Meksyku w Laskach (ul. 3 Maja 40/42). "
+                   "Nie trzeba znać nut – wystarczy chęć. Zaproś też znajomych i rodzinę!"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
-     "https://guadalupe500.org/", None),
+     "https://guadalupe500.org/",
+     {'zaangazuj': "Komponujesz, śpiewasz, grasz, piszesz teksty albo tłumaczysz? Włącz się w przygotowanie nowej muzyki "
+                   "na 500-lecie objawień Matki Bożej z Guadalupe (1531–2031). Zajrzyj na stronę projektu "
+                   "i módl się z nami w tej intencji."}),
 ]
 
 
@@ -3858,7 +3864,11 @@ class MainWindow(QMainWindow):
         h = QLabel(f"<h2>{H.escape(title)}</h2><p>{H.escape(desc)}</p>")
         h.setWordWrap(True)
         lay.addWidget(h)
-        if acc:
+        if acc and acc.get('zaangazuj'):
+            z = QLabel(f"<b>Jak się włączyć?</b><br>{H.escape(acc['zaangazuj'])}")
+            z.setWordWrap(True)
+            lay.addWidget(z)
+        if acc and acc.get('konta'):
             lay.addWidget(QLabel(f"<b>Odbiorca:</b> {H.escape(acc['odbiorca'])}", wordWrap=True))
             for bank, nr in acc['konta']:
                 row = QHBoxLayout()
