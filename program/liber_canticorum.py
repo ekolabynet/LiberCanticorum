@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.1"
+VERSION = "0.20.2"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -66,7 +66,7 @@ BG_DIR = os.path.join(APP_DIR, "tla")
 SUPPORT = [
     ("🤍", "Wesprzyj Ośrodek dla Niewidomych w Laskach",
      "Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
-     "https://laski.edu.pl/wplac-darowizne/",
+     "https://laski.edu.pl/",
      {'odbiorca': "Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin",
       'konta': [("mBank S.A. – konto do darowizn", "02 1140 1010 0000 4399 5800 1002")],
       'tytul': "Darowizna na cele statutowe",
