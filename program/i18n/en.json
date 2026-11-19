@@ -1150,8 +1150,19 @@
   "Vatican News – {a}": "Vatican News – {a}",
   "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "Readings: <a href='{a}'>{b}</a> (Vatican News, “Word of the day”). The program only displays them and keeps them in your database so that they work offline.",
   "Antyfona na ofiarowanie": "Offertory Antiphon",
-  "Missale Romanum 1962 (Missale Meum)": "",
-  "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).": "",
-  "Kolor szat:": "Liturgical colour:"
+  "Missale Romanum 1962 (Missale Meum)": "Missale Romanum 1962 (Missale Meum)",
+  "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).": "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).",
+  "Kolor szat:": "Liturgical colour:",
+  "🌐 Otwórz": "🌐 Open",
+  "✚ Własny adres…": "✚ Own address…",
+  "🗑 Usuń własny": "🗑 Remove own",
+  "📋 Strony z czytaniami – wybierz…": "📋 Pages with readings – choose…",
+  "Lista stron z czytaniami na ten dzień: Vatican News we wszystkich językach, krajowe mszaliki,\nMszał 1962 – oraz własne adresy (z datą w adresie)": "List of pages with the readings for this day: Vatican News in all languages, national missals,\nthe 1962 Missal – and your own addresses (with the date in the address)",
+  "Szukaj: język, kraj, nazwa strony…": "Search: language, country, page name…",
+  "Zaznacz własny adres (★).": "Select your own address (★).",
+  "czytania dnia": "readings of the day",
+  "Strony z czytaniami": "Pages with readings",
+  "Nazwa strony (np. „Mszalik mojej diecezji”):": "Page name (e.g. “My diocese's missal”):",
+  "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": "Address of the page with readings. Date placeholders: {YYYY} {MM} {DD} {YY}, {date} = YYYY-MM-DD.\nE.g. https://example.org/{YYYY}/{MM}/{DD}"
  }
 }

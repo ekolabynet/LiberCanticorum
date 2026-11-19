@@ -1147,11 +1147,22 @@
   "Antyfona na Komunię": "Communio",
   "Modlitwa po Komunii": "Postcommunio",
   "Vatican News – {a}": "",
-  "Czytania w Twoim języku:": "",
+  "Czytania w Twoim języku:": "Lectiones in lingua tua:",
   "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "",
   "Antyfona na ofiarowanie": "Offertorium",
   "Missale Romanum 1962 (Missale Meum)": "",
   "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).": "",
-  "Kolor szat:": "Color:"
+  "Kolor szat:": "Color:",
+  "🌐 Otwórz": "🌐 Aperire",
+  "✚ Własny adres…": "",
+  "🗑 Usuń własny": "",
+  "📋 Strony z czytaniami – wybierz…": "📋 Paginae lectionum – elige…",
+  "Lista stron z czytaniami na ten dzień: Vatican News we wszystkich językach, krajowe mszaliki,\nMszał 1962 – oraz własne adresy (z datą w adresie)": "",
+  "Szukaj: język, kraj, nazwa strony…": "",
+  "Zaznacz własny adres (★).": "",
+  "czytania dnia": "lectiones diei",
+  "Strony z czytaniami": "Paginae lectionum",
+  "Nazwa strony (np. „Mszalik mojej diecezji”):": "",
+  "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": ""
  }
 }

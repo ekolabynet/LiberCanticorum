@@ -1152,6 +1152,17 @@
   "Antyfona na ofiarowanie": "Offertorium",
   "Missale Romanum 1962 (Missale Meum)": "",
   "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).": "",
-  "Kolor szat:": "Liturgische Farbe:"
+  "Kolor szat:": "Liturgische Farbe:",
+  "🌐 Otwórz": "🌐 Öffnen",
+  "✚ Własny adres…": "✚ Eigene Adresse…",
+  "🗑 Usuń własny": "🗑 Eigene entfernen",
+  "📋 Strony z czytaniami – wybierz…": "📋 Seiten mit Lesungen – auswählen…",
+  "Lista stron z czytaniami na ten dzień: Vatican News we wszystkich językach, krajowe mszaliki,\nMszał 1962 – oraz własne adresy (z datą w adresie)": "",
+  "Szukaj: język, kraj, nazwa strony…": "",
+  "Zaznacz własny adres (★).": "",
+  "czytania dnia": "Tageslesungen",
+  "Strony z czytaniami": "Seiten mit Lesungen",
+  "Nazwa strony (np. „Mszalik mojej diecezji”):": "",
+  "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}": ""
  }
 }

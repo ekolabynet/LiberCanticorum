@@ -126,6 +126,9 @@ def self_lang():
         return 'pl'
 
 
+APP = "Liber Canticorum"
+
+
 def _tr(t):
     try:
         import modul_i18n
@@ -276,8 +279,17 @@ def fetch(date, source='gregorianski', timeout=20):
 # czytania w innych językach – Vatican News („Słowo na dziś”) i krajowe mszaliki
 # ---------------------------------------------------------------------
 VN_SLUGS = {'en': ["word-of-the-day"], 'es': ["evangelio-de-hoy"], 'fr': ["evangile-du-jour"],
-            'pt': ["palavra-do-dia"], 'it': ["vangelo-del-giorno", "parola-del-giorno"],
-            'de': ["tagesevangelium", "wort-des-tages"]}
+            'pt': ["palavra-do-dia"], 'it': ["vangelo-del-giorno-e-parola-del-giorno"],
+            'de': ["tagesevangelium-und-tagesliturgie"]}
+VN_ALL = [("it", "Italiano"), ("en", "English"), ("fr", "Français"), ("de", "Deutsch"), ("es", "Español"),
+          ("pt", "Português"), ("pl", "Polski"), ("ar", "العربية"), ("hy", "Հայերէն"), ("az", "Azərbaycan"),
+          ("be", "Беларуская"), ("bg", "Български"), ("cs", "Čeština"), ("eo", "Esperanto"), ("he", "עברית"),
+          ("hr", "Hrvatski"), ("hu", "Magyar"), ("id", "Bahasa Indonesia"), ("lv", "Latviešu"), ("lt", "Lietuvių"),
+          ("mk", "Македонски"), ("mn", "Монгол"), ("ro", "Română"), ("sq", "Shqip"), ("sk", "Slovenčina"),
+          ("sl", "Slovenščina"), ("sv", "Svenska"), ("ru", "Русский"), ("uk", "Українська"), ("hi", "हिन्दी"),
+          ("ml", "മലയാളം"), ("ta", "தமிழ்"), ("kn", "ಕನ್ನಡ"), ("vi", "Tiếng Việt"), ("ja", "日本語"), ("ko", "한국어"),
+          ("zht", "繁體中文"), ("zh", "简体中文"), ("am", "አማርኛ"), ("ln", "Lingála"), ("rn", "Ikirundi"),
+          ("so", "Soomaali"), ("sw", "Kiswahili"), ("ti", "ትግርኛ")]          # języki serwisu vaticannews.va
 VN_LANGS = {'en', 'it', 'fr', 'de', 'es', 'pt', 'pl', 'ar', 'cs', 'hr', 'hu', 'lt', 'ro', 'sk', 'sv', 'uk', 'ml',
             'vi', 'ja', 'ko', 'zh', 'sw'}            # języki serwisu vaticannews.va (strony główne)
 # krajowe mszaliki z czytaniami na dany dzień (otwierane w przeglądarce)
@@ -291,8 +303,8 @@ NATIONAL = {
     'la': [("Missale Meum (1962)", lambda d: f"https://missale.bieda.it/en/calendar/{d:%Y-%m-%d}")],
 }
 _VN_READ = re.compile(r"(?i)^(reading of the day|first reading|lectura del d[ií]a|primera lectura|lecture du jour|"
-                      r"premi[eè]re lecture|leitura do dia|primeira leitura|lettura del giorno|prima lettura|"
-                      r"lesung( des tages)?|erste lesung)\s*$")
+                      r"premi[eè]re lecture|leitura do dia|primeira leitura|letture? del giorno|prima lettura|"
+                      r"lesung( des tages)?|tageslesung|erste lesung)\s*$")
 _VN_GOSP = re.compile(r"(?i)^(gospel of the day|evangelio del d[ií]a|[ée]vangile du jour|evangelho do dia|"
                       r"vangelo del giorno|evangelium( des tages| vom tag)?)\s*$")
 _VN_STOP = re.compile(r"(?i)^(the words of the popes|las palabras de los papas|les paroles des papes|"
@@ -357,6 +369,41 @@ def fetch_missale(date, timeout=25):
                     'sekcje': secs, 'meta': meta, 'jezyk': 'la'}
         errors.append(f"{url}: brak tekstów")
     raise RuntimeError("Missale Meum: " + "; ".join(errors[-2:]))
+
+
+def reading_pages(date, lang=None):
+    """Strony z czytaniami na dany dzień: [(grupa, nazwa, adres)] – najpierw język interfejsu."""
+    out = []
+    for code, name in VN_ALL:
+        if VN_SLUGS.get(code):
+            out.append(("Vatican News", f"{name} – {_tr('czytania dnia')}", vatican_url(date, code, VN_SLUGS[code][0])))
+        else:
+            out.append(("Vatican News", name, f"https://www.vaticannews.va/{code}.html"))
+    for lg, items in NATIONAL.items():
+        for name, fn in items:
+            out.append((lg.upper(), name, fn(date)))
+    out.append(("PL", "gregorianski.pl – mszalik", SOURCES['gregorianski'][1].format(d=date.isoformat())))
+    out.append(("PL", "niezbednik.niedziela.pl", SOURCES['niezbednik'][1].format(d=date.isoformat())))
+    out.append(("PL", "opoka.org.pl", SOURCES['opoka'][1].format(d=date.isoformat())))
+    out.append(("1962", "Ordo – propria.org", f"https://propria.org/ordo-{date.year}/"))
+    try:
+        from PySide6.QtCore import QSettings
+        custom = json.loads(QSettings("LiberCanticorum", "LiberCanticorum").value("lit_custom_urls", "[]") or "[]")
+    except Exception:
+        custom = []
+    for name, tmpl in custom:
+        out.append(("★", name, custom_url(tmpl, date)))
+    if lang:
+        mine = {lang, {'zh': 'zht'}.get(lang, lang)}
+        out.sort(key=lambda r: (0 if r[0] == "★" else 1 if (r[0].lower() in mine or any(
+            f"vaticannews.va/{m}/" in r[2] or r[2].endswith(f"vaticannews.va/{m}.html") for m in mine)) else 2))
+    return out
+
+
+def custom_url(tmpl, date):
+    """Własny adres z miejscami na datę: {YYYY} {MM} {DD} {YY} {date} (RRRR-MM-DD)."""
+    return (tmpl.replace("{YYYY}", f"{date:%Y}").replace("{MM}", f"{date:%m}").replace("{DD}", f"{date:%d}")
+            .replace("{YY}", f"{date:%y}").replace("{date}", date.isoformat()))
 
 
 def vatican_url(date, lang, slug):
@@ -700,7 +747,7 @@ class LiturgyDialog(QDialog):
             latin = modul_i18n.LANG == 'la'
         except Exception:
             latin = False
-        if self.lang not in ('pl', 'la'):                 # krajowe mszaliki i Vatican News w przeglądarce
+        if True:                                              # krajowe mszaliki i Vatican News w przeglądarce
             nat = QHBoxLayout()
             nat.addWidget(QLabel("Czytania w Twoim języku:"))
             links = list(NATIONAL.get(self.lang, []))
@@ -709,10 +756,17 @@ class LiturgyDialog(QDialog):
                 links.append(("Vatican News", lambda d, vl=vl: vatican_url(d, vl, VN_SLUGS[vl][0])))
             else:
                 links.append(("Vatican News", lambda d, vl=vl: f"https://www.vaticannews.va/{vl}.html"))
+            if self.lang in ('pl', 'la'):
+                links = []
             for txt, fn in links:
                 b = QPushButton("🌐 " + txt)
                 b.clicked.connect(lambda _=False, fn=fn: QDesktopServices.openUrl(QUrl(fn(self.date))))
                 nat.addWidget(b)
+            b = QPushButton("📋 Strony z czytaniami – wybierz…")
+            b.setToolTip("Lista stron z czytaniami na ten dzień: Vatican News we wszystkich językach, krajowe mszaliki,\n"
+                         "Mszał 1962 – oraz własne adresy (z datą w adresie)")
+            b.clicked.connect(self.pages_dialog)
+            nat.addWidget(b)
             nat.addStretch(1)
             lay.addLayout(nat)
         if latin:                                           # po łacinie: liturgia tradycyjna (Mszał 1962)
@@ -952,6 +1006,72 @@ class LiturgyDialog(QDialog):
         it = self.tree.currentItem()
         if it and it.data(0, Qt.UserRole):
             self.add_fn(self.part.currentText(), it.data(0, Qt.UserRole))
+
+    def pages_dialog(self):
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QHBoxLayout, \
+            QPushButton, QInputDialog, QMessageBox
+        from PySide6.QtCore import QSettings
+        d = QDialog(self)
+        d.setWindowTitle(_tr("Strony z czytaniami") + f" – {self.date:%d.%m.%Y}")
+        lay = QVBoxLayout(d)
+        q = QLineEdit()
+        q.setPlaceholderText(_tr("Szukaj: język, kraj, nazwa strony…"))
+        lay.addWidget(q)
+        lst = QListWidget()
+        lay.addWidget(lst, 1)
+
+        def fill():
+            lst.clear()
+            for grp, name, url in reading_pages(self.date, self.lang):
+                if q.text().strip() and q.text().lower() not in f"{grp} {name} {url}".lower():
+                    continue
+                it = QListWidgetItem(f"{grp}   ·   {name}")
+                it.setToolTip(url)
+                it.setData(Qt.UserRole, url)
+                lst.addItem(it)
+        q.textChanged.connect(fill)
+        fill()
+        lst.itemDoubleClicked.connect(lambda it: QDesktopServices.openUrl(QUrl(it.data(Qt.UserRole))))
+        row = QHBoxLayout()
+
+        def open_sel():
+            it = lst.currentItem()
+            if it:
+                QDesktopServices.openUrl(QUrl(it.data(Qt.UserRole)))
+
+        def add_custom():
+            name, ok = QInputDialog.getText(d, APP, _tr("Nazwa strony (np. „Mszalik mojej diecezji”):"))
+            if not ok or not name.strip():
+                return
+            tmpl, ok = QInputDialog.getText(d, APP, _tr("Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, "
+                                                        "{date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}"),
+                                            text="https://")
+            if not ok or not tmpl.strip().startswith("http"):
+                return
+            qs = QSettings("LiberCanticorum", "LiberCanticorum")
+            cur = json.loads(qs.value("lit_custom_urls", "[]") or "[]")
+            cur.append([name.strip(), tmpl.strip()])
+            qs.setValue("lit_custom_urls", json.dumps(cur, ensure_ascii=False))
+            fill()
+
+        def del_custom():
+            it = lst.currentItem()
+            if not it or not it.text().startswith("★"):
+                QMessageBox.information(d, APP, _tr("Zaznacz własny adres (★)."))
+                return
+            qs = QSettings("LiberCanticorum", "LiberCanticorum")
+            cur = json.loads(qs.value("lit_custom_urls", "[]") or "[]")
+            name = it.text().split("·", 1)[1].strip()
+            qs.setValue("lit_custom_urls", json.dumps([c for c in cur if c[0] != name], ensure_ascii=False))
+            fill()
+        for txt, fn in (("🌐 Otwórz", open_sel), ("✚ Własny adres…", add_custom), ("🗑 Usuń własny", del_custom),
+                        ("Zamknij", d.accept)):
+            b = QPushButton(txt)
+            b.clicked.connect(fn)
+            row.addWidget(b)
+        lay.addLayout(row)
+        d.resize(640, 620)
+        d.exec()
 
     def open_web(self):
         src = self.src.currentData()

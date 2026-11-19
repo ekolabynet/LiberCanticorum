@@ -201,5 +201,18 @@
  "Vatican News – {a}",
  "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.",
  "Antyfona na ofiarowanie",
- "Kolor szat:"
+ "Kolor szat:",
+ "czytania dnia",
+ "📋 Strony z czytaniami – wybierz…",
+ "Lista stron z czytaniami na ten dzień: Vatican News we wszystkich językach, krajowe mszaliki,\nMszał 1962 – oraz własne adresy (z datą w adresie)",
+ "Strony z czytaniami",
+ "Szukaj: język, kraj, nazwa strony…",
+ "Nazwa strony (np. „Mszalik mojej diecezji”):",
+ "Adres strony z czytaniami. Miejsca na datę: {YYYY} {MM} {DD} {YY}, {date} = RRRR-MM-DD.\nNp. https://example.org/{YYYY}/{MM}/{DD}",
+ "Zaznacz własny adres (★).",
+ "🌐 Otwórz",
+ "✚ Własny adres…",
+ "🗑 Usuń własny",
+ "Missale Romanum 1962 (Missale Meum)",
+ "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum)."
 ]
