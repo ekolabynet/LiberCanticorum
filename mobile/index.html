@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1d22">
+<meta name="description" content="Liber Canticorum – wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła / A free liturgical songbook for musicians, choirs and Church communities">
+<meta name="generator" content="Liber Canticorum Mobile (GPL-3.0-or-later)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<title>Liber Canticorum</title>
+</head>
+<body>
+<header id="top">
+  <button id="back" class="ib" hidden aria-label="←">←</button>
+  <img src="icons/icon-192.png" alt="" class="logo" id="logo">
+  <h1 id="h1">Liber Canticorum</h1>
+  <span id="tools"></span>
+</header>
+<main id="main"></main>
+<nav id="nav">
+  <a href="#/" data-v="songs"><span>♪</span><b data-t="Pieśni">Pieśni</b></a>
+  <a href="#/sets" data-v="sets"><span>✝</span><b data-t="Zestawy">Zestawy</b></a>
+  <a href="#/settings" data-v="settings"><span>⚙</span><b data-t="Ustawienia">Ustawienia</b></a>
+</nav>
+<div id="viewer" hidden>
+  <img id="vImg" alt="">
+  <span id="vCnt"></span>
+  <button id="vClose" class="ib" aria-label="✕">✕</button>
+</div>
+<div id="modal" hidden><div class="box" id="mBox"></div></div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<script src="chords.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

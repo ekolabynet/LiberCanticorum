@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.28.2
+# Liber Canticorum 0.29.0
 *Un cancionero litúrgico libre para músicos, coros y comunidades de la Iglesia*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -17,6 +17,15 @@ Funciona en Windows, macOS y Linux. **Empieza con una base vacía: las letras, p
 introduces o importas tú** – el paquete no contiene ningún canto.
 
 Los números de versión son 0.x.y: el programa sigue desarrollándose rápidamente.
+
+## 📱 Aplicación para el móvil (Android, iPhone) – novedad en 0.29
+
+**<https://ekolabynet.github.io/LiberCanticorum/>** – ábrela en Chrome y elige ⋮ → *Instalar aplicación*
+(en iPhone: Safari → Compartir → *Añadir a pantalla de inicio*). Funciona sin internet: cantos con búsqueda y filtros,
+letra grande, acordes con transposición, repertorios para la Misa con notas para los músicos y partituras a pantalla
+completa (pasar página tocando o con un pedal). La aplicación no incluye ningún canto: en el programa elige
+**Archivo → 📱 Exportar a la aplicación móvil** y luego **📥 Importar** en el móvil.
+Detalles: [mobile/README.md](mobile/README.md).
 
 ## Aspecto
 
@@ -114,7 +123,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.28.2.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.29.0.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
