@@ -1133,6 +1133,21 @@
   "E-dur / cis-moll": "",
   "H-dur / gis-moll": "",
   "Fis-dur / dis-moll": "",
-  "Cis-dur / ais-moll": ""
+  "Cis-dur / ais-moll": "",
+  "Antyfona na wejście": "Antífona de entrada",
+  "Kolekta": "Oración colecta",
+  "Pierwsze czytanie": "Primera lectura",
+  "Psalm responsoryjny": "Salmo responsorial",
+  "Drugie czytanie": "Segunda lectura",
+  "Sekwencja": "Secuencia",
+  "Aklamacja przed Ewangelią": "Aclamación antes del Evangelio",
+  "Ewangelia": "Evangelio",
+  "Modlitwa nad darami": "Oración sobre las ofrendas",
+  "Prefacja": "Prefacio",
+  "Antyfona na Komunię": "Antífona de comunión",
+  "Modlitwa po Komunii": "Oración después de la comunión",
+  "Czytania w Twoim języku:": "Lecturas en tu idioma:",
+  "Vatican News – {a}": "Vatican News – {a}",
+  "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "Lecturas: <a href='{a}'>{b}</a> (Vatican News, «Palabra del día»). El programa solo las muestra y las guarda en tu base para que funcionen sin conexión."
  }
 }

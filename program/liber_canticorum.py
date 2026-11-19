@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.26.0"
+VERSION = "0.27.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -3394,7 +3394,7 @@ class MainWindow(QMainWindow):
         from PySide6.QtCore import QDate, QTime
         from PySide6.QtCore import QLocale
         self.m_date = QDateEdit(QDate.currentDate())
-        self.m_date.setLocale(QLocale(QLocale.Polish, QLocale.Poland))
+        self.m_date.setLocale(QLocale(QLocale.Polish, QLocale.Poland) if __import__('modul_i18n').LANG == 'pl' else QLocale())
         self.m_date.setCalendarPopup(True)
         self.m_date.setDisplayFormat("ddd d.MM.yyyy")
         self.m_time = QTimeEdit(QTime(10, 0))

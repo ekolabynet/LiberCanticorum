@@ -117,6 +117,22 @@ _STOP_RE = re.compile(r"^(homilie|polecamy|rozwa[żz]ania|je[żz]eli chcesz|czyt
                       r"liturgia godzin|czytania liturgiczne pochodz)", re.I)
 _REF_RE = re.compile(r"^\(?\s*(por\.\s*)?[1-3]?\s?[A-ZŁŚŻ][a-ząćęłńóśźż]{0,5}\.?\s*\d+\s*(\(\d+\))?\s*[,:]\s*\d")
 
+def self_lang():
+    try:
+        import modul_i18n
+        return modul_i18n.LANG
+    except Exception:
+        return 'pl'
+
+
+def _tr(t):
+    try:
+        import modul_i18n
+        return modul_i18n.tr(t)
+    except Exception:
+        return t
+
+
 UA = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 "
                     "LiberCanticorum/0.15.1", 'Accept-Language': "pl,en;q=0.8"}
 
@@ -253,6 +269,94 @@ def fetch(date, source='gregorianski', timeout=20):
     if not secs:
         raise RuntimeError("Nie znalazłem tekstów liturgii na stronie (zmienił się jej układ?).")
     return {'zrodlo': source, 'url': url, 'data': d, 'sekcje': secs, 'meta': meta}
+
+
+# ---------------------------------------------------------------------
+# czytania w innych językach – Vatican News („Słowo na dziś”) i krajowe mszaliki
+# ---------------------------------------------------------------------
+VN_SLUGS = {'en': ["word-of-the-day"], 'es': ["evangelio-de-hoy"], 'fr': ["evangile-du-jour"],
+            'pt': ["palavra-do-dia"], 'it': ["vangelo-del-giorno", "parola-del-giorno"],
+            'de': ["tagesevangelium", "wort-des-tages"]}
+VN_LANGS = {'en', 'it', 'fr', 'de', 'es', 'pt', 'pl', 'ar', 'cs', 'hr', 'hu', 'lt', 'ro', 'sk', 'sv', 'uk', 'ml',
+            'vi', 'ja', 'ko', 'zh', 'sw'}            # języki serwisu vaticannews.va (strony główne)
+# krajowe mszaliki z czytaniami na dany dzień (otwierane w przeglądarce)
+NATIONAL = {
+    'en': [("USCCB – Daily Readings", lambda d: f"https://bible.usccb.org/bible/readings/{d:%m%d%y}.cfm"),
+           ("Universalis", lambda d: f"https://universalis.com/{d:%Y%m%d}/mass.htm")],
+    'fr': [("AELF – messe du jour", lambda d: f"https://www.aelf.org/{d:%Y-%m-%d}/romain/messe")],
+    'de': [("Schott – Erzabtei Beuron", lambda d: f"https://www.erzabtei-beuron.de/schott/schott_anz/index.html?datum={d:%Y-%m-%d}")],
+    'it': [("Liturgia del giorno – CEI", lambda d: f"https://www.chiesacattolica.it/liturgia-del-giorno/?data-liturgia={d:%Y%m%d}")],
+    'es': [("Evangelio del día – Dominicos", lambda d: "https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/")],
+    'la': [("Missale Meum (1962)", lambda d: f"https://missale.bieda.it/en/calendar/{d:%Y-%m-%d}")],
+}
+_VN_READ = re.compile(r"(?i)^(reading of the day|first reading|lectura del d[ií]a|primera lectura|lecture du jour|"
+                      r"premi[eè]re lecture|leitura do dia|primeira leitura|lettura del giorno|prima lettura|"
+                      r"lesung( des tages)?|erste lesung)\s*$")
+_VN_GOSP = re.compile(r"(?i)^(gospel of the day|evangelio del d[ií]a|[ée]vangile du jour|evangelho do dia|"
+                      r"vangelo del giorno|evangelium( des tages| vom tag)?)\s*$")
+_VN_STOP = re.compile(r"(?i)^(the words of the popes|las palabras de los papas|les paroles des papes|"
+                      r"as palavras dos papas|le parole dei papi|die worte der p[äa]pste|excerpts from the lectionary)")
+
+
+def vatican_url(date, lang, slug):
+    return f"https://www.vaticannews.va/{lang}/{slug}/{date:%Y/%m/%d}.html"
+
+
+def fetch_vatican(date, lang='en', timeout=20):
+    """Czytania dnia z Vatican News w danym języku (czytanie i Ewangelia); gdy w tym języku brak strony – po angielsku.
+    → {'zrodlo': 'vatican', 'url', 'data', 'sekcje', 'meta', 'jezyk'}"""
+    tries = [(lang, sl) for sl in VN_SLUGS.get(lang, [])]
+    if lang != 'en':
+        tries.append(('en', "word-of-the-day"))
+    errors = []
+    for lg, slug in tries:
+        url = vatican_url(date, lg, slug)
+        try:
+            req = urllib.request.Request(url, headers=dict(UA, **{'Accept-Language': f"{lg},en;q=0.8"}))
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw = r.read().decode(r.headers.get_content_charset() or 'utf-8', errors='replace')
+        except Exception as e:
+            errors.append(f"{url}: {e}")
+            continue
+        lines = html_lines(raw)
+        secs, cur, buf, meta = {}, None, [], {}
+
+        def close():
+            if cur and buf and cur not in secs:
+                body = list(buf)
+                sig = ""
+                # nagłówek księgi i sigla: „A reading from …” / „17:1-6”
+                head = body[0] if body else ""
+                for i, l in enumerate(body[:3]):
+                    if re.match(r"^\(?[\d][\d,:.\-–a-z ]{1,30}\)?$", l.strip()):
+                        sig = l.strip(" ()")
+                        del body[i]
+                        break
+                secs[cur] = {'naglowek': SECTION_NAMES[cur], 'sigla': sig, 'tekst': "\n".join(body).strip(),
+                             'tytul': head}
+        for i, l in enumerate(lines):
+            if re.match(r"(?i)^(date|data|fecha|datum)\s*\d", l) and i + 1 < len(lines):
+                meta.setdefault('dzien', lines[i + 1].strip())
+            if _VN_STOP.match(l):
+                close()
+                cur, buf = None, []
+                continue
+            if _VN_READ.match(l):
+                close()
+                cur, buf = ('czyt1' if 'czyt1' not in secs else 'czyt2'), []
+                continue
+            if _VN_GOSP.match(l):
+                close()
+                cur, buf = 'ewangelia', []
+                continue
+            if cur:
+                buf.append(l)
+        close()
+        if secs:
+            return {'zrodlo': 'vatican', 'url': url, 'data': date.isoformat(), 'sekcje': secs, 'meta': meta,
+                    'jezyk': lg}
+        errors.append(f"{url}: brak czytań na stronie")
+    raise RuntimeError("Vatican News: " + "; ".join(errors[-3:]))
 
 
 def fetch_any(date, order=('gregorianski', 'niezbednik', 'opoka')):
@@ -485,7 +589,7 @@ class LiturgyDialog(QDialog):
         self.dedit = QDateEdit(QDate(date.year, date.month, date.day))
         self.dedit.setCalendarPopup(True)
         self.dedit.setDisplayFormat("dddd, d MMMM yyyy")
-        self.dedit.setLocale(QLocale(QLocale.Polish, QLocale.Poland))
+        self.dedit.setLocale(QLocale(QLocale.Polish, QLocale.Poland) if self_lang() == 'pl' else QLocale())
         self.dedit.setToolTip("Wybierz dzień z kalendarza albo zmień dzień, miesiąc i rok strzałkami / kółkiem myszy")
         self.dedit.setStyleSheet("font-size: 13pt; padding: 3px;")
         self.dedit.dateChanged.connect(lambda q: self.set_date(q.toPython()))
@@ -510,6 +614,13 @@ class LiturgyDialog(QDialog):
         top.addWidget(self.head, 1)
         top.addWidget(QLabel("Źródło:"))
         self.src = QComboBox()
+        try:
+            import modul_i18n
+            self.lang = modul_i18n.LANG
+        except Exception:
+            self.lang = 'pl'
+        if self.lang not in ('pl', 'la'):                 # czytania w języku interfejsu – Vatican News
+            self.src.addItem(f"Vatican News – {self.lang.upper()}", 'vatican')
         self.src.addItem("Automatycznie (najpierw pełny mszalik)", 'auto')
         for k, (name, _) in SOURCES.items():
             self.src.addItem(name, k)
@@ -526,6 +637,21 @@ class LiturgyDialog(QDialog):
             latin = modul_i18n.LANG == 'la'
         except Exception:
             latin = False
+        if self.lang not in ('pl', 'la'):                 # krajowe mszaliki i Vatican News w przeglądarce
+            nat = QHBoxLayout()
+            nat.addWidget(QLabel("Czytania w Twoim języku:"))
+            links = list(NATIONAL.get(self.lang, []))
+            vl = self.lang if self.lang in VN_LANGS else 'en'
+            if VN_SLUGS.get(vl):
+                links.append(("Vatican News", lambda d, vl=vl: vatican_url(d, vl, VN_SLUGS[vl][0])))
+            else:
+                links.append(("Vatican News", lambda d, vl=vl: f"https://www.vaticannews.va/{vl}.html"))
+            for txt, fn in links:
+                b = QPushButton("🌐 " + txt)
+                b.clicked.connect(lambda _=False, fn=fn: QDesktopServices.openUrl(QUrl(fn(self.date))))
+                nat.addWidget(b)
+            nat.addStretch(1)
+            lay.addLayout(nat)
         if latin:                                           # po łacinie: liturgia tradycyjna (Mszał 1962)
             trad = QHBoxLayout()
             lab = QLabel("<b>Missale Romanum 1962</b> – usus antiquior:")
@@ -571,22 +697,22 @@ class LiturgyDialog(QDialog):
         rl.addLayout(frow)
         srow = QHBoxLayout()
         srow.addWidget(QLabel("Źródło:"))
-        self.src = QComboBox()
-        self.src.setProperty("i18n_no", True)
-        self.src.setToolTip("Tylko pieśni z wybranego śpiewnika / zbioru")
+        self.song_src = QComboBox()
+        self.song_src.setProperty("i18n_no", True)
+        self.song_src.setToolTip("Tylko pieśni z wybranego śpiewnika / zbioru")
         from modul_i18n import tr as _t
-        self.src.addItem(_t("Wszystkie źródła"), None)
+        self.song_src.addItem(_t("Wszystkie źródła"), None)
         try:
             for name, n in db.sources():
-                self.src.addItem(f"{name or _t('(bez źródła)')}  ({n})", name)
+                self.song_src.addItem(f"{name or _t('(bez źródła)')}  ({n})", name)
         except Exception:
             pass
         keep = self.qs.value("lit_source", None)
-        k = self.src.findData(keep) if keep is not None else 0
-        self.src.setCurrentIndex(max(0, k))
-        self.src.currentIndexChanged.connect(lambda _: (self.qs.setValue("lit_source", self.src.currentData()),
+        k = self.song_src.findData(keep) if keep is not None else 0
+        self.song_src.setCurrentIndex(max(0, k))
+        self.song_src.currentIndexChanged.connect(lambda _: (self.qs.setValue("lit_source", self.song_src.currentData()),
                                                         self.suggest()))
-        srow.addWidget(self.src, 1)
+        srow.addWidget(self.song_src, 1)
         rl.addLayout(srow)
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Pieśń", "Pasuje do", "Nawiązania (słowa i frazy z liturgii)", "Źródło"])
@@ -617,11 +743,18 @@ class LiturgyDialog(QDialog):
         self.foot.setStyleSheet("color: gray;")
         lay.addWidget(self.foot)
         self._done.connect(self._fetched)
-        cached = db.get_liturgy(date.isoformat())
+        if self.lang not in ('pl', 'la'):
+            self.src.setCurrentIndex(0)                       # Vatican News w języku interfejsu
+        cached = db.get_liturgy(self._key(date))
         if cached:
             self.show_lit(cached)
         else:
             self.fetch()
+
+    def _key(self, day, lit=None):
+        """Klucz pamięci podręcznej: polska liturgia – sama data; Vatican News – data@język."""
+        vat = (lit.get('zrodlo') == 'vatican') if lit is not None else self.src.currentData() == 'vatican'
+        return day.isoformat() + (f"@{self.lang}" if vat else "")
 
     def fetch(self):
         import threading
@@ -633,7 +766,8 @@ class LiturgyDialog(QDialog):
 
         def run():
             try:
-                lit = fetch_any(day) if src == 'auto' else fetch(day, src)
+                lit = (fetch_vatican(day, self.lang) if src == 'vatican' else
+                       fetch_any(day) if src == 'auto' else fetch(day, src))
                 self._done.emit((day, lit), "")
             except Exception as e:
                 self._done.emit((day, None), str(e))
@@ -642,7 +776,7 @@ class LiturgyDialog(QDialog):
     def _fetched(self, res, err):
         day, lit = res
         if lit is not None:
-            self.db.set_liturgy(day.isoformat(), lit)       # zapamiętaj także, gdy w międzyczasie wybrano inny dzień
+            self.db.set_liturgy(self._key(day, lit), lit)       # zapamiętaj także, gdy w międzyczasie wybrano inny dzień
         if day != self.date:
             return
         self.b_fetch.setEnabled(True)
@@ -666,7 +800,7 @@ class LiturgyDialog(QDialog):
             s = lit.get('sekcje', {}).get(k)
             if not s:
                 continue
-            parts.append(f"<h3>{name}" + (f" <i>({html.escape(s['sigla'])})</i>" if s.get('sigla') else "") + "</h3>")
+            parts.append(f"<h3>{_tr(name)}" + (f" <i>({html.escape(s['sigla'])})</i>" if s.get('sigla') else "") + "</h3>")
             if s.get('refren') and k == 'psalm':
                 parts.append(f"<p><b>Refren: {html.escape(s['refren'])}</b></p>")
             body = html.escape(s['tekst']).replace("\n", "<br>")
@@ -675,15 +809,20 @@ class LiturgyDialog(QDialog):
         if meta.get('dzien'):
             self.head.setText(self.head.text().split(" • ")[0] + " • " + html.escape(meta['dzien']))
         src = lit.get('url', '')
-        self.foot.setText(f"Teksty liturgiczne: <a href='{src}'>{html.escape(src)}</a> (Lekcjonarz mszalny i Mszał rzymski "
-                          "– Pallottinum/KEP). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.")
+        if lit.get('zrodlo') == 'vatican':
+            self.foot.setText(_tr("Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je "
+                                  "wyświetla i pamięta w Twojej bazie, aby działały bez internetu.").replace(
+                "{a}", src).replace("{b}", html.escape(src)))
+        else:
+            self.foot.setText(f"Teksty liturgiczne: <a href='{src}'>{html.escape(src)}</a> (Lekcjonarz mszalny i Mszał rzymski "
+                              "– Pallottinum/KEP). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.")
         self.suggest()
 
     def suggest(self, *_):
         self.tree.clear()
         if not self.lit:
             return
-        src = self.src.currentData()
+        src = self.song_src.currentData()
         songs = [s for s in self.songs_fn() if s and (src is None or (s.get('spiewnik') or '') == src)]
         srcmap = {s.get('id'): s.get('spiewnik', '') for s in songs}
         res = suggest(self.lit, songs, self.okres, limit=80 if self.only.isChecked() else 30,
@@ -693,7 +832,7 @@ class LiturgyDialog(QDialog):
             res = [r for r in res if r['score'] >= top * 0.15]
         for r in res:
             fr = "; ".join(f"„{f}” ({SECTION_NAMES.get(k, k).lower()})" for k, f in r['frazy'])
-            it = QTreeWidgetItem([("★ " if r['okres'] else "") + r['title'], ", ".join(r['parts']), fr or "—",
+            it = QTreeWidgetItem([("★ " if r['okres'] else "") + r['title'], ", ".join(_tr(x) for x in r['parts']), fr or "—",
                                   srcmap.get(r['id']) or ""])
             it.setData(0, Qt.UserRole, r['id'])
             it.setData(1, Qt.UserRole, r['parts'])
@@ -724,7 +863,7 @@ class LiturgyDialog(QDialog):
         self.head.setText(f"<b>{d.strftime('%d.%m.%Y')}</b> – {info['opis']}")
         self.lit = None
         self.tree.clear()
-        cached = self.db.get_liturgy(d.isoformat())
+        cached = self.db.get_liturgy(self._key(d))
         if cached:
             self.show_lit(cached)
         else:
@@ -743,5 +882,10 @@ class LiturgyDialog(QDialog):
 
     def open_web(self):
         src = self.src.currentData()
-        url = (self.lit or {}).get('url') or SOURCES['gregorianski' if src == 'auto' else src][1].format(d=self.date.isoformat())
+        if src == 'vatican' and not (self.lit or {}).get('url'):
+            vl = self.lang if self.lang in VN_SLUGS else 'en'
+            QDesktopServices.openUrl(QUrl(vatican_url(self.date, vl, VN_SLUGS[vl][0])))
+            return
+        url = (self.lit or {}).get('url') or SOURCES['gregorianski' if src in ('auto', 'vatican') else src][1].format(
+            d=self.date.isoformat())
         QDesktopServices.openUrl(QUrl(url))

@@ -219,6 +219,11 @@ def install(app):
     from PySide6.QtCore import QObject, QEvent, QTimer, Qt
     if is_rtl():
         app.setLayoutDirection(Qt.RightToLeft)
+    try:                                     # daty, dni tygodnia i liczby w języku interfejsu
+        from PySide6.QtCore import QLocale
+        QLocale.setDefault(QLocale({'nb': "nb_NO", 'tl': "fil"}.get(LANG, LANG)))
+    except Exception:
+        pass
 
     class _Filter(QObject):
         def eventFilter(self, obj, ev):

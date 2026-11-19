@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.26.0
+# Liber Canticorum 0.27.0
 *a free songbook for communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -62,6 +62,12 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 
 ## New features step by step
 
+**New in 0.27 – readings in other languages.** When the interface is not Polish, “Today's liturgy” fetches the
+reading and Gospel of the day from **Vatican News** (“Word of the day”) in the interface language (English, Spanish,
+French, Portuguese, and Italian and German if the page responds; otherwise English) and suggests songs from them.
+Buttons open national missals: USCCB and Universalis (EN), AELF (FR), Schott – Beuron (DE), CEI (IT), Dominicos (ES);
+in Latin – the 1962 Missal. Dates are shown in the interface language.
+
 **New in 0.26.** A **source manager** (File → “📚 Source manager…”, the “Tidy up” tile, the ⚙ button next to the
 source list) – rename, merge similar sources, add, delete; set the source of one or many selected songs with
 “📚 Source for selected…”. Slide design shows **verses per slide** and **background image** at the top. The whole
@@ -107,7 +113,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.26.0.zip` and run:
+Unpack `LiberCanticorum_0.27.0.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

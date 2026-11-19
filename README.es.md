@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.26.0
+# Liber Canticorum 0.27.0
 *un cancionero libre para las comunidades*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -62,6 +62,11 @@ Las listas se filtran por **categoría**, **fuente (cancionero)** y búsqueda. C
 
 ## Novedades paso a paso
 
+**Novedad en 0.27 – lecturas en otros idiomas.** Si la interfaz no está en polaco, la «Liturgia del día» descarga
+la lectura y el Evangelio del día de **Vatican News** («Palabra del día») en el idioma de la interfaz y propone cantos a
+partir de ellos. Hay botones para misales nacionales: Dominicos (ES), USCCB (EN), AELF (FR), Schott (DE), CEI (IT);
+en latín – el misal de 1962.
+
 **Novedades en 0.26.** Un **gestor de fuentes** (Archivo → «📚 Gestor de fuentes…», mosaico «Ordenar», botón ⚙
 junto a la lista de fuentes) – renombrar, fusionar, añadir, eliminar; fuente de uno o varios cantos seleccionados
 con «📚 Fuente…». En el aspecto de las diapositivas, **estrofas por diapositiva** e **imagen de fondo** están arriba.
@@ -107,7 +112,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.26.0.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.27.0.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

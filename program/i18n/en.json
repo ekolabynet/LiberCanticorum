@@ -1133,6 +1133,21 @@
   "E-dur / cis-moll": "E major / C♯ minor",
   "H-dur / gis-moll": "B major / G♯ minor",
   "Fis-dur / dis-moll": "F♯ major / D♯ minor",
-  "Cis-dur / ais-moll": "C♯ major / A♯ minor"
+  "Cis-dur / ais-moll": "C♯ major / A♯ minor",
+  "Antyfona na wejście": "Entrance Antiphon",
+  "Kolekta": "Collect",
+  "Pierwsze czytanie": "First Reading",
+  "Psalm responsoryjny": "Responsorial Psalm",
+  "Drugie czytanie": "Second Reading",
+  "Sekwencja": "Sequence",
+  "Aklamacja przed Ewangelią": "Gospel Acclamation",
+  "Ewangelia": "Gospel",
+  "Modlitwa nad darami": "Prayer over the Offerings",
+  "Prefacja": "Preface",
+  "Antyfona na Komunię": "Communion Antiphon",
+  "Modlitwa po Komunii": "Prayer after Communion",
+  "Czytania w Twoim języku:": "Readings in your language:",
+  "Vatican News – {a}": "Vatican News – {a}",
+  "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "Readings: <a href='{a}'>{b}</a> (Vatican News, “Word of the day”). The program only displays them and keeps them in your database so that they work offline."
  }
 }
