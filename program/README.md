@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.14.0
+# Liber Canticorum 0.14.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -18,13 +18,13 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 - **Start** – kafle najważniejszych funkcji: Teksty, Slajdy i pokaz, Nuty, Zestaw na Mszę, Nowa pieśń,
   Import śpiewnika lub pliku, Akordy, Pilot w telefonie, Zaawansowane.
-- **Teksty** – przeglądanie słów: wyszukiwanie po tytule i słowach, duże litery (A− / A+), akordy jednym przyciskiem.
+- **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+), akordy jednym przyciskiem.
 - **Slajdy** – wybierz pieśń, zobacz slajdy i pokaż je na rzutniku jednym przyciskiem; także pokaz całego zestawu.
 - **Nuty** – nuty pieśni do przewijania i powiększania, odsłuch, „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”.
 - **Zaawansowane** – pełny edytor jak dotąd: wygląd slajdów, załączniki, wersje, akordy, zestaw, eksport.
 
 We wszystkich prostych widokach lista pieśni może pokazywać wszystkie pieśni albo tylko pieśni z bieżącego zestawu.
-Wygląd: jasny pergamin bez ozdobników, monogram „C” w rogu (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
+Wygląd: jasny pergamin bez ozdobników, w rogu inicjał „C” z kancjonału (logo programu) (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 Program pamięta ostatnio otwartą zakładkę.
 
 ## Instalacja i uruchomienie
@@ -32,7 +32,7 @@ Program pamięta ostatnio otwartą zakładkę.
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.14.0/
+LiberCanticorum_0.14.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

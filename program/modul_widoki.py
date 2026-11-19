@@ -72,19 +72,42 @@ def serif_font(px, bold=False):
     return f
 
 
+def logo_path(size=512):
+    import os
+    here = os.path.dirname(os.path.abspath(__file__))
+    for s in (size, 512, 256, 128):
+        p = os.path.join(here, "ikony", f"liber_canticorum_{s}.png")
+        if os.path.exists(p):
+            return p
+    return ""
+
+
 class Monogram(QLabel):
-    """Litera „C” – monogram programu (bez ozdobników)."""
+    """Monogram programu: inicjałowe „C” z kancjonału (logo Liber Canticorum)."""
 
     def __init__(self, size=30, parent=None):
-        super().__init__("C", parent)
-        self.setFont(serif_font(size, True))
-        self.setStyleSheet(f"color: {GOLD}; background: transparent; padding: 0 10px;")
+        super().__init__(parent)
+        path = logo_path(512 if size > 64 else 128)
+        pm = QPixmap(path) if path else QPixmap()
+        if pm.isNull():                                    # brak pliku – sama litera
+            self.setText("C")
+            self.setFont(serif_font(size, True))
+            self.setStyleSheet(f"color: {GOLD}; background: transparent; padding: 0 10px;")
+        else:
+            dpr = self.devicePixelRatioF() if hasattr(self, 'devicePixelRatioF') else 1.0
+            pm = pm.scaled(int(size * dpr), int(size * dpr), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pm.setDevicePixelRatio(dpr)
+            self.setPixmap(pm)
+            self.setStyleSheet("background: transparent; padding: 2px 8px;")
         self.setToolTip("Liber Canticorum")
         self.setAlignment(Qt.AlignCenter)
 
 
 def monogram_icon(size=256):
-    """Ikona okna: złote „C” na pergaminie."""
+    """Ikona okna: logo programu (inicjał „C” z kancjonału)."""
+    path = logo_path(size)
+    if path:
+        return QIcon(path)
     pm = QPixmap(size, size)
     pm.fill(QColor(PARCHMENT))
     p = QPainter(pm)
@@ -147,7 +170,7 @@ class HomePage(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(36, 24, 36, 20)
         head = QHBoxLayout()
-        head.addWidget(Monogram(64))
+        head.addWidget(Monogram(84))
         tl = QVBoxLayout()
         t = QLabel("Liber Canticorum")
         t.setObjectName("homeTitle")
@@ -185,6 +208,10 @@ class SongPicker(QWidget):
         self.mode.addItems(["Wszystkie pieśni", "Pieśni z bieżącego zestawu"])
         self.mode.currentIndexChanged.connect(self.refresh)
         lay.addWidget(self.mode)
+        self.cat = QComboBox()
+        self.cat.setToolTip("Kategoria pieśni")
+        self.cat.currentIndexChanged.connect(self.refresh)
+        lay.addWidget(self.cat)
         self.q = QLineEdit()
         self.q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
         self.q.setClearButtonEnabled(True)
@@ -198,7 +225,21 @@ class SongPicker(QWidget):
         self.count.setStyleSheet(f"color: {MUTED};")
         lay.addWidget(self.count)
 
+    def fill_categories(self):
+        keep = self.cat.currentData()
+        self.cat.blockSignals(True)
+        self.cat.clear()
+        self.cat.addItem("Wszystkie kategorie", None)
+        for name, n in self.db.categories():
+            self.cat.addItem(f"{name or '(bez kategorii)'}  ({n})", name)
+        k = self.cat.findData(keep)
+        self.cat.setCurrentIndex(k if k >= 0 else 0)
+        self.cat.blockSignals(False)
+
     def refresh(self, *_):
+        if self.cat.count() == 0 or not _:
+            self.fill_categories()
+        cat = self.cat.currentData()
         cur = self.current()
         self.list.blockSignals(True)
         self.list.clear()
@@ -206,10 +247,11 @@ class SongPicker(QWidget):
             rows = []
             for label, sid in self.set_ids():
                 s = self.db.get(sid)
-                if s and (not self.q.text().strip() or self.q.text().lower() in (s['title'] + s['zwrotki_raw']).lower()):
+                if s and (not self.q.text().strip() or self.q.text().lower() in (s['title'] + s['zwrotki_raw']).lower()) \
+                        and (cat is None or (s.get('kategoria') or '') == cat):
                     rows.append((sid, f"{label}: {s['title']}" if label else s['title']))
         else:
-            rows = [(r['id'], r['title']) for r in self.db.search(self.q.text())]
+            rows = [(r['id'], r['title']) for r in self.db.search(self.q.text(), category=cat)]
         for sid, title in rows:
             it = QListWidgetItem(title)
             it.setData(Qt.UserRole, sid)
