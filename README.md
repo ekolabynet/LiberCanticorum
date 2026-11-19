@@ -126,7 +126,7 @@ CEI (IT), Dominicos (ES). **Po łacinie** okno pokazuje wprost *Proprium Missae*
 Lectio, Graduale, Evangelium, Offertorium, Secreta, Communio, Postcommunio – po łacinie, z Missale Meum) i według niego
 proponuje pieśni. Daty wyświetlają się w języku interfejsu.
 
-**Strony z czytaniami (0.28.0).** W oknie „Liturgia z dnia” przycisk „📋 Strony z czytaniami – wybierz…” otwiera
+**Strony z czytaniami (0.27.2).** W oknie „Liturgia z dnia” przycisk „📋 Strony z czytaniami – wybierz…” otwiera
 listę stron z czytaniami na wybrany dzień: Vatican News we wszystkich językach serwisu (strony „Słowo na dziś”
 po angielsku, włosku, francusku, niemiecku, hiszpańsku i portugalsku – wprost na ten dzień, pozostałe – strona
 główna języka), krajowe mszaliki, polskie mszaliki, Ordo 1962. Można dopisać **własny adres** z datą w adresie

@@ -76,7 +76,7 @@ in **Latin** the window shows the *Proprium Missae* of the 1962 Missal directly 
 Evangelium, Offertorium, Secreta, Communio, Postcommunio – in Latin, from Missale Meum) and suggests songs from it.
 Dates are shown in the interface language.
 
-**Pages with readings (0.28.0).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
+**Pages with readings (0.27.2).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
 pages with the readings of the chosen day: Vatican News in all its languages (the “Word of the day” pages in English,
 Italian, French, German, Spanish and Portuguese open directly on that day; the others open the language's home page),
 national missals, Polish missals, the 1962 Ordo. You can add **your own address** with the date in it
