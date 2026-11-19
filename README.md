@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.19.0
+# Liber Canticorum 0.19.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -131,7 +131,9 @@ w kolorach głosów – dobre do nauki partii i do szukania dźwięków na organ
 znakami i symbolami akordów (G → A, D7 → E7); powrót do 0 pokazuje oryginał od razu. Działa dla plików MuseScore
 i MusicXML (także z edytora melodii).
 **Okno odtwarzacza otwiera się na pełnym ekranie** (od 0.18): widać nuty, pasek odtwarzania, słowa i klawiaturę.
-Tempo, transpozycja, „Ćwicz głos”, brzmienie, podkład organowy, SoundFont i lista głosów są pod przyciskiem
+Na pasku odtwarzania jest zawsze **tempo w ćwierćnutach na minutę** („Tempo ♩ = 72 /min”, jak w nutach);
+strzałkami albo kółkiem myszy zwolnisz lub przyspieszysz, ↺ wraca do tempa z nut.
+Transpozycja, „Ćwicz głos”, tempo w %, brzmienie, podkład organowy, SoundFont i lista głosów są pod przyciskiem
 **„⚙ Więcej ustawień”**. „⛶ Pełny ekran” / F11 / Esc przełącza pełny ekran (program pamięta wybór).
 **Nazwy głosów:** przycisk ✎ przy głosie (w „Więcej ustawień”) zmienia jego nazwę, np. „Soprano (kanał 1)” →
 „Melodia”; program pamięta nazwy dla tego pliku, a pusta nazwa przywraca nazwę z pliku.
@@ -145,7 +147,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.19.0/
+LiberCanticorum_0.19.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

@@ -1557,6 +1557,26 @@ def _chord_channels(groups):
     return out
 
 
+def midi_bpm(data):
+    """Tempo z pliku MIDI w ćwierćnutach na minutę: (początkowe, czy zmienia się w utworze)."""
+    try:
+        mido = _need('mido')
+        mid = mido.MidiFile(file=io.BytesIO(data))
+        tempos = []
+        for tr in mid.tracks:
+            tick = 0
+            for msg in tr:
+                tick += msg.time
+                if msg.type == 'set_tempo':
+                    tempos.append((tick, msg.tempo))
+        tempos.sort()
+        if not tempos:
+            return 120.0, False
+        return 60_000_000 / tempos[0][1], len({t for _, t in tempos}) > 1
+    except Exception:
+        return 120.0, False
+
+
 def midi_timing(data):
     """Mapa tempa i chwile wejścia nut z pliku MIDI: (tpb, [(tick, us/ćwierćnutę)], ticki wejść, ms wejść)."""
     mido = _need('mido')
@@ -2120,6 +2140,7 @@ class MidiPlayerDialog(QDialog):
         self.split.toggled.connect(self.rebuild_voices)
         self.tempo = QSpinBox(minimum=25, maximum=200, value=100, suffix=" %", singleStep=5)
         self.tempo.valueChanged.connect(self.params_changed)
+        self.tempo.valueChanged.connect(self._pct_changed)
         self.transpose = QSpinBox(minimum=-12, maximum=12, value=0, suffix=" półt.")
         self.transpose.valueChanged.connect(self.params_changed)
         self.practice = QComboBox()
@@ -2524,6 +2545,22 @@ class MidiPlayerDialog(QDialog):
         self.b_play.setFont(f)
         btn("⏹", "Zatrzymaj i wróć na początek", lambda: (self.stop(), self.seek_to(0)), 40)
         btn("⏩", "5 sekund do przodu (→)", lambda: self.seek_to(self.current_pos() + 5), 40)
+        # tempo zawsze pod ręką: ćwierćnuty na minutę (♩ = …), połączone z tempem w % w „Więcej ustawień”
+        self.base_bpm, varying = midi_bpm(self.data_bytes) if self.data_bytes else (120.0, False)
+        bar.addWidget(QLabel("  Tempo ♩ ="))
+        self.bpm = QSpinBox(minimum=max(10, int(self.base_bpm * 0.25 + 0.5)), maximum=int(self.base_bpm * 2 + 0.5),
+                            value=int(round(self.base_bpm)), suffix=" /min", singleStep=2)
+        self.bpm.setToolTip(f"Ćwierćnut na minutę. W nutach: ♩ = {round(self.base_bpm)}"
+                            + (" (tempo zmienia się w utworze – to tempo początkowe)" if varying else "")
+                            + ".\nStrzałki / kółko myszy zmieniają tempo; dźwięk przeliczy się sam.")
+        self.bpm.setKeyboardTracking(False)
+        self.bpm.valueChanged.connect(self._bpm_changed)
+        bar.addWidget(self.bpm)
+        b_orig = QPushButton("↺")
+        b_orig.setFixedWidth(30)
+        b_orig.setToolTip("Tempo z nut")
+        b_orig.clicked.connect(lambda: self.bpm.setValue(int(round(self.base_bpm))))
+        bar.addWidget(b_orig)
         self.pos_slider = QSlider(Qt.Horizontal)
         self.pos_slider.setRange(0, 1000)
         self.pos_slider.setToolTip("Przesuń, aby przejść w inne miejsce utworu")
@@ -2542,6 +2579,20 @@ class MidiPlayerDialog(QDialog):
         if self.buf is not None and not self.dirty:
             return len(self.buf) / self.sr
         return self.length / max(0.01, self.tempo.value() / 100)
+
+    def _bpm_changed(self, v):
+        pct = max(25, min(200, int(round(v / self.base_bpm * 100))))
+        if pct != self.tempo.value():
+            self.tempo.setValue(pct)                       # przelicza dźwięk (params_changed)
+
+    def _pct_changed(self, pct):
+        if not hasattr(self, 'bpm'):
+            return
+        v = int(round(self.base_bpm * pct / 100))
+        if abs(v - self.bpm.value()) > max(1, self.base_bpm * 0.006):
+            self.bpm.blockSignals(True)
+            self.bpm.setValue(v)
+            self.bpm.blockSignals(False)
 
     def set_settings_visible(self, on):
         """Ustawienia (tempo, transpozycja, brzmienia, głosy) – pokazane albo schowane pod „Więcej ustawień”."""
