@@ -30,7 +30,7 @@ Les numéros de version sont 0.x.y : le programme évolue encore rapidement.
 
 ## Langues
 
-L'interface existe en **27 langues** : polonais, anglais, français, espagnol, allemand, ukrainien, tchèque,
+L'interface existe en **26 langues** : polonais, anglais, français, espagnol, allemand, ukrainien, tchèque,
 italien, portugais, swahili, japonais, chinois, vietnamien, norvégien, suédois, islandais, croate, arabe (de droite
 à gauche), lituanien, filipino (tagalog), slovaque,
 hongrois, roumain, coréen, malayalam et **latin** (pour les amis de la tradition – sans la tuile guitare :-) ). Bouton **🌐** sur l'écran d'accueil ou **Paramètres → Langue**

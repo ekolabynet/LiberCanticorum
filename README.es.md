@@ -30,7 +30,7 @@ Los números de versión son 0.x.y: el programa sigue desarrollándose rápidame
 
 ## Idiomas
 
-La interfaz está en **27 idiomas**: polaco, inglés, francés, español, alemán, ucraniano, checo, italiano, portugués,
+La interfaz está en **26 idiomas**: polaco, inglés, francés, español, alemán, ucraniano, checo, italiano, portugués,
 suajili, japonés, chino, vietnamita, noruego, sueco, islandés, croata, árabe (de derecha a izquierda), lituano,
 filipino (tagalo), eslovaco, húngaro, rumano, coreano, malayalam y **latín** (para los amantes de la tradición – sin el mosaico de guitarra :-) ). Botón **🌐** en la pantalla de Inicio o **Configuración → Idioma** (tras reiniciar; por defecto,
 el idioma del sistema). Las letras y partituras de los cantos no se traducen.

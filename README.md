@@ -12,7 +12,7 @@
 > a melody editor, guitar chords, Mass sets and the liturgy of the day. It starts with an empty database – you add
 > the songs yourself. **Full description in English: [README.en.md](README.en.md).**
 >
-> **Interfejs programu / Program interface – 27 języków / languages:** Polski · English · Français · Español ·
+> **Interfejs programu / Program interface – 26 języków / languages:** Polski · English · Français · Español ·
 > Deutsch · Italiano · Português · Українська · Čeština · Slovenčina · Hrvatski · Magyar · Română · Lietuvių ·
 > Svenska · Norsk · Íslenska · Kiswahili · Filipino (Tagalog) · Tiếng Việt · 日本語 · 中文 · 한국어 · മലയാളം ·
 > العربية · Latina. Opis po francusku i hiszpańsku / description in French and Spanish:
@@ -49,7 +49,7 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 Opis po angielsku, francusku i hiszpańsku: [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md).
 
-Interfejs jest w **27 językach**: polskim, angielskim, francuskim, hiszpańskim, niemieckim, ukraińskim, czeskim,
+Interfejs jest w **26 językach**: polskim, angielskim, francuskim, hiszpańskim, niemieckim, ukraińskim, czeskim,
 włoskim, portugalskim, suahili, japońskim, chińskim, wietnamskim, norweskim, szwedzkim, islandzkim, chorwackim,
 arabskim (od prawej do lewej), litewskim, filipińskim (tagalskim), słowackim, węgierskim, rumuńskim,
 koreańskim, malajalam i **po łacinie** (dla miłośników tradycji – bez kafla gitarowego :-) ). Przycisk **🌐** w prawym górnym rogu ekranu

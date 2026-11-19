@@ -5,7 +5,7 @@
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
 
-> **Available in 27 languages.** The program interface can be switched (🌐 on the Home screen) to: Polski · English ·
+> **Available in 26 languages.** The program interface can be switched (🌐 on the Home screen) to: Polski · English ·
 > Français · Español · Deutsch · Italiano · Português · Українська · Čeština · Slovenčina · Hrvatski · Magyar ·
 > Română · Lietuvių · Svenska · Norsk · Íslenska · Kiswahili · Filipino (Tagalog) · Tiếng Việt · 日本語 · 中文 · 한국어 ·
 > മലയാളം · العربية · Latina. This description exists in Polish, English, French and Spanish; speakers of other
@@ -36,7 +36,7 @@ Version numbers are 0.x.y: the program is still developing quickly.
 
 ## Languages
 
-The interface is available in **27 languages**: Polish, English, French, Spanish, German, Ukrainian, Czech, Italian,
+The interface is available in **26 languages**: Polish, English, French, Spanish, German, Ukrainian, Czech, Italian,
 Portuguese, Swahili, Japanese, Chinese, Vietnamese, Norwegian, Swedish, Icelandic, Croatian, Arabic (right-to-left),
 Lithuanian, Filipino (Tagalog), Slovak,
 Hungarian, Romanian, Korean, Malayalam and **Latin** (for lovers of tradition – without the guitar tile :-) ). Use the **🌐** button on the Home screen or **Settings → Language** (applies after
