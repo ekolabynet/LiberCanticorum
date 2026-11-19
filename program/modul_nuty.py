@@ -2041,6 +2041,7 @@ class MidiPlayerDialog(QDialog):
     def render(self):
         if self.dirty or self.buf is None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.setEnabled(False)            # w trakcie przeliczania kliknięcia nie mogą zmieniać głosów ani pozycji
             try:
                 organ_instr = 'sf:0:19'
                 self.buf, self.sr = synthesize(self.voices, self.tempo.value() / 100, self.transpose.value(),
@@ -2049,6 +2050,7 @@ class MidiPlayerDialog(QDialog):
                                                progress=lambda d, t: (self.pos_lbl.setText(f"Przygotowuję dźwięk… {100 * d // t}%"),
                                                                       QApplication.processEvents()))
             finally:
+                self.setEnabled(True)
                 QApplication.restoreOverrideCursor()
             self.dirty = False
         return self.buf

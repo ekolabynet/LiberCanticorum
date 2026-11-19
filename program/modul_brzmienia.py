@@ -86,6 +86,72 @@ class SoundFont:
             self.presets[(bank, prog)] = (i, name.split(b'\0')[0].decode('latin-1', 'replace'))
         self._samples = {}
         self._regions = {}
+        self._onsets = {}
+        self._tunes = {}
+        self.tight = True                                   # wyrównuj wolne początki próbek
+        self.retune = True                                  # dostrój próbki dokładnie do wysokości nominalnej
+
+    def detune(self, sid, root=None):
+        """Odchyłka stroju próbki w centach (zmierzona w pętli); 0 gdy nie da się zmierzyć pewnie."""
+        if (sid, root) in self._tunes:
+            return self._tunes[(sid, root)]
+        data, rate, orig, corr, ls, le = self.sample(sid)
+        if root is not None:
+            orig = root
+        dev = 0.0
+        try:
+            f_exp = 440.0 * 2 ** ((orig - 69) / 12) / 2 ** (corr / 1200)      # częstotliwość nagrania przed korektą
+            if 0 < ls < le <= len(data) and le - ls > rate * 0.1 and 30 < f_exp < 2500:   # tylko dźwięki trwające (pętla)
+                devs = []
+                half = (le - ls) // 2
+                for a in (ls, ls + half):
+                    x = data[a:a + min(half, int(0.3 * rate))].astype(np.float64)
+                    x = x - x.mean()
+                    n = len(x)
+                    spec = np.fft.rfft(x, 2 * n)
+                    c = np.fft.irfft(spec * np.conj(spec))[:n]
+                    c /= (c[0] or 1)
+                    lag0 = rate / f_exp
+                    lo, hi = int(lag0 * 0.97), int(lag0 * 1.03) + 2      # tylko w pobliżu oczekiwanej wysokości
+                    if not (hi + 1 < n and lo > 2):
+                        break
+                    k = lo + int(np.argmax(c[lo:hi]))
+                    if c[k] < 0.85 or k in (lo, hi - 1):
+                        break
+                    y0, y1, y2 = c[k - 1], c[k], c[k + 1]
+                    d = 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2) if (y0 - 2 * y1 + y2) else 0
+                    devs.append(1200 * np.log2((rate / (k + d)) / f_exp))
+                if len(devs) == 2 and abs(devs[0] - devs[1]) < 4 and abs(sum(devs) / 2) <= 35:
+                    dev = sum(devs) / 2
+        except Exception:
+            dev = 0.0
+        self._tunes[(sid, root)] = float(dev)
+        return float(dev)
+
+    def onset(self, sid):
+        """Indeks próbki, od którego dźwięk ma już ~30% głośności (najwyżej 0,35 s, przed pętlą)."""
+        if sid in self._onsets:
+            return self._onsets[sid]
+        data, rate, orig, corr, ls, le = self.sample(sid)
+        lim = int(0.4 * rate)
+        w = max(1, int(0.01 * rate))
+        if len(data) < 4 * w:
+            self._onsets[sid] = 0
+            return 0
+        env = np.convolve(np.abs(data[:int(1.2 * rate)]), np.ones(w) / w, 'same')
+        # poziom „ustalony”: średnia z pętli (albo z 0,4–1,0 s) – do niego mierzymy narastanie
+        a, b = (ls, min(le, ls + int(0.5 * rate))) if 0 < ls < le and ls < len(env) else (int(0.4 * rate), len(env))
+        steady = float(np.abs(data[a:b]).mean() * 1.4) if b > a else float(env.max())
+        off = 0
+        if steady > 0:
+            k = int(np.argmax(env >= 0.5 * steady)) if (env >= 0.5 * steady).any() else 0
+            off = max(0, min(k - w, lim))
+            if 0 < ls <= off:
+                off = max(0, ls - w)
+            if off < int(0.02 * rate):                     # szybki atak – zostaw jak jest
+                off = 0
+        self._onsets[sid] = off
+        return off
 
     def _chunks(self, off, end):
         b = self.buf
@@ -191,12 +257,17 @@ class SoundFont:
                 continue
             root = g[58] if g[58] >= 0 else orig
             cents = (pitch - root) * g[56] + g[51] * 100 + g[52] + corr
+            if self.retune:
+                cents -= self.detune(g[53], root)
             ratio = 2 ** (cents / 1200) * rate / sr
             tc = lambda v: 2 ** (max(v, -12000) / 1200)
             delay, attack, hold, decay, release = tc(g[33]), tc(g[34]), tc(g[35]), tc(g[36]), min(tc(g[38]), 3.0)
             sus_db = max(0, min(g[37], 1440)) / 10
             n = int((dur + release) * sr)
-            pos = np.arange(n, dtype=np.float64) * ratio
+            # wolny początek próbki (np. chór „aa” – do 0,3 s ciszy i narastania) przesuwa nutę w czasie:
+            # zaczynamy od miejsca, gdzie dźwięk już brzmi, żeby wszystkie nuty wchodziły równo z rytmem
+            off = self.onset(g[53]) if self.tight else 0
+            pos = off + np.arange(n, dtype=np.float64) * ratio
             looping = g[54] in (1, 3) and 0 <= ls < le <= len(data)
             if looping:
                 L = le - ls
@@ -219,6 +290,9 @@ class SoundFont:
             rel = np.where(t > dur, (t - dur) * 100 / max(release, 1e-3), 0)
             db = np.where(t > dur, db_off - rel, db)
             env = att * (10 ** (db / 20))
+            if off:
+                k = min(n, int(0.006 * sr))                 # krótkie wejście bez trzasku
+                env[:k] *= np.linspace(0, 1, k, dtype=np.float32)
             gain = 10 ** (-(g[48] * 0.4) / 200) * (vel / 127) ** 2
             outs.append((w * env * gain).astype(np.float32))
         if not outs:

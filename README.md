@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.16.1
+# Liber Canticorum 0.16.2
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -107,7 +107,7 @@ w pliku MuseScore pięciolinie (np. akompaniament).
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.16.1/
+LiberCanticorum_0.16.2/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -326,6 +326,11 @@ poprawia się błędy rozpoznania; z nut powstaje też MIDI i nagrania do nauki.
 program znajduje go sam, a w razie potrzeby: Ustawienia → Ścieżka do Audiveris. Przy PDF-ie wielostronicowym
 wybiera się strony. Uwaga na prawa: melodie dawnych pieśni są wspólne, ale współczesne wydania (redakcja, harmonizacje,
 skład) bywają chronione – rozpoznane nuty do użytku we własnej parafii, bez publikowania.
+
+**Czyste brzmienie z SoundFontu (od 0.16.2).** Odtwarzacz sam dostraja próbki dźwięków trwających (chór, organy)
+do dokładnej wysokości – w popularnych SoundFontach bywają rozstrojone o 5–30 centów, przez co chór z organami
+„fałszował” – i wyrównuje wolne początki próbek (chór „aa” potrafi narastać 0,1–0,3 s, więc niektóre nuty wchodziły
+za późno). Nuty brzmią teraz równo z rytmem i z kursorem w nutach.
 
 **Odtwarzacz głosów:** pasek odtwarzania nad nutami – ⏮ od początku, ⏪ / ⏩ 5 s, Odtwórz/Pauza, ⏹, suwak położenia
 i czas (spacja – odtwórz/pauza, strzałki – przewijanie). **👁 Pięciolinie** – pokaż albo ukryj pięciolinie w nutach,
