@@ -2106,8 +2106,13 @@ class MidiPlayerDialog(QDialog):
             b.clicked.connect(lambda _=False, d=d: self.set_lyrics_size(self.lyr_size + d))
             views.addWidget(b)
             self.lyr_buttons.append(b)
+        self.b_more = QPushButton("⚙ Więcej ustawień")
+        self.b_more.setCheckable(True)
+        self.b_more.setToolTip("Tempo, transpozycja, ćwiczenie głosu, brzmienia, SoundFont, głosy")
+        self.b_more.toggled.connect(self.set_settings_visible)
+        views.addWidget(self.b_more)
         b_fs = QPushButton("⛶ Pełny ekran")
-        b_fs.setToolTip("Nuty na cały ekran – zostają tylko pasek odtwarzania i klawiatura (F11, Esc – wyjście)")
+        b_fs.setToolTip("Okno na cały ekran (F11, Esc – wyjście)")
         b_fs.clicked.connect(self.toggle_fullscreen)
         views.addWidget(b_fs)
         self.b_fs = b_fs
@@ -2159,6 +2164,7 @@ class MidiPlayerDialog(QDialog):
         for b in self.lyr_buttons:
             b.setVisible(bool(self.lyrics))
         lay.addWidget(self.lyr_lbl)
+        self.set_settings_visible(False)               # dodatkowe ustawienia pod przyciskiem „Więcej ustawień”
         if self.follow:
             self.resize(1150, 900)
         try:                                              # nie większe niż ekran – pasek odtwarzania ma być widać
@@ -2181,7 +2187,12 @@ class MidiPlayerDialog(QDialog):
         while self.voice_box.count():
             w = self.voice_box.takeAt(0).widget()
             if w:
+                w.hide()
                 w.deleteLater()
+        names = self._voice_names()
+        for v in self.voices:
+            v.orig_name = v.name
+            v.name = names.get(v.name, v.name)
         for i, v in enumerate(self.voices):
             c = VOICE_COLORS[i % len(VOICE_COLORS)]
             cb = QCheckBox(f"{v.name}   [{midi_note_name(min(n[2] for n in v.notes))}–{midi_note_name(max(n[2] for n in v.notes))}]")
@@ -2203,15 +2214,69 @@ class MidiPlayerDialog(QDialog):
                     vc.setCurrentIndex(k)
                     vc.blockSignals(False)
                     v.instrument = vc.currentData()
-            self.voice_box.addWidget(cb, i // 2, (i % 2) * 3)
-            self.voice_box.addWidget(sl, i // 2, (i % 2) * 3 + 1)
-            self.voice_box.addWidget(vc, i // 2, (i % 2) * 3 + 2)
+            ed = QPushButton("✎")
+            ed.setFixedWidth(28)
+            ed.setToolTip("Zmień nazwę głosu (np. „Sopran”, „Organy – lewa ręka”); program ją zapamięta dla tego pliku")
+            ed.clicked.connect(lambda _=False, v=v: self.rename_voice(v))
+            self.voice_box.addWidget(cb, i // 2, (i % 2) * 4)
+            self.voice_box.addWidget(ed, i // 2, (i % 2) * 4 + 1)
+            self.voice_box.addWidget(sl, i // 2, (i % 2) * 4 + 2)
+            self.voice_box.addWidget(vc, i // 2, (i % 2) * 4 + 3)
         self.practice.blockSignals(True)
         self.practice.clear()
         self.practice.addItem("(wszystkie równo)", None)
         for i, v in enumerate(self.voices):
             self.practice.addItem(v.name.split('  (')[0], i)
         self.practice.blockSignals(False)
+        if hasattr(self, '_settings_on') and not self._settings_on:
+            # nowe wiersze głosów też schowane (Qt pokazuje nowo dodane widżety z opóźnieniem – stąd timer)
+            QTimer.singleShot(0, lambda: hasattr(self, '_settings_on') and not self._settings_on
+                              and self.set_settings_visible(False))
+        self.params_changed()
+
+    def _voice_key(self):
+        import hashlib
+        return "voice_names/" + hashlib.md5(self.data_bytes or b"").hexdigest()
+
+    def _voice_names(self):
+        try:
+            return json.loads(self._qs.value(self._voice_key(), "") or "{}")
+        except (ValueError, TypeError):
+            return {}
+
+    def rename_voice(self, v):
+        from PySide6.QtWidgets import QInputDialog
+        orig = getattr(v, 'orig_name', v.name)
+        name, ok = QInputDialog.getText(self, "Nazwa głosu", f"Nowa nazwa głosu „{orig}”\n(puste – nazwa z pliku):",
+                                        text=v.name)
+        if not ok:
+            return
+        names = self._voice_names()
+        if name.strip() and name.strip() != orig:
+            names[orig] = name.strip()
+        else:
+            names.pop(orig, None)
+        self._qs.setValue(self._voice_key(), json.dumps(names, ensure_ascii=False))
+        enabled = {getattr(x, 'orig_name', x.name): (x.enabled, x.volume, x.instrument) for x in self.voices}
+        self.rebuild_voices()
+        for x in self.voices:                          # zachowaj włączenie, głośność i brzmienie głosów
+            st = enabled.get(getattr(x, 'orig_name', x.name))
+            if st:
+                x.enabled, x.volume, x.instrument = st
+        self._sync_voice_widgets()
+
+    def _sync_voice_widgets(self):
+        for i, v in enumerate(self.voices):
+            row, col = i // 2, (i % 2) * 4
+            items = [self.voice_box.itemAtPosition(row, col + j) for j in range(4)]
+            if not all(items):
+                continue
+            cb, _, sl, vc = (it.widget() for it in items)
+            for w, fn in ((cb, lambda: cb.setChecked(v.enabled)), (sl, lambda: sl.setValue(int(v.volume * 100))),
+                          (vc, lambda: vc.setCurrentIndex(max(0, vc.findData(v.instrument))))):
+                w.blockSignals(True)
+                fn()
+                w.blockSignals(False)
         self.params_changed()
 
     # --- brzmienia
@@ -2336,33 +2401,52 @@ class MidiPlayerDialog(QDialog):
             return len(self.buf) / self.sr
         return self.length / max(0.01, self.tempo.value() / 100)
 
-    def toggle_fullscreen(self):
-        """Pełny ekran: chowa ustawienia głosów i brzmienia, zostają nuty, pasek odtwarzania, słowa i klawiatura."""
-        full = not self.isFullScreen()
+    def set_settings_visible(self, on):
+        """Ustawienia (tempo, transpozycja, brzmienia, głosy) – pokazane albo schowane pod „Więcej ustawień”."""
+        self._settings_on = on
         lay = self.layout()
         stop = lay.indexOf(self._views_lay) if hasattr(self, '_views_lay') else -1
 
-        def walk(item, on):
+        def walk(item):
             w = item.widget()
             if w is not None:
                 if on:
-                    w.setVisible(getattr(w, '_lc_was', True))
-                else:
-                    w._lc_was = w.isVisible()
+                    if getattr(w, '_lc_hidden_by_us', False):
+                        w._lc_hidden_by_us = False
+                        w.setVisible(True)
+                elif not w.isHidden():
+                    w._lc_hidden_by_us = True
                     w.hide()
             elif item.layout() is not None:
                 for j in range(item.layout().count()):
-                    walk(item.layout().itemAt(j), on)
+                    walk(item.layout().itemAt(j))
         for i in range(max(0, stop)):
-            walk(lay.itemAt(i), not full)
+            walk(lay.itemAt(i))
+        if hasattr(self, 'b_more'):
+            self.b_more.blockSignals(True)
+            self.b_more.setChecked(on)
+            self.b_more.blockSignals(False)
+            self.b_more.setText("⚙ Mniej ustawień" if on else "⚙ Więcej ustawień")
+
+    def toggle_fullscreen(self):
+        """Pełny ekran (F11, Esc – wyjście); ustawienia osobno – przycisk „Więcej ustawień”."""
+        full = not self.isFullScreen()
         self.b_fs.setText("✕ Zamknij pełny ekran" if full else "⛶ Pełny ekran")
+        self._qs.setValue("player_fullscreen", full)       # następnym razem tak samo
         if full:
-            self._was_max = self.isMaximized()
             self.showFullScreen()
         else:
-            self.showMaximized() if getattr(self, '_was_max', False) else self.showNormal()
+            self.showMaximized()
         if self.follow:
             QTimer.singleShot(150, lambda: self.follow and self.follow.set_zoom(self.follow.zoom))
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        if not getattr(self, '_shown_once', False):          # pierwszy raz: od razu pełny ekran
+            self._shown_once = True
+            if self._qs.value("player_fullscreen", "true") == "true":
+                QTimer.singleShot(0, lambda: (self.showFullScreen(),
+                                              self.b_fs.setText("✕ Zamknij pełny ekran")))
 
     def keyPressEvent(self, e):
         k = e.key()

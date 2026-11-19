@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.17.2
+# Liber Canticorum 0.18.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.17.x, 0.18.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.18.x, 0.19.0 itd.
 
 ## Jak wygląda
 
@@ -108,7 +108,11 @@ w kolorach głosów – dobre do nauki partii i do szukania dźwięków na organ
 **Transpozycja** zmienia dźwięk i **nuty**: po chwili MuseScore przelicza nuty w nowej tonacji – z kluczem,
 znakami i symbolami akordów (G → A, D7 → E7); powrót do 0 pokazuje oryginał od razu. Działa dla plików MuseScore
 i MusicXML (także z edytora melodii).
-**⛶ Pełny ekran** (F11, Esc – wyjście): zostają tylko nuty, pasek odtwarzania, słowa i klawiatura.
+**Okno odtwarzacza otwiera się na pełnym ekranie** (od 0.18): widać nuty, pasek odtwarzania, słowa i klawiaturę.
+Tempo, transpozycja, „Ćwicz głos”, brzmienie, podkład organowy, SoundFont i lista głosów są pod przyciskiem
+**„⚙ Więcej ustawień”**. „⛶ Pełny ekran” / F11 / Esc przełącza pełny ekran (program pamięta wybór).
+**Nazwy głosów:** przycisk ✎ przy głosie (w „Więcej ustawień”) zmienia jego nazwę, np. „Soprano (kanał 1)” →
+„Melodia”; program pamięta nazwy dla tego pliku, a pusta nazwa przywraca nazwę z pliku.
 Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy pod nutami (program pamięta wybór).
 
 ## Instalacja i uruchomienie
@@ -116,7 +120,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.17.2/
+LiberCanticorum_0.18.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
