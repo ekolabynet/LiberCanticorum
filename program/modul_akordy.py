@@ -266,6 +266,13 @@ class ChordView(QDialog):
         self.show_c.setChecked(True)
         self.show_c.toggled.connect(self.render)
         bar.addWidget(self.show_c)
+        from PySide6.QtCore import QSettings
+        self._qs = QSettings("LiberCanticorum", "LiberCanticorum")
+        self.show_g = QCheckBox("chwyty")
+        self.show_g.setToolTip("Chwyty akordów na gryfie gitary")
+        self.show_g.setChecked(self._qs.value("chord_grips", "true") == "true")
+        self.show_g.toggled.connect(lambda on: (self._qs.setValue("chord_grips", on), self.render()))
+        bar.addWidget(self.show_g)
         bar.addStretch(1)
         b = QPushButton("Zapisz PDF…")
         b.clicked.connect(self.save_pdf)
@@ -274,6 +281,9 @@ class ChordView(QDialog):
         b.clicked.connect(lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen())
         bar.addWidget(b)
         lay.addLayout(bar)
+        from modul_instrumenty import ChordStrip
+        self.strip = ChordStrip()
+        lay.addWidget(self.strip)
         self.view = QTextBrowser()
         lay.addWidget(self.view, 1)
         self.info = QLabel()
@@ -310,6 +320,14 @@ class ChordView(QDialog):
             return
         s = self.songs[self.idx]
         self.view.setHtml(self.html(s))
+        try:
+            from modul_instrumenty import song_chords
+            names = song_chords(song_chordpro(s), self.tr.value(), self.flat.isChecked())
+            self.strip.set_chords(names)
+            self.strip.setVisible(self.show_g.isChecked() and bool(names))
+        except Exception as e:
+            self.strip.setVisible(False)
+            print("Chwyty:", e)
         self.prev_b.setEnabled(self.idx > 0)
         self.next_b.setEnabled(self.idx < len(self.songs) - 1)
         has = has_chords(s.get('akordy', ''))

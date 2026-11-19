@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.16.3
+# Liber Canticorum 0.17.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.16.x, 0.17.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.17.x, 0.18.0 itd.
 
 ## Jak wygląda
 
@@ -92,7 +92,9 @@ nad tekstem lub z boku) – i pokazuje listę pieśni do zaznaczenia. Pieśni, k
 prawy przycisk myszy → „Kategoria dla zaznaczonych…” albo „Tagi dla zaznaczonych…”.
 
 **Akordy dla gitarzystów.** Kafel „Akordy”, przycisk „Akordy” w Tekstach albo Ctrl+G: akordy nad sylabami,
-transpozycja, pełny ekran, PDF. Akordy wpisuje się w zakładce „Akordy” w ChordPro: `[a]Chwalcie [E]Pana`.
+transpozycja, pełny ekran, PDF. Nad tekstem są **chwyty na gryfie** wszystkich akordów pieśni (pole „chwyty”) –
+w kolejności, w jakiej się pojawiają, i zmieniają się razem z transpozycją: chwyty otwarte (C, a, G, D7, e…),
+a pozostałe jako barre w kształcie E albo A (z numerem progu). Kropki to palce, × – struna nie gra, ○ – struna pusta. Akordy wpisuje się w zakładce „Akordy” w ChordPro: `[a]Chwalcie [E]Pana`.
 
 **Znaleźć nuty.** Nuty → „Szukaj nut w MuseScore” (Ctrl+M) – szuka tytułu pieśni na musescore.com; pobrany plik
 sam trafia do pieśni. Nuty tylko na papierze: zeskanuj i „Rozpoznaj nuty ze skanu” (Audiveris) – albo wpisz
@@ -101,13 +103,15 @@ melodię w edytorze melodii.
 **Posłuchać i ćwiczyć głos.** Nuty → „Posłuchaj”: pasek odtwarzania nad nutami (⏮ ⏪ Odtwórz ⏹ ⏩, suwak,
 spacja i strzałki), głosy S A T B osobno, „Ćwicz głos”, tempo, transpozycja, **👁 Pięciolinie** – pokaż ukryte
 w pliku MuseScore pięciolinie (np. akompaniament).
+Pole **„Klawiatura”** pokazuje nad nutami klawiaturę fortepianu, na której podświetlają się grane właśnie dźwięki
+w kolorach głosów – dobre do nauki partii i do szukania dźwięków na organach.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.16.3/
+LiberCanticorum_0.17.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -176,6 +180,7 @@ python3 -m venv .venv
 | `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
 | `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
 | `modul_omr.py` | rozpoznawanie nut ze skanu programem Audiveris (MusicXML) |
+| `modul_instrumenty.py` | klawiatura w odtwarzaczu, chwyty gitarowe na gryfie |
 | `modul_edytor.py` | edytor melodii: nuty, słowa, akordy; zapis MusicXML (Sopran – chór, Organy) i MIDI |
 | `czcionki/` | czcionki z MuseScore: Leland (znaki nutowe, SMuFL) i Edwin (tekst), licencja SIL OFL 1.1 |
 | `zrzuty/` | zrzuty ekranu do tej dokumentacji |

@@ -1918,6 +1918,8 @@ class MidiPlayerDialog(QDialog):
         views = QHBoxLayout()
         self.show_score = QCheckBox("Nuty ze słowami (kursor podczas odtwarzania; kliknij nutę, by tam przeskoczyć)")
         self.show_roll = QCheckBox("Wałek pianoli")
+        self.show_kbd = QCheckBox("Klawiatura")
+        self.show_kbd.setToolTip("Klawiatura z podświetlonymi dźwiękami w kolorach głosów")
         self.show_score.setChecked(self.follow is not None)
         self.show_score.setEnabled(self.follow is not None)
         if self.follow is None:
@@ -1925,6 +1927,7 @@ class MidiPlayerDialog(QDialog):
         self.show_roll.setChecked(self.follow is None)
         views.addWidget(self.show_score)
         views.addWidget(self.show_roll)
+        views.addWidget(self.show_kbd)
         views.addStretch()
         from PySide6.QtCore import QSettings
         self._qs = QSettings("LiberCanticorum", "LiberCanticorum")
@@ -1965,6 +1968,13 @@ class MidiPlayerDialog(QDialog):
         lay.addLayout(views)
         from PySide6.QtWidgets import QSplitter
         lay.addLayout(self._build_transport())        # pasek odtwarzania – nad nutami, zawsze widoczny
+        from modul_instrumenty import Keyboard
+        self.kbd = Keyboard()
+        lay.addWidget(self.kbd)
+        self.kbd.setVisible(self._qs.value("show_keyboard", "false") == "true")
+        self.show_kbd.setChecked(self.kbd.isVisible())
+        self.show_kbd.toggled.connect(lambda on: (self.kbd.setVisible(on), self._qs.setValue("show_keyboard", on),
+                                                  self.update_pos(self.current_pos())))
         split = QSplitter(Qt.Vertical)
         self.vsplit = split
         if self.follow:
@@ -2002,6 +2012,10 @@ class MidiPlayerDialog(QDialog):
     def rebuild_voices(self):
         self.stop()
         self.voices = prepare_voices(self.raw, self.split.isChecked())
+        if getattr(self, 'kbd', None) is not None:
+            ps = [n[2] for v in self.voices for n in v.notes]
+            if ps:
+                self.kbd.set_range(min(ps) + self.transpose.value(), max(ps) + self.transpose.value())
         while self.voice_box.count():
             w = self.voice_box.takeAt(0).widget()
             if w:
@@ -2249,10 +2263,28 @@ class MidiPlayerDialog(QDialog):
         if hasattr(self, 'time_lbl'):
             self.time_lbl.setText(f"{int(pos) // 60}:{int(pos) % 60:02d} / {int(tot) // 60}:{int(tot) % 60:02d}")
         self.roll.set_pos(pos)
+        if getattr(self, 'kbd', None) is not None and self.kbd.isVisible():
+            self.kbd.set_active(self.sounding(pos))
         if self.follow:
             self.follow.set_time(pos * (self.tempo.value() / 100) * 1000)
         if self.lyrics:
             self.show_lyrics(pos * (self.tempo.value() / 100))
+
+    def sounding(self, pos):
+        """Dźwięki brzmiące w chwili pos (s, w tempie odtwarzania): {wysokość: kolor głosu}."""
+        t = pos * (self.tempo.value() / 100)
+        k = self.transpose.value()
+        out = {}
+        for i, v in enumerate(self.voices):
+            if not v.enabled:
+                continue
+            col = VOICE_COLORS[i % len(VOICE_COLORS)]
+            for start, dur, p, _ in v.notes:
+                if start > t:
+                    break
+                if t < start + dur:
+                    out.setdefault(p + k, col)
+        return out
 
     def choose_staves(self):
         """Okno z listą partii: zaznaczone są widoczne w nutach."""
