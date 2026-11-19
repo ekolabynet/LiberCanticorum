@@ -169,7 +169,7 @@ def items(pages):
     return [it for it in out if it['regions']]
 
 
-def render_regions(path, regions, dpi=150):
+def render_regions(path, regions, dpi=300):
     """Wycięte obrazki nut → PDF (bajty); kolejne fragmenty jeden pod drugim na stronach A4."""
     import pypdfium2 as pdfium
     from PIL import Image
@@ -179,7 +179,8 @@ def render_regions(path, regions, dpi=150):
     for pi, (x0, y0, x1, y1) in regions:
         page = doc[pi]
         ph = page.get_height()
-        img = page.render(scale=scale, crop=(x0, y0, page.get_width() - x1, ph - y1)).to_pil().convert("RGB")
+        img = page.render(scale=scale, crop=(x0, y0, page.get_width() - x1, ph - y1),
+                          grayscale=True).to_pil().convert("L")      # 300 dpi w szarości – też do rozpoznania nut
         crops.append(img)
     doc.close()
     if not crops:
@@ -193,7 +194,7 @@ def render_regions(path, regions, dpi=150):
             r = (W - 2 * margin) / im.width
             im = im.resize((int(im.width * r), int(im.height * r)))
         if cur is None or y + im.height > H - margin:
-            cur = Image.new("RGB", (W, H), "white")
+            cur = Image.new("L", (W, H), 255)
             pages.append(cur)
             y = margin
         cur.paste(im, ((W - im.width) // 2, y))

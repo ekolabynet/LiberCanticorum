@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.12.1 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.13.0 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.12.1"
+VERSION = "0.13.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.12.1)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.13.0)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -2519,6 +2519,7 @@ class MainWindow(QMainWindow):
                 ('midi', "MIDI – odtwarzanie głosów…", self.play_midi), ('del', "Usuń", self.delete_attachment),
                 ('search', "Szukaj nut w MuseScore…", self.search_scores),
                 ('lyrics', "Słowa z tych nut → do tekstu pieśni…", self.lyrics_from_attachment),
+                ('omr', "Rozpoznaj nuty z tego skanu (Audiveris)…", self.omr_attachment),
                 ('desc', "Wersja / aranżacja (opis)…", self.describe_attachment),
                 ('merge', "Połącz z inną pieśnią…", self.merge_song_dialog)]):
             b = QPushButton(txt)
@@ -2606,6 +2607,7 @@ class MainWindow(QMainWindow):
         act(m_song, "Duplikuj", self.duplicate_song)
         act(m_song, "Usuń z bazy", self.delete_song)
         act(m_song, "Szukaj nut w MuseScore (po tytule)…", self.search_scores, "Ctrl+M")
+        act(m_song, "Rozpoznaj nuty ze skanu / zdjęcia (Audiveris)…", self.omr_from_file)
         act(m_song, "🎸 Akordy – widok dla gitarzystów…", self.show_chords, "Ctrl+G")
         act(m_song, "🎸 Akordy całego zestawu…", self.show_set_chords)
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
@@ -2640,6 +2642,7 @@ class MainWindow(QMainWindow):
         self.screen_menu = m_show.addMenu("Ekran pokazu")
         self.screen_menu.aboutToShow.connect(self.fill_screen_menu)
         act(m_set, "Ścieżka do MuseScore (AppImage, .exe…) – podgląd plików .mscz…", self.set_musescore_path)
+        act(m_set, "Ścieżka do Audiveris (rozpoznawanie nut ze skanu)…", self.set_audiveris_path)
         act(m_set, "Test MuseScore (próbna konwersja z raportem)…", self.test_musescore)
         m_tb = m_set.addMenu("Pasek narzędzi")
         m_tb.setIcon(ikony.fa_icon("sliders") if os.path.exists(os.path.join(ikony.ICON_DIR, "sliders.svg")) else QIcon())
@@ -4083,6 +4086,7 @@ class MainWindow(QMainWindow):
         self.b_att['view'].setEnabled(name.endswith(('.pdf', '.png', '.jpg', '.jpeg') + SCORE_EXT))
         self.b_att['midi'].setEnabled(name.endswith(('.mid', '.midi', '.kar') + SCORE_EXT))
         self.b_att['lyrics'].setEnabled(name.endswith(('.pdf', '.mid', '.midi', '.kar') + SCORE_EXT))
+        self.b_att['omr'].setEnabled(name.endswith(('.pdf', '.png', '.jpg', '.jpeg', '.tif', '.tiff')))
 
     def add_attachments(self):
         if not self.ensure_saved("Aby dołączyć pliki"):
@@ -4981,6 +4985,113 @@ class MainWindow(QMainWindow):
             return
         self.settings.setValue("import_dir", os.path.dirname(paths[0]))
         self.import_paths(paths)
+
+    # --- rozpoznawanie nut ze skanu (Audiveris)
+    def audiveris(self):
+        import modul_omr
+        return modul_omr.find_audiveris(self.settings.value("audiveris", ""))
+
+    def set_audiveris_path(self):
+        import modul_omr
+        cur = self.audiveris()
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Wskaż program Audiveris (Audiveris, Audiveris.exe, Audiveris.bat)",
+            os.path.dirname(cur[0]) if cur and os.path.isabs(cur[0]) else os.path.expanduser("~"),
+            "Audiveris (Audiveris* audiveris*);;Wszystkie pliki (*)")
+        if path:
+            self.settings.setValue("audiveris", path)
+            self.settings.sync()
+            self.statusBar().showMessage(f"Audiveris: {path}", 6000)
+        elif not cur:
+            modul_omr.install_help(self)
+
+    def omr_from_file(self):
+        if not self.ensure_saved("Aby dołączyć rozpoznane nuty"):
+            return
+        last = self.settings.value("attach_dir", os.path.expanduser("~"))
+        path, _ = QFileDialog.getOpenFileName(self, "Skan, zdjęcie albo PDF z nutami", last,
+                                              "Nuty – obraz lub PDF (*.png *.jpg *.jpeg *.tif *.tiff *.pdf);;Wszystkie (*)")
+        if not path:
+            return
+        self.settings.setValue("attach_dir", os.path.dirname(path))
+        attach_src = QMessageBox.question(self, APP_NAME, "Dołączyć do pieśni także sam skan (obok rozpoznanych nut)?") \
+            == QMessageBox.Yes
+        if attach_src:
+            aid = self.db.add_attachment(self.song['id'], path)
+            self.db.set_attachment_desc(aid, "Skan")
+            self.refresh_media()
+        self._run_omr(path)
+
+    def omr_attachment(self):
+        it = self.att_list.currentItem()
+        if not it or not self.ensure_saved("Aby rozpoznać nuty"):
+            return
+        import modul_omr
+        a = self.db.attachment(it.data(Qt.UserRole))
+        tmp = os.path.join(modul_omr.work_dir(), os.path.basename(a['name']) or "skan.pdf")
+        with open(tmp, 'wb') as f:
+            f.write(a['data'])
+        self._run_omr(tmp)
+
+    def _run_omr(self, path):
+        import modul_omr
+        cmd = self.audiveris()
+        if not cmd:
+            modul_omr.install_help(self)
+            return
+        sheets = ""
+        if path.lower().endswith('.pdf'):
+            try:
+                import pypdfium2 as pdfium
+                doc = pdfium.PdfDocument(path)
+                n = len(doc)
+                doc.close()
+            except Exception:
+                n = 1
+            if n > 1:
+                txt, ok = QInputDialog.getText(self, APP_NAME, f"PDF ma {n} stron. Które rozpoznać? "
+                                               "(np. 3 albo 3-4; puste = wszystkie)")
+                if not ok:
+                    return
+                sheets = txt.strip()
+        dlg = modul_omr.OmrDialog(cmd, path, sheets, "pol", self)
+        got = []
+        dlg.finished_ok.connect(got.extend)
+        dlg.exec()
+        if not got:
+            if dlg.result() != QDialog.Rejected or dlg.b.text() == "Zamknij":
+                QMessageBox.information(self, APP_NAME, "Nie udało się rozpoznać nut. Sprawdź dziennik w oknie Audiveris "
+                                        "albo spróbuj skanu w 300 dpi.")
+            return
+        sid = self.song['id']
+        base = os.path.splitext(os.path.basename(path))[0]
+        new_ids = []
+        for k, f in enumerate(got):
+            with open(f, 'rb') as fh:
+                data = fh.read()
+            name = f"{self.song['title'] or base}" + (f" ({k + 1})" if len(got) > 1 else "") + " – rozpoznane" + \
+                os.path.splitext(f)[1]
+            aid = self.db.add_attachment_bytes(sid, re.sub(r'[\\/:*?"<>|]+', ' ', name), data,
+                                               "Rozpoznane ze skanu (Audiveris) – do sprawdzenia")
+            new_ids.append(aid)
+        self.refresh_media()
+        self.refresh_list()
+        self.pilot_invalidate()
+        cur = self.editor_song()
+        msg = (f"Rozpoznane nuty dołączono do pieśni ({len(got)} plik"
+               + ("i" if 1 < len(got) < 5 else "ów" if len(got) >= 5 else "") + "). "
+               "Otwórz je w MuseScore, popraw błędy rozpoznania i zapisz – MuseScore zapisze .mscz, "
+               "który też możesz dołączyć.")
+        if not (cur.get('refren') or cur.get('zwrotki_raw')):
+            if QMessageBox.question(self, APP_NAME, msg + "\n\nPieśń nie ma tekstu – wstawić słowa odczytane spod nut?") \
+                    == QMessageBox.Yes:
+                for i in range(self.att_list.count()):
+                    if self.att_list.item(i).data(Qt.UserRole) == new_ids[0]:
+                        self.att_list.setCurrentRow(i)
+                        self.lyrics_from_attachment()
+                        break
+        else:
+            QMessageBox.information(self, APP_NAME, msg)
 
     def lyrics_from_attachment(self):
         """Słowa spod nut z załącznika → refren i zwrotki bieżącej pieśni (po podglądzie)."""

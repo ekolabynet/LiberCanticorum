@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Liber Canticorum – rozpoznawanie nut ze skanu / zdjęcia / PDF (OMR) programem Audiveris.
+
+Audiveris (wolny program, AGPL, https://github.com/Audiveris/audiveris) zamienia obraz nut na MusicXML (.mxl),
+który otwiera MuseScore. Liber Canticorum uruchamia go w tle („-batch -export”), a wynik dołącza do pieśni:
+z pliku .mxl da się potem odczytać słowa spod nut, zrobić MIDI i nagrania do nauki.
+Audiveris trzeba zainstalować osobno (instalator z wbudowaną Javą albo Flatpak na Linuksie).
+
+Licencja: GPL-3.0-or-later.
+"""
+import glob
+import os
+import shutil
+import sys
+import tempfile
+
+from PySide6.QtCore import QProcess, Qt, Signal, QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
+                               QProgressBar)
+
+RELEASES = "https://github.com/Audiveris/audiveris/releases"
+IMG_EXT = ('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.pdf')
+
+
+def find_audiveris(custom=""):
+    """Polecenie do uruchomienia Audiveris (lista argumentów) albo None."""
+    if custom:
+        if custom.startswith("flatpak:"):
+            return ["flatpak", "run", custom.split(":", 1)[1]]
+        if os.path.isfile(custom):
+            return [custom]
+    for name in ("Audiveris", "audiveris"):
+        p = shutil.which(name)
+        if p:
+            return [p]
+    cands = []
+    if sys.platform == "win32":
+        for pf in (os.environ.get("ProgramFiles", r"C:\Program Files"), os.environ.get("ProgramFiles(x86)", ""),
+                   os.environ.get("LOCALAPPDATA", "")):
+            if pf:
+                cands += glob.glob(os.path.join(pf, "Audiveris*", "Audiveris.exe"))
+                cands += glob.glob(os.path.join(pf, "Audiveris*", "bin", "Audiveris.bat"))
+                cands += glob.glob(os.path.join(pf, "Programs", "Audiveris*", "Audiveris.exe"))
+    elif sys.platform == "darwin":
+        cands += glob.glob("/Applications/Audiveris*.app/Contents/MacOS/Audiveris")
+        cands += glob.glob(os.path.expanduser("~/Applications/Audiveris*.app/Contents/MacOS/Audiveris"))
+    else:
+        cands += glob.glob("/opt/audiveris/bin/Audiveris") + glob.glob("/opt/Audiveris*/bin/Audiveris")
+        cands += glob.glob("/usr/local/bin/Audiveris") + glob.glob(os.path.expanduser("~/.local/opt/audiveris/bin/Audiveris"))
+    for c in cands:
+        if os.path.isfile(c):
+            return [c]
+    if sys.platform.startswith("linux") and shutil.which("flatpak"):
+        try:
+            import subprocess
+            r = subprocess.run(["flatpak", "info", "org.audiveris.audiveris"], capture_output=True, timeout=10)
+            if r.returncode == 0:
+                return ["flatpak", "run", "org.audiveris.audiveris"]
+        except Exception:
+            pass
+    return None
+
+
+def work_dir():
+    """Folder roboczy w katalogu domowym (Flatpak widzi pliki w katalogu domowym, nie zawsze w /tmp)."""
+    base = os.path.join(os.path.expanduser("~"), ".cache", "LiberCanticorum", "omr")
+    os.makedirs(base, exist_ok=True)
+    return tempfile.mkdtemp(prefix="omr_", dir=base)
+
+
+def args_for(src, out_dir, sheets="", lang="pol", variant=0):
+    """Argumenty Audiveris. variant: 0 – język OCR przez -constant (5.3+), 1 – przez -option (starsze), 2 – bez."""
+    a = ["-batch", "-export", "-output", out_dir]
+    key = "org.audiveris.omr.text.Language.defaultSpecification=" + lang
+    if lang and variant == 0:
+        a += ["-constant", key]
+    elif lang and variant == 1:
+        a += ["-option", key]
+    if sheets:
+        a += ["-sheets"] + sheets.replace(",", " ").split()
+    return a + ["--", src]
+
+
+def results(out_dir):
+    """Pliki MusicXML zrobione przez Audiveris (także w podfolderach „książki”), w kolejności."""
+    found = []
+    for ext in ("*.mxl", "*.musicxml", "*.xml"):
+        found += glob.glob(os.path.join(out_dir, "**", ext), recursive=True)
+    return sorted(set(found))
+
+
+class OmrDialog(QDialog):
+    """Okno z postępem rozpoznawania: uruchamia Audiveris w tle, pokazuje dziennik, można przerwać."""
+    finished_ok = Signal(list)                     # lista ścieżek .mxl
+
+    def __init__(self, cmd, src, sheets="", lang="pol", parent=None):
+        super().__init__(parent)
+        self.cmd, self.src, self.sheets, self.lang = cmd, src, sheets, lang
+        self.out = work_dir()
+        self.variant = 0 if lang else 2
+        self.files = []
+        self.setWindowTitle("Rozpoznawanie nut (Audiveris)")
+        self.resize(720, 420)
+        lay = QVBoxLayout(self)
+        lay.addWidget(QLabel(f"Rozpoznaję nuty z pliku <b>{os.path.basename(src)}</b>"
+                             + (f" (strony {sheets})" if sheets else "") +
+                             ". Jedna strona to zwykle 20 s – 2 min.", wordWrap=True))
+        self.bar = QProgressBar()
+        self.bar.setRange(0, 0)
+        lay.addWidget(self.bar)
+        self.log = QPlainTextEdit()
+        self.log.setReadOnly(True)
+        self.log.setMaximumBlockCount(2000)
+        lay.addWidget(self.log, 1)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        self.b = QPushButton("Przerwij")
+        self.b.clicked.connect(self.stop)
+        row.addWidget(self.b)
+        lay.addLayout(row)
+        self.proc = QProcess(self)
+        self.proc.setProcessChannelMode(QProcess.MergedChannels)
+        self.proc.readyReadStandardOutput.connect(self._read)
+        self.proc.finished.connect(self._done)
+        self.proc.errorOccurred.connect(self._error)
+        self._start()
+
+    def _start(self):
+        a = args_for(self.src, self.out, self.sheets, self.lang, self.variant)
+        self.log.appendPlainText("$ " + " ".join(self.cmd + a))
+        self.proc.start(self.cmd[0], self.cmd[1:] + a)
+
+    def _read(self):
+        t = bytes(self.proc.readAllStandardOutput()).decode('utf-8', 'replace')
+        for line in t.splitlines():
+            if line.strip():
+                self.log.appendPlainText(line.rstrip())
+
+    def _error(self, err):
+        if err == QProcess.FailedToStart:
+            self.log.appendPlainText("Nie udało się uruchomić Audiveris.")
+            self.bar.setRange(0, 1)
+            self.b.setText("Zamknij")
+
+    def _done(self, code, _status):
+        self.files = results(self.out)
+        text = self.log.toPlainText()
+        if not self.files and self.variant < 2 and ("Unknown" in text or "unknown" in text or "not a valid" in text
+                                                     or "No option" in text or code != 0):
+            self.variant += 1                         # starsza / inna wersja – spróbuj inaczej podać język OCR
+            self.log.appendPlainText("— ponawiam z innymi ustawieniami —")
+            self._start()
+            return
+        self.bar.setRange(0, 1)
+        self.bar.setValue(1)
+        self.b.setText("Zamknij")
+        if self.files:
+            self.log.appendPlainText(f"\nGotowe: {', '.join(os.path.basename(f) for f in self.files)}")
+            self.finished_ok.emit(self.files)
+            self.accept()
+        else:
+            self.log.appendPlainText("\nAudiveris nie zwrócił nut. Najczęstsze powody: zbyt mała rozdzielczość "
+                                     "(potrzeba ok. 300 dpi), krzywe lub nieostre zdjęcie, rękopis.")
+
+    def stop(self):
+        if self.proc.state() != QProcess.NotRunning:
+            self.proc.kill()
+            self.proc.waitForFinished(3000)
+        self.reject()
+
+
+def install_help(parent):
+    """Okno z informacją, jak zainstalować Audiveris."""
+    from PySide6.QtWidgets import QMessageBox
+    box = QMessageBox(parent)
+    box.setWindowTitle("Audiveris – rozpoznawanie nut")
+    box.setTextFormat(Qt.RichText)
+    box.setText("Do rozpoznawania nut ze skanu potrzebny jest darmowy program <b>Audiveris</b> "
+                "(instaluje się osobno, ok. 130 MB, z wbudowaną Javą).<br><br>"
+                "<b>Windows / macOS / Ubuntu:</b> pobierz instalator z działu <i>Assets</i> najnowszego wydania "
+                "(plik .msi, .dmg albo .deb).<br>"
+                "<b>Linux (Flatpak):</b> <code>flatpak install flathub org.audiveris.audiveris</code><br><br>"
+                "Po instalacji Liber Canticorum znajdzie go sam; jeśli nie – Ustawienia → Ścieżka do Audiveris.")
+    b = box.addButton("Otwórz stronę z instalatorami", QMessageBox.AcceptRole)
+    box.addButton(QMessageBox.Close)
+    box.exec()
+    if box.clickedButton() is b:
+        QDesktopServices.openUrl(QUrl(RELEASES))

@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.12.1
+# Liber Canticorum 0.13.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,14 +12,14 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.12.1 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.10.x, 0.13.0 itd.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.12.1/
+LiberCanticorum_0.13.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -83,6 +83,10 @@ python3 -m venv .venv
 | Plik | Co to jest |
 |---|---|
 | `liber_canticorum.py` | program główny |
+| `modul_akordy.py` | akordy (ChordPro), transpozycja, widok dla gitarzystów |
+| `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
+| `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
+| `modul_omr.py` | rozpoznawanie nut ze skanu programem Audiveris (MusicXML) |
 | `modul_nuty.py` | wyszukiwanie nut (CPDL, MuseScore, IMSLP), podgląd nut, odtwarzacz MIDI z głosami |
 | `modul_brzmienia.py` | brzmienia odtwarzacza: odtwarzacz SoundFont (.sf2/.sf3) – chór, organy |
 | `modul_youtube.py` | wyszukiwanie i odtwarzanie nagrań z YouTube |
@@ -212,6 +216,16 @@ i **nagrania do nauki** z nut. Przy nagraniach wybierasz **głosy** (S, A, T, B,
 głos z delikatnym podkładem harmonii, sam głos, oraz tempo z nut i/lub wolniejsze. Okno od razu pokazuje,
 ile plików powstanie, i ostrzega, gdy jest ich za dużo. **♿ Dla niewidomych** to ten sam eksport z wersją
 tekstów dla czytników ekranu (większa czcionka, DOCX + TXT, bez slajdów i obrazków).
+
+**Rozpoznawanie nut ze skanu** (Pieśń → „Rozpoznaj nuty ze skanu / zdjęcia (Audiveris)”, albo przycisk przy
+zaznaczonym załączniku PDF/obrazie w zakładce „Nuty, wersje i nagrania”): wolny program **Audiveris** zamienia skan
+(najlepiej 300 dpi) na MusicXML (.mxl), który program dołącza do pieśni z opisem „Rozpoznane ze skanu – do
+sprawdzenia”. Gdy pieśń nie ma tekstu, słowa spod nut można od razu wstawić. Plik .mxl otwiera MuseScore – tam
+poprawia się błędy rozpoznania; z nut powstaje też MIDI i nagrania do nauki. Audiveris instaluje się osobno
+(instalator z wbudowaną Javą z github.com/Audiveris/audiveris/releases albo Flatpak `org.audiveris.audiveris`);
+program znajduje go sam, a w razie potrzeby: Ustawienia → Ścieżka do Audiveris. Przy PDF-ie wielostronicowym
+wybiera się strony. Uwaga na prawa: melodie dawnych pieśni są wspólne, ale współczesne wydania (redakcja, harmonizacje,
+skład) bywają chronione – rozpoznane nuty do użytku we własnej parafii, bez publikowania.
 
 **Szukaj nut w MuseScore po tytule** (Pieśń → „Szukaj nut w MuseScore”, Ctrl+M, albo przycisk w zakładce „Nuty,
 wersje i nagrania”): okno od razu szuka tytułu bieżącej pieśni na musescore.com („Msza Rycerska – Kyrie” → „Msza

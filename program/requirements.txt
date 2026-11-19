@@ -1,4 +1,4 @@
-# Liber Canticorum 0.12.1: zależności podstawowe
+# Liber Canticorum 0.13.0: zależności podstawowe
 PySide6-Essentials>=6.5
 python-pptx>=0.6.22
 python-docx>=1.1
