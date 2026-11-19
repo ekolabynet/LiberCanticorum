@@ -48,7 +48,7 @@ def _pattern(key):
     parts = re.split(r"(\{[a-z]\w*\})", key)
     def grp(p):
         name = p[1:-1]
-        return f"(?P<{name}>\\d[\\d\\s.,]*)" if name == "n" else f"(?P<{name}>.+?)"      # {n} – liczba
+        return f"(?P<{name}>\\d[\\d\\s.,]*)" if name == "n" else f"(?P<{name}>.*?)"      # {n} – liczba
     rx = "".join(grp(p) if re.fullmatch(r"\{[a-z]\w*\}", p) else re.escape(p) for p in parts)
     return re.compile("^" + rx + "$", re.S)
 
@@ -81,7 +81,9 @@ def load(lang):
             pats[k] = v
         else:
             _EXACT[k] = v
-    _PATTERNS.extend((_pattern(k), v) for k, v in pats.items())
+    # najpierw wzorce z najdłuższym stałym tekstem (bardziej szczegółowe)
+    for k in sorted(pats, key=lambda k: -len(re.sub(r"\{[a-z]\w*\}", "", k))):
+        _PATTERNS.append((_pattern(k), pats[k]))
 
 
 def is_rtl():
@@ -99,6 +101,9 @@ def tr(s):
     bare = s.replace("&", "")
     if bare != s and bare in _EXACT:
         return _EXACT[bare]
+    m = re.fullmatch(r"(.+?)(\s+\((?:Ctrl|Shift|Alt|F\d|Esc|Del|Enter|Space|Spacja)[^()]*\))", s, re.S)
+    if m and m.group(1) in _EXACT:                          # „Polecenie  (Ctrl+N)” – skrót bez zmian
+        return _EXACT[m.group(1)] + m.group(2)
     m = re.fullmatch(r"(<b>)(.*?)(</b>)", s, re.S)          # pogrubiony napis – tłumacz środek
     if m and m.group(2) in _EXACT:
         return m.group(1) + _EXACT[m.group(2)] + m.group(3)

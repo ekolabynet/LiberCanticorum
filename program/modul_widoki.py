@@ -265,7 +265,14 @@ class SongPicker(QWidget):
         self.src.setToolTip("Źródło pieśni – śpiewnik, zbiór")
         self.src.setProperty("i18n_no", True)
         self.src.currentIndexChanged.connect(self.refresh)
-        lay.addWidget(self.src)
+        srow = QHBoxLayout()
+        srow.addWidget(self.src, 1)
+        self.b_src = QPushButton("⚙")
+        self.b_src.setFixedWidth(32)
+        self.b_src.setToolTip("Menedżer źródeł: zmiana nazw, łączenie podobnych, usuwanie")
+        self.b_src.clicked.connect(lambda: self.bulk.emit('sources', []))
+        srow.addWidget(self.b_src)
+        lay.addLayout(srow)
         self.q = QLineEdit()
         self.q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
         self.q.setClearButtonEnabled(True)
@@ -316,12 +323,14 @@ class SongPicker(QWidget):
         keep = self.src.currentData()
         self.src.blockSignals(True)
         self.src.clear()
-        self.src.addItem("Wszystkie źródła", None)
+        from modul_i18n import tr as _t
+        self.src.addItem(_t("Wszystkie źródła"), None)
         for name, n in (self.db.sources() if hasattr(self.db, 'sources') else []):
-            self.src.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+            self.src.addItem(f"{name or _t('(bez źródła)')}  ({n})", name)
         k = self.src.findData(keep) if keep is not None else 0
         self.src.setCurrentIndex(k if k >= 0 else 0)
         self.src.setVisible(self.src.count() > 2)
+        self.b_src.setVisible(self.src.count() > 2)
         self.src.blockSignals(False)
 
     def refresh(self, *_):
@@ -371,9 +380,11 @@ class SongPicker(QWidget):
             m.addAction(f"🔗 Połącz zaznaczone ({len(ids)}) w jedną pieśń…", lambda: self.bulk.emit('merge', ids))
         m.addAction(f"🏷 Kategoria dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('category', ids))
         m.addAction(f"Tagi dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('tags', ids))
+        m.addAction(f"📚 Źródło dla zaznaczonych ({len(ids)})…", lambda: self.bulk.emit('source', ids))
         m.addSeparator()
         m.addAction("Znajdź duplikaty w całej bazie…", lambda: self.bulk.emit('duplicates', ids))
         m.addAction("Menedżer kategorii…", lambda: self.bulk.emit('categories', []))
+        m.addAction("Menedżer źródeł…", lambda: self.bulk.emit('sources', []))
         m.exec(self.list.viewport().mapToGlobal(pos))
 
     def current(self):

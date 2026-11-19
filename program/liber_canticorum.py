@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.25.0"
+VERSION = "0.26.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -218,9 +218,10 @@ def source_combo(db, keep=None, all_label="Wszystkie źródła"):
     c = QComboBox()
     c.setProperty("i18n_no", True)
     c.setToolTip("Źródło pieśni – śpiewnik, zbiór")
-    c.addItem(all_label, None)
+    from modul_i18n import tr as _t
+    c.addItem(_t(all_label), None)
     for name, n in db.sources():
-        c.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+        c.addItem(f"{name or _t('(bez źródła)')}  ({n})", name)
     k = c.findData(keep) if keep is not None else 0
     c.setCurrentIndex(max(0, k))
     return c
@@ -2240,15 +2241,34 @@ def similar_categories(names):
 
 class CategoryManagerDialog(QDialog):
     """Menedżer kategorii: zmiana nazwy, łączenie (także podobnych), usuwanie; podgląd pieśni w kategorii."""
+    FIELD, LISTFN, EXTRA = 'kategoria', 'categories', 'extra_categories'
+    T = {'title': "Menedżer kategorii", 'list': "Kategorie (Shift/Ctrl+klik – kilka):",
+         'b_ren': ("✎ Zmień nazwę…", "Nowa nazwa kategorii (dla wszystkich jej pieśni)"),
+         'b_merge': ("🔗 Połącz zaznaczone…", "Kilka kategorii w jedną (np. „Adwent” i „adwentowe”)"),
+         'b_sim': ("🔍 Znajdź podobne", "Zaznacza grupy kategorii, które wyglądają na tę samą"),
+         'b_new': ("✚ Nowa kategoria…", "Kategoria na liście wyboru – pieśni dodasz potem"),
+         'b_del': ("🗑 Usuń kategorię", "Pieśni z tej kategorii zostaną bez kategorii"),
+         'songs': "Pieśni w zaznaczonych kategoriach:", 'none': "(bez kategorii)",
+         'count': "Kategorii: {a}.  Zmiany można cofnąć: Plik → Cofnij ostatnie zmiany.",
+         'one': "Zaznacz jedną kategorię.", 'ren_q': "Nowa nazwa kategorii „{a}”:",
+         'ren_snap': "Zmiana nazwy kategorii „{a}” na „{b}”", 'two': "Zaznacz co najmniej dwie kategorie (Shift/Ctrl+klik).",
+         'merge_q': "Połączyć {a} kategorie w jedną.\nWybierz nazwę albo wpisz nową:",
+         'merge_snap': "Połączenie kategorii {a} w „{b}”", 'merged': "Połączono – {a} pieśni ma teraz kategorię „{b}”.",
+         'nosim': "Nie znalazłem podobnych kategorii.", 'new_q': "Nazwa nowej kategorii:",
+         'del_q': "Usunąć kategorie: {a}?\n{b} pieśni zostanie bez kategorii (pieśni nie są usuwane).",
+         'del_snap': "Usunięcie kategorii {a}"}
+
+    def _items(self):
+        return getattr(self.db, self.LISTFN)()
 
     def __init__(self, db, parent=None):
         super().__init__(parent)
         self.db, self.changed = db, False
-        self.setWindowTitle("Menedżer kategorii")
+        self.setWindowTitle(self.T['title'])
         self.resize(820, 560)
         lay = QHBoxLayout(self)
         left = QVBoxLayout()
-        left.addWidget(QLabel("Kategorie (Shift/Ctrl+klik – kilka):"))
+        left.addWidget(QLabel(self.T['list']))
         self.list = QListWidget()
         self.list.setSelectionMode(QListWidget.ExtendedSelection)
         self.list.itemSelectionChanged.connect(self.show_songs)
@@ -2259,16 +2279,14 @@ class CategoryManagerDialog(QDialog):
         left.addWidget(self.info)
         lay.addLayout(left, 1)
         right = QVBoxLayout()
-        for txt, fn, tip in (("✎ Zmień nazwę…", self.rename, "Nowa nazwa kategorii (dla wszystkich jej pieśni)"),
-                             ("🔗 Połącz zaznaczone…", self.merge, "Kilka kategorii w jedną (np. „Adwent” i „adwentowe”)"),
-                             ("🔍 Znajdź podobne", self.find_similar, "Zaznacza grupy kategorii, które wyglądają na tę samą"),
-                             ("✚ Nowa kategoria…", self.new_cat, "Kategoria na liście wyboru – pieśni dodasz potem"),
-                             ("🗑 Usuń kategorię", self.delete, "Pieśni z tej kategorii zostaną bez kategorii")):
+        for key, fn in (('b_ren', self.rename), ('b_merge', self.merge), ('b_sim', self.find_similar),
+                        ('b_new', self.new_cat), ('b_del', self.delete)):
+            txt, tip = self.T[key]
             b = QPushButton(txt)
             b.setToolTip(tip)
             b.clicked.connect(fn)
             right.addWidget(b)
-        right.addWidget(QLabel("Pieśni w zaznaczonych kategoriach:"))
+        right.addWidget(QLabel(self.T['songs']))
         self.songs = QListWidget()
         right.addWidget(self.songs, 1)
         close = QPushButton("Zamknij")
@@ -2280,22 +2298,22 @@ class CategoryManagerDialog(QDialog):
 
     def extra(self):
         try:
-            return json.loads(QSettings("LiberCanticorum", "LiberCanticorum").value("extra_categories", "[]") or "[]")
+            return json.loads(QSettings("LiberCanticorum", "LiberCanticorum").value(self.EXTRA, "[]") or "[]")
         except ValueError:
             return []
 
     def fill(self, select=()):
         self.list.clear()
-        used = dict(self.db.categories())
+        used = dict(self._items())
         for c in self.extra():
             used.setdefault(c, 0)
         for name in sorted(used, key=lambda n: (n == "", fold(n))):
-            it = QListWidgetItem(f"{name or '(bez kategorii)'}   ({used[name]})")
+            it = QListWidgetItem(f"{name or self.T['none']}   ({used[name]})")
             it.setData(Qt.UserRole, name)
             self.list.addItem(it)
             if name in select:
                 it.setSelected(True)
-        self.info.setText(f"Kategorii: {len([n for n in used if n])}.  Zmiany można cofnąć: Plik → Cofnij ostatnie zmiany.")
+        self.info.setText(self.T['count'].format(a=len([n for n in used if n])))
 
     def selected(self):
         return [it.data(Qt.UserRole) for it in self.list.selectedItems()]
@@ -2305,21 +2323,21 @@ class CategoryManagerDialog(QDialog):
         cats = self.selected()
         if not cats:
             return
-        for r in self.db.con.execute("SELECT title, COALESCE(kategoria, '') AS k FROM songs ORDER BY title").fetchall():
+        for r in self.db.con.execute(f"SELECT title, COALESCE({self.FIELD}, '') AS k FROM songs ORDER BY title").fetchall():
             if r['k'] in cats:
                 self.songs.addItem(r['title'] + (f"   [{r['k']}]" if len(cats) > 1 else ""))
 
     def _set(self, cats, new, label):
-        ids = [r['id'] for r in self.db.con.execute("SELECT id, COALESCE(kategoria, '') AS k FROM songs").fetchall()
+        ids = [r['id'] for r in self.db.con.execute(f"SELECT id, COALESCE({self.FIELD}, '') AS k FROM songs").fetchall()
                if r['k'] in cats]
         if ids:
             self.db.snapshot(label)
         for sid in ids:
             s = self.db.get(sid)
-            s['kategoria'] = new
+            s[self.FIELD] = new
             self.db.save(s)
         ex = [c for c in self.extra() if c not in cats]
-        QSettings("LiberCanticorum", "LiberCanticorum").setValue("extra_categories", json.dumps(ex, ensure_ascii=False))
+        QSettings("LiberCanticorum", "LiberCanticorum").setValue(self.EXTRA, json.dumps(ex, ensure_ascii=False))
         self.changed = True
         self.fill(select=[new])
         return len(ids)
@@ -2327,33 +2345,32 @@ class CategoryManagerDialog(QDialog):
     def rename(self):
         cats = [c for c in self.selected() if c]
         if len(cats) != 1:
-            QMessageBox.information(self, APP_NAME, "Zaznacz jedną kategorię.")
+            QMessageBox.information(self, APP_NAME, self.T['one'])
             return
-        new, ok = QInputDialog.getText(self, APP_NAME, f"Nowa nazwa kategorii „{cats[0]}”:", text=cats[0])
+        new, ok = QInputDialog.getText(self, APP_NAME, self.T['ren_q'].format(a=cats[0]), text=cats[0])
         if ok and new.strip() and new.strip() != cats[0]:
-            n = self._set(cats, new.strip(), f"Zmiana nazwy kategorii „{cats[0]}” na „{new.strip()}”")
+            n = self._set(cats, new.strip(), self.T['ren_snap'].format(a=cats[0], b=new.strip()))
             self.info.setText(f"Zmieniono nazwę – {n} pieśni.")
 
     def merge(self):
         cats = self.selected()
         if len(cats) < 2:
-            QMessageBox.information(self, APP_NAME, "Zaznacz co najmniej dwie kategorie (Shift/Ctrl+klik).")
+            QMessageBox.information(self, APP_NAME, self.T['two'])
             return
-        counts = dict(self.db.categories())
+        counts = dict(self._items())
         opts = sorted([c for c in cats if c], key=lambda c: -counts.get(c, 0)) or [""]
-        new, ok = QInputDialog.getItem(self, APP_NAME, f"Połączyć {len(cats)} kategorie w jedną.\n"
-                                       "Wybierz nazwę albo wpisz nową:", opts, 0, True)
+        new, ok = QInputDialog.getItem(self, APP_NAME, self.T['merge_q'].format(a=len(cats)), opts, 0, True)
         if ok and new.strip():
-            n = self._set(cats, new.strip(), f"Połączenie kategorii {', '.join(c or '(bez)' for c in cats)} w „{new.strip()}”")
-            self.info.setText(f"Połączono – {n} pieśni ma teraz kategorię „{new.strip()}”.")
+            n = self._set(cats, new.strip(), self.T['merge_snap'].format(a=', '.join(c or '(bez)' for c in cats), b=new.strip()))
+            self.info.setText(self.T['merged'].format(a=n, b=new.strip()))
             self._gi = 0
 
     def find_similar(self):
-        self._groups = similar_categories([n for n, _ in self.db.categories()] + self.extra())
+        self._groups = similar_categories([n for n, _ in self._items()] + self.extra())
         if self._gi >= len(self._groups):
             self._gi = 0
         if not self._groups:
-            self.info.setText("Nie znalazłem podobnych kategorii.")
+            self.info.setText(self.T['nosim'])
             return
         g = self._groups[self._gi]
         self._gi += 1
@@ -2366,12 +2383,12 @@ class CategoryManagerDialog(QDialog):
                           "albo „🔍 Znajdź podobne”, żeby przejść do następnej grupy.")
 
     def new_cat(self):
-        new, ok = QInputDialog.getText(self, APP_NAME, "Nazwa nowej kategorii:")
+        new, ok = QInputDialog.getText(self, APP_NAME, self.T['new_q'])
         if ok and new.strip():
             ex = self.extra()
             if new.strip() not in ex:
                 ex.append(new.strip())
-            QSettings("LiberCanticorum", "LiberCanticorum").setValue("extra_categories", json.dumps(ex, ensure_ascii=False))
+            QSettings("LiberCanticorum", "LiberCanticorum").setValue(self.EXTRA, json.dumps(ex, ensure_ascii=False))
             self.changed = True
             self.fill(select=[new.strip()])
 
@@ -2379,11 +2396,30 @@ class CategoryManagerDialog(QDialog):
         cats = [c for c in self.selected() if c]
         if not cats:
             return
-        n = sum(cnt for c, cnt in self.db.categories() if c in cats)
-        if QMessageBox.question(self, APP_NAME, f"Usunąć kategorie: {', '.join(cats)}?\n{n} pieśni zostanie bez kategorii "
-                                "(pieśni nie są usuwane).") != QMessageBox.Yes:
+        n = sum(cnt for c, cnt in self._items() if c in cats)
+        if QMessageBox.question(self, APP_NAME, self.T['del_q'].format(a=', '.join(cats), b=n)) != QMessageBox.Yes:
             return
-        self._set(cats, "", f"Usunięcie kategorii {', '.join(cats)}")
+        self._set(cats, "", self.T['del_snap'].format(a=', '.join(cats)))
+
+
+class SourceManagerDialog(CategoryManagerDialog):
+    """Menedżer źródeł (śpiewników): zmiana nazwy, łączenie podobnych („Siedlecki” / „Śpiewnik Siedleckiego”), usuwanie."""
+    FIELD, LISTFN, EXTRA = 'spiewnik', 'sources', 'extra_sources'
+    T = {'title': "Menedżer źródeł", 'list': "Źródła – śpiewniki, zbiory (Shift/Ctrl+klik – kilka):",
+         'b_ren': ("✎ Zmień nazwę…", "Nowa nazwa źródła (dla wszystkich jego pieśni)"),
+         'b_merge': ("🔗 Połącz zaznaczone…", "Kilka źródeł w jedno (np. „Siedlecki” i „Śpiewnik Siedleckiego”)"),
+         'b_sim': ("🔍 Znajdź podobne", "Zaznacza grupy źródeł, które wyglądają na to samo"),
+         'b_new': ("✚ Nowe źródło…", "Źródło na liście wyboru – pieśni dodasz potem"),
+         'b_del': ("🗑 Usuń źródło", "Pieśni z tego źródła zostaną bez źródła"),
+         'songs': "Pieśni z zaznaczonych źródeł:", 'none': "(bez źródła)",
+         'count': "Źródeł: {a}.  Zmiany można cofnąć: Plik → Cofnij ostatnie zmiany.",
+         'one': "Zaznacz jedno źródło.", 'ren_q': "Nowa nazwa źródła „{a}”:",
+         'ren_snap': "Zmiana nazwy źródła „{a}” na „{b}”", 'two': "Zaznacz co najmniej dwa źródła (Shift/Ctrl+klik).",
+         'merge_q': "Połączyć {a} źródła w jedno.\nWybierz nazwę albo wpisz nową:",
+         'merge_snap': "Połączenie źródeł {a} w „{b}”", 'merged': "Połączono – {a} pieśni ma teraz źródło „{b}”.",
+         'nosim': "Nie znalazłem podobnych źródeł.", 'new_q': "Nazwa nowego źródła (śpiewnika, zbioru):",
+         'del_q': "Usunąć źródła: {a}?\n{b} pieśni zostanie bez źródła (pieśni nie są usuwane).",
+         'del_snap': "Usunięcie źródeł {a}"}
 
 
 class DuplicatesDialog(QDialog):
@@ -3567,11 +3603,19 @@ class MainWindow(QMainWindow):
         self.fill_bg_combo()
         self.bg_combo.currentIndexChanged.connect(self.on_bg_combo)
 
-        r = 0
+        r = 0                                               # najczęściej zmieniane – na górze
+        g.addWidget(QLabel("<b>Zwrotek na slajd:</b>"), r, 0)
+        g.addWidget(self.w['zwrotek_na_slajd'], r, 1)
+        g.addWidget(QLabel("<b>Obraz tła:</b>"), r, 2)
+        g.addWidget(self.bg_combo, r, 3)
+        r += 1
         g.addWidget(QLabel("Format:"), r, 0)
         g.addWidget(self.w['format'], r, 1)
-        g.addWidget(QLabel("Zwrotek na slajd:"), r, 2)
-        g.addWidget(self.w['zwrotek_na_slajd'], r, 3)
+        hl3 = QHBoxLayout()
+        hl3.addWidget(QLabel("Wyciszenie tła:"))
+        hl3.addWidget(self.w['przyciemnienie'])
+        hl3.addStretch()
+        g.addLayout(hl3, r, 2, 1, 2)
         r += 1
         chk('refren_osobno', "Refren na osobnym slajdzie", r, 0)
         chk('powtarzaj_refren', "Powtarzaj refren", r, 1)
@@ -3599,13 +3643,6 @@ class MainWindow(QMainWindow):
             hl2.addWidget(self.w[key])
         hl2.addStretch()
         g.addLayout(hl2, r, 2, 1, 2)
-        r += 1
-        g.addWidget(QLabel("Obraz tła:"), r, 0)
-        g.addWidget(self.bg_combo, r, 1, 1, 2)
-        hl3 = QHBoxLayout()
-        hl3.addWidget(QLabel("Wyciszenie tła:"))
-        hl3.addWidget(self.w['przyciemnienie'])
-        g.addLayout(hl3, r, 3)
         r += 1
         chk('cien', "Cień / poświata pod tekstem", r, 0)
         g.addWidget(QLabel("Marginesy (bok / góra-dół):"), r, 2)
@@ -4070,6 +4107,7 @@ class MainWindow(QMainWindow):
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
         act(m_song, "Kategoria dla zaznaczonych pieśni…", self.bulk_category)
         act(m_song, "Tagi dla zaznaczonych pieśni (dodaj / usuń)…", self.bulk_tags)
+        act(m_song, "📚 Źródło (śpiewnik) dla zaznaczonych pieśni…", self.bulk_source)
         act(m_song, "Zapisz bieżący tekst jako wersję…", self.store_text_as_version)
         m_song.addSeparator()
         act(m_song, "Eksport do PDF…", lambda: self.export_current('pdf'), "Ctrl+E", True)
@@ -4088,6 +4126,7 @@ class MainWindow(QMainWindow):
         act(m_file, "↶ Cofnij ostatnie zmiany w bazie (import, łączenie, usuwanie)…", self.undo_db_dialog, "Ctrl+Shift+Z")
         act(m_file, "Znajdź i połącz duplikaty pieśni…", self.find_duplicates)
         act(m_file, "🏷 Menedżer kategorii (zmiana nazw, łączenie, usuwanie)…", self.category_manager)
+        act(m_file, "📚 Menedżer źródeł – śpiewników (zmiana nazw, łączenie, usuwanie)…", self.source_manager)
         m_file.addSeparator()
         act(m_file, "Eksport śpiewnika offline HTML (telefon, tablet)…", lambda: self.export_html(None), "Ctrl+H")
         m_file.addSeparator()
@@ -4213,9 +4252,9 @@ class MainWindow(QMainWindow):
         for combo, items, cur in ((self.f_cat, cats, cur_c), (self.f_tag, tags, cur_t), (self.f_src, srcs, cur_s)):
             combo.blockSignals(True)
             combo.clear()
-            combo.addItem(self.ALL, None)
+            combo.addItem(__import__("modul_i18n").tr(self.ALL), None)
             for name, n in items:
-                combo.addItem(f"{name or ('(bez źródła)' if combo is self.f_src else self.NONE_CAT)} ({n})", name)
+                combo.addItem(f"{name or __import__('modul_i18n').tr('(bez źródła)' if combo is self.f_src else self.NONE_CAT)} ({n})", name)
             idx = combo.findText(cur, Qt.MatchStartsWith) if cur and cur != self.ALL else 0
             combo.setCurrentIndex(max(0, idx))
             combo.blockSignals(False)
@@ -4560,6 +4599,8 @@ class MainWindow(QMainWindow):
             self.find_duplicates()
         elif action == 'categories':
             self.category_manager()
+        elif action == 'sources':
+            self.source_manager()
         self._refresh_pickers()
 
     def _open_support(self, title, url, desc="", acc=None):
@@ -4637,7 +4678,7 @@ class MainWindow(QMainWindow):
         lay = QVBoxLayout(d)
         tb = QTextBrowser()
         tb.setOpenExternalLinks(True)
-        tb.setHtml(COPYRIGHT_HTML)
+        tb.setHtml(__import__('modul_i18n').tr(COPYRIGHT_HTML.strip()))
         lay.addWidget(tb)
         b = QPushButton("Zamknij")
         b.clicked.connect(d.accept)
@@ -4690,6 +4731,8 @@ class MainWindow(QMainWindow):
                  "(teksty jako wersje, nuty, nagrania, zestawy)", self.find_duplicates),
                 ("🏷  Menedżer kategorii", "Zmiana nazw, łączenie podobnych („Adwent” / „adwentowe”), nowe, usuwanie",
                  self.category_manager),
+                ("📚  Menedżer źródeł (śpiewników)", "Zmiana nazw, łączenie podobnych („Siedlecki” / „Śpiewnik Siedleckiego”), "
+                 "nowe, usuwanie; źródło dla wielu pieśni – zaznacz je na liście i „📚 Źródło…”", self.source_manager),
                 ("↶  Cofnij ostatnie zmiany w bazie", "Import, łączenie, kategorie, usuwanie – powrót do stanu sprzed zmiany",
                  self.undo_db_dialog)):
             b = QPushButton(txt)
@@ -4715,10 +4758,13 @@ class MainWindow(QMainWindow):
         d.exec()
         self._refresh_pickers()
 
-    def category_manager(self):
+    def source_manager(self):
+        self.category_manager(SourceManagerDialog)
+
+    def category_manager(self, cls=None):
         if self.dirty and not self.maybe_save():
             return
-        dlg = CategoryManagerDialog(self.db, self)
+        dlg = (cls if isinstance(cls, type) else CategoryManagerDialog)(self.db, self)
         dlg.exec()
         if dlg.changed:
             sid = (self.song or {}).get('id')

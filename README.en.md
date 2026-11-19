@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.25.0
+# Liber Canticorum 0.26.0
 *a free songbook for communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -62,6 +62,13 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 
 ## New features step by step
 
+**New in 0.26.** A **source manager** (File → “📚 Source manager…”, the “Tidy up” tile, the ⚙ button next to the
+source list) – rename, merge similar sources, add, delete; set the source of one or many selected songs with
+“📚 Source for selected…”. Slide design shows **verses per slide** and **background image** at the top. The whole
+program is now translated into English, including helper windows, tooltips and messages; in other languages
+anything not yet translated appears in English. In **Latin**, “Today's liturgy” links to the traditional liturgy
+(1962 Missal): *Proprium diei* in [Missale Meum](https://missale.bieda.it/) and the *Ordo* on [propria.org](https://propria.org/).
+
 **Share your melodies and arrangements (0.25).** A melody you entered or your own setting (schola, choir, organ) can
 help other communities: share it on [MuseScore.com](https://musescore.com/) **with an open licence** – CC0 (public
 domain) or CC BY / CC BY-SA. In the melody editor: “🌍 Share on MuseScore.com…” (MusicXML export, the Upload button
@@ -100,7 +107,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.25.0.zip` and run:
+Unpack `LiberCanticorum_0.26.0.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

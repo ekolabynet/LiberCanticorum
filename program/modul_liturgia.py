@@ -521,6 +521,25 @@ class LiturgyDialog(QDialog):
         self.b_web.clicked.connect(self.open_web)
         top.addWidget(self.b_web)
         lay.addLayout(top)
+        try:
+            import modul_i18n
+            latin = modul_i18n.LANG == 'la'
+        except Exception:
+            latin = False
+        if latin:                                           # po łacinie: liturgia tradycyjna (Mszał 1962)
+            trad = QHBoxLayout()
+            lab = QLabel("<b>Missale Romanum 1962</b> – usus antiquior:")
+            trad.addWidget(lab)
+            for txt, fn in (("📜 Proprium diei (Missale Meum)",
+                             lambda: QDesktopServices.openUrl(QUrl(
+                                 f"https://missale.bieda.it/en/calendar/{self.date.isoformat()}"))),
+                            ("📅 Ordo (propria.org)",
+                             lambda: QDesktopServices.openUrl(QUrl(f"https://propria.org/ordo-{self.date.year}/")))):
+                b = QPushButton(txt)
+                b.clicked.connect(fn)
+                trad.addWidget(b)
+            trad.addStretch(1)
+            lay.addLayout(trad)
         sp = QSplitter()
         self.text = QTextBrowser()
         self.text.setOpenExternalLinks(True)
@@ -555,10 +574,11 @@ class LiturgyDialog(QDialog):
         self.src = QComboBox()
         self.src.setProperty("i18n_no", True)
         self.src.setToolTip("Tylko pieśni z wybranego śpiewnika / zbioru")
-        self.src.addItem("Wszystkie źródła", None)
+        from modul_i18n import tr as _t
+        self.src.addItem(_t("Wszystkie źródła"), None)
         try:
             for name, n in db.sources():
-                self.src.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+                self.src.addItem(f"{name or _t('(bez źródła)')}  ({n})", name)
         except Exception:
             pass
         keep = self.qs.value("lit_source", None)

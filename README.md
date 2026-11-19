@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.25.0
+# Liber Canticorum 0.26.0
 *wolny śpiewnik dla wspólnot*
 
 🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
@@ -101,6 +101,16 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Nowości w 0.26.**
+- **Menedżer źródeł** (Plik → „📚 Menedżer źródeł…”, kafel „Porządki”, przycisk ⚙ przy liście źródeł) – zmiana nazw,
+  łączenie podobnych („Siedlecki” / „Śpiewnik Siedleckiego”), nowe, usuwanie. Źródło jednej lub wielu pieśni:
+  zaznacz je na liście (także jedną) i „📚 Źródło dla zaznaczonych…” (menu pod prawym przyciskiem, menu Pieśń).
+- **Wygląd slajdów:** na górze „Zwrotek na slajd” i „Obraz tła” – to, co zmienia się najczęściej.
+- **Tłumaczenia okien:** po angielsku przetłumaczony jest teraz cały program (także okna pomocnicze, podpowiedzi,
+  komunikaty, prawa autorskie); w pozostałych językach to, czego jeszcze nie ma, pokazuje się po angielsku.
+- **Po łacinie** okno „Liturgia z dnia” ma odnośniki do liturgii tradycyjnej (Mszał 1962): *Proprium diei* w
+  [Missale Meum](https://missale.bieda.it/) i *Ordo* na [propria.org](https://propria.org/).
 
 **Podziel się melodią lub aranżacją (nowość w 0.25).** Wpisaną melodię albo własne opracowanie (na scholę, chór,
 organy) udostępnij na [MuseScore.com](https://musescore.com/) **z licencją otwartą** – CC0 (domena publiczna) albo
@@ -237,7 +247,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.25.0/
+LiberCanticorum_0.26.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

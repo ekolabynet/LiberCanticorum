@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.25.0
+# Liber Canticorum 0.26.0
 *un cancionero libre para las comunidades*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -62,6 +62,13 @@ Las listas se filtran por **categoría**, **fuente (cancionero)** y búsqueda. C
 
 ## Novedades paso a paso
 
+**Novedades en 0.26.** Un **gestor de fuentes** (Archivo → «📚 Gestor de fuentes…», mosaico «Ordenar», botón ⚙
+junto a la lista de fuentes) – renombrar, fusionar, añadir, eliminar; fuente de uno o varios cantos seleccionados
+con «📚 Fuente…». En el aspecto de las diapositivas, **estrofas por diapositiva** e **imagen de fondo** están arriba.
+Todo el programa está traducido al inglés; en los demás idiomas lo que falta aparece en inglés. En **latín**, la
+«Liturgia del día» enlaza con la liturgia tradicional (misal de 1962): [Missale Meum](https://missale.bieda.it/) y
+[propria.org](https://propria.org/).
+
 **Comparte tus melodías y arreglos (0.25).** Una melodía que hayas introducido o tu propio arreglo (schola, coro,
 órgano) puede ayudar a otras comunidades: compártelo en [MuseScore.com](https://musescore.com/) **con licencia
 abierta** – CC0 (dominio público) o CC BY / CC BY-SA. En el editor de melodías: «🌍 Compartir en MuseScore.com…»
@@ -100,7 +107,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.25.0.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.26.0.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
