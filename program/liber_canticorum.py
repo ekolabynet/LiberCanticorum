@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.7"
+VERSION = "0.29.8"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -147,7 +147,7 @@ SUPPORT = [
     ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
      "Kochamy muzykę – zwłaszcza chóralną i tę, która towarzyszy liturgii – i nie możemy nie śpiewać :-). Śpiewem służymy wspólnocie parafii M.B. Królowej Meksyku w Laskach; promienie w naszym logo to zachwyt nad niepojętym działaniem Boga. Jesteśmy odpowiedzialni za Mszę o bogactwo łaski dla rodzin – byłych, obecnych i przyszłych, we wszystkich ich potrzebach (to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
-     {'krotko': "Schola adHoc działa przy parafii M.B. Królowej Meksyku w Laskach. W każdą I niedzielę miesiąca modlimy się śpiewem w czasie Mszy o bogactwo łaski dla rodzin. Dołącz swoją intencję i pomódl się śpiewem razem z nami :-). Duch Święty działa potężnie za wstawiennictwem naszej Królowej.",
+     {'krotko': "Schola adHoc działa przy parafii M.B. Królowej Meksyku w Laskach. W każdą I niedzielę miesiąca modlimy się śpiewem w czasie Mszy o bogactwo łaski dla rodzin. Dołącz swoją intencję i pomódl się śpiewem razem z nami :-). UWAGA! Duch Święty działa potężnie za wstawiennictwem naszej Królowej.",
       'zaangazuj': "Najlepiej wesprzesz nas, śpiewając razem z nami: na Mszy w I niedzielę miesiąca w samo południe w kościele w Laskach (ul. 3 Maja 40/42), a próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! Mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – polecimy ją Bogu na Mszy.",
       'baner': "ikony/adhoc_baner.png"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",

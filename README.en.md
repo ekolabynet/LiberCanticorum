@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.7
+# Liber Canticorum 0.29.8
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -135,7 +135,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.29.7.zip` and run:
+Unpack `LiberCanticorum_0.29.8.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
