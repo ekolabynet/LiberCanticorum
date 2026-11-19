@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.0
+# Liber Canticorum 0.27.1
 *wolny śpiewnik dla wspólnot*
 
 🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
@@ -106,7 +106,9 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 czytanie i Ewangelię dnia z **Vatican News** („Słowo na dziś”) w języku interfejsu (angielski, hiszpański, francuski,
 portugalski, a także włoski i niemiecki, jeśli strona odpowie; w pozostałych – po angielsku) i według nich proponuje
 pieśni. Obok są przyciski do krajowych mszalików: USCCB i Universalis (EN), AELF (FR), Schott – Beuron (DE),
-CEI (IT), Dominicos (ES); po łacinie – Mszał 1962. Daty wyświetlają się w języku interfejsu.
+CEI (IT), Dominicos (ES). **Po łacinie** okno pokazuje wprost *Proprium Missae* z Mszału 1962 (Introitus, Oratio,
+Lectio, Graduale, Evangelium, Offertorium, Secreta, Communio, Postcommunio – po łacinie, z Missale Meum) i według niego
+proponuje pieśni. Daty wyświetlają się w języku interfejsu.
 
 **Nowości w 0.26.**
 - **Menedżer źródeł** (Plik → „📚 Menedżer źródeł…”, kafel „Porządki”, przycisk ⚙ przy liście źródeł) – zmiana nazw,
@@ -253,7 +255,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.27.0/
+LiberCanticorum_0.27.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

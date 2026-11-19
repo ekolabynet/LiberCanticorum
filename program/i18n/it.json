@@ -1148,6 +1148,10 @@
   "Modlitwa po Komunii": "Dopo la comunione",
   "Czytania w Twoim języku:": "Letture nella tua lingua:",
   "Vatican News – {a}": "Vatican News – {a}",
-  "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "Letture: <a href='{a}'>{b}</a> (Vatican News, «Parola del giorno»). Il programma le mostra soltanto e le conserva nel tuo archivio per l'uso offline."
+  "Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je wyświetla i pamięta w Twojej bazie, aby działały bez internetu.": "Letture: <a href='{a}'>{b}</a> (Vatican News, «Parola del giorno»). Il programma le mostra soltanto e le conserva nel tuo archivio per l'uso offline.",
+  "Antyfona na ofiarowanie": "Antifona all'offertorio",
+  "Missale Romanum 1962 (Missale Meum)": "",
+  "Missale Romanum 1962 – <a href='{a}'>{b}</a> (Missale Meum).": "",
+  "Kolor szat:": "Colore liturgico:"
  }
 }

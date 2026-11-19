@@ -105,6 +105,7 @@ SECTIONS = [  # klucz, nazwa, wzorzec nagłówka (po złożeniu do małych liter
     ('aklamacja', "Aklamacja przed Ewangelią",
      r"(aklamacja( przed ewangeli[aą])?|werset przed ewangeli[aą]( \(alleluja\))?|[sś]piew przed ewangeli[aą])"),
     ('ewangelia', "Ewangelia", r"ewangelia( na dzi[sś])?"),
+    ('offert', "Antyfona na ofiarowanie", r"antyfona na ofiarowanie"),
     ('dary', "Modlitwa nad darami", r"modlitwa nad darami"),
     ('prefacja', "Prefacja", r"prefacja"),
     ('ant_kom', "Antyfona na Komunię", r"antyfona na komuni[eęi]"),
@@ -298,6 +299,66 @@ _VN_STOP = re.compile(r"(?i)^(the words of the popes|las palabras de los papas|l
                       r"as palavras dos papas|le parole dei papi|die worte der p[äa]pste|excerpts from the lectionary)")
 
 
+# Mszał 1962 (usus antiquior) – Missale Meum (API: łacina + angielski)
+MM_HOSTS = ("https://missale.bieda.it", "https://www.missalemeum.com")
+_MM_MAP = {'introitus': 'ant_wej', 'oratio': 'kolekta', 'lectio': 'czyt1', 'graduale': 'psalm', 'tractus': 'aklamacja',
+           'alleluja': 'aklamacja', 'alleluia': 'aklamacja', 'sequentia': 'sekwencja', 'evangelium': 'ewangelia',
+           'offertorium': 'offert', 'secreta': 'dary', 'praefatio': 'prefacja', 'communio': 'ant_kom',
+           'postcommunio': 'po_kom'}
+
+
+def _mm_clean(t):
+    """Znaczniki Divinum Officium → zwykły tekst."""
+    out = []
+    for l in (t or "").split("\n"):
+        l = l.strip()
+        if not l or l.startswith(("&", "$", "#")):
+            continue
+        l = re.sub(r"[_*]", "", l)
+        l = re.sub(r"^(v\.|r\.|V\.|R\.)\s*", lambda m: m.group(1).upper() + " ", l)
+        out.append(l)
+    return "\n".join(out).strip()
+
+
+def fetch_missale(date, timeout=25):
+    """Proprium Missae z Mszału 1962 na dany dzień – tekst łaciński (Missale Meum)."""
+    errors = []
+    for host in MM_HOSTS:
+        url = f"{host}/en/api/v5/proper/{date:%Y-%m-%d}"
+        try:
+            req = urllib.request.Request(url, headers=dict(UA, Accept="application/json"))
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read().decode('utf-8'))
+        except Exception as e:
+            errors.append(f"{url}: {e}")
+            continue
+        if not data:
+            errors.append(f"{url}: pusto")
+            continue
+        p = data[0]
+        secs = {}
+        for sec in p.get('sections', []):
+            key = _MM_MAP.get(re.sub(r"[^a-z]", "", (sec.get('id') or "").lower()))
+            if not key or key in secs:
+                continue
+            body = sec.get('body') or []
+            latin = "\n".join((b[1] if len(b) > 1 and b[1] else b[0]) for b in body if b)
+            lines = [l for l in latin.split("\n")]
+            sig = ""
+            if lines and lines[0].strip().startswith("!"):
+                sig = lines.pop(0).strip("! ")
+            text = _mm_clean("\n".join(lines))
+            if text:
+                secs[key] = {'naglowek': SECTION_NAMES[key], 'sigla': sig, 'tekst': text}
+        info = p.get('info', {})
+        meta = {'dzien': info.get('title') or "", 'kolor': ", ".join(info.get('colors') or [])}
+        if secs:
+            return {'zrodlo': 'missale', 'url': f"{host}/en/calendar/{date:%Y-%m-%d}", 'data': date.isoformat(),
+                    'sekcje': secs, 'meta': meta, 'jezyk': 'la'}
+        errors.append(f"{url}: brak tekstów")
+    raise RuntimeError("Missale Meum: " + "; ".join(errors[-2:]))
+
+
 def vatican_url(date, lang, slug):
     return f"https://www.vaticannews.va/{lang}/{slug}/{date:%Y/%m/%d}.html"
 
@@ -420,10 +481,10 @@ SECTION_TO_PART = {'ant_wej': ["Wejście"], 'kolekta': ["Wejście"], 'czyt1': ["
                    'psalm': ["Ofiarowanie", "Komunia"], 'czyt2': ["Ofiarowanie", "Uwielbienie"],
                    'aklamacja': ["Uwielbienie", "Komunia"], 'ewangelia': ["Komunia", "Uwielbienie", "Ofiarowanie"],
                    'dary': ["Ofiarowanie"], 'prefacja': ["Uwielbienie"], 'ant_kom': ["Komunia"],
-                   'po_kom': ["Uwielbienie", "Wyjście"], 'sekwencja': ["Uwielbienie"]}
+                   'po_kom': ["Uwielbienie", "Wyjście"], 'sekwencja': ["Uwielbienie"], 'offert': ["Ofiarowanie"]}
 SECTION_WEIGHT = {'ant_wej': 1.3, 'psalm': 1.4, 'ewangelia': 1.3, 'ant_kom': 1.3, 'aklamacja': 1.1,
                   'czyt1': 1.0, 'czyt2': 0.9, 'kolekta': 0.9, 'dary': 0.8, 'prefacja': 0.8, 'po_kom': 0.8,
-                  'sekwencja': 1.0}
+                  'sekwencja': 1.0, 'offert': 1.2}
 
 
 _ORDINARY_WORDS = ("kyrie", "gloria", "sanctus", "agnus dei", "baranku bozy", "panie zmiluj sie", "chwala na wysokosci",
@@ -619,7 +680,9 @@ class LiturgyDialog(QDialog):
             self.lang = modul_i18n.LANG
         except Exception:
             self.lang = 'pl'
-        if self.lang not in ('pl', 'la'):                 # czytania w języku interfejsu – Vatican News
+        if self.lang == 'la':                                # po łacinie – Mszał 1962
+            self.src.addItem("Missale Romanum 1962 (Missale Meum)", 'missale')
+        elif self.lang != 'pl':                              # czytania w języku interfejsu – Vatican News
             self.src.addItem(f"Vatican News – {self.lang.upper()}", 'vatican')
         self.src.addItem("Automatycznie (najpierw pełny mszalik)", 'auto')
         for k, (name, _) in SOURCES.items():
@@ -743,8 +806,8 @@ class LiturgyDialog(QDialog):
         self.foot.setStyleSheet("color: gray;")
         lay.addWidget(self.foot)
         self._done.connect(self._fetched)
-        if self.lang not in ('pl', 'la'):
-            self.src.setCurrentIndex(0)                       # Vatican News w języku interfejsu
+        if self.lang != 'pl':
+            self.src.setCurrentIndex(0)                       # Vatican News / Mszał 1962 w języku interfejsu
         cached = db.get_liturgy(self._key(date))
         if cached:
             self.show_lit(cached)
@@ -753,7 +816,8 @@ class LiturgyDialog(QDialog):
 
     def _key(self, day, lit=None):
         """Klucz pamięci podręcznej: polska liturgia – sama data; Vatican News – data@język."""
-        vat = (lit.get('zrodlo') == 'vatican') if lit is not None else self.src.currentData() == 'vatican'
+        vat = (lit.get('zrodlo') in ('vatican', 'missale')) if lit is not None else \
+            self.src.currentData() in ('vatican', 'missale')
         return day.isoformat() + (f"@{self.lang}" if vat else "")
 
     def fetch(self):
@@ -767,6 +831,7 @@ class LiturgyDialog(QDialog):
         def run():
             try:
                 lit = (fetch_vatican(day, self.lang) if src == 'vatican' else
+                       fetch_missale(day) if src == 'missale' else
                        fetch_any(day) if src == 'auto' else fetch(day, src))
                 self._done.emit((day, lit), "")
             except Exception as e:
@@ -795,7 +860,11 @@ class LiturgyDialog(QDialog):
         if meta.get('dzien'):
             parts.append(f"<h2>{html.escape(meta['dzien'])}</h2>")
         if meta.get('kolor'):
-            parts.append(f"<p>Kolor szat: {html.escape(meta['kolor'])}</p>")
+            kol = meta['kolor']
+            if lit.get('zrodlo') == 'missale':
+                kol = ", ".join({'w': "albus", 'r': "ruber", 'g': "viridis", 'v': "violaceus", 'b': "niger",
+                                 'p': "rosaceus"}.get(c.strip(), c) for c in kol.split(","))
+            parts.append(f"<p>{_tr('Kolor szat:')} {html.escape(kol)}</p>")
         for k, name, _ in SECTIONS:
             s = lit.get('sekcje', {}).get(k)
             if not s:
@@ -806,10 +875,14 @@ class LiturgyDialog(QDialog):
             body = html.escape(s['tekst']).replace("\n", "<br>")
             parts.append(f"<p>{body}</p>")
         self.text.setHtml("".join(parts) or "<p>(brak tekstów)</p>")
-        if meta.get('dzien'):
+        if lit.get('zrodlo') == 'missale':                  # usus antiquior – bez cyklu lekcjonarza (rok A/B/C)
+            self.head.setText(f"<b>{self.date.strftime('%d.%m.%Y')}</b> • {html.escape(meta.get('dzien', ''))}")
+        elif meta.get('dzien'):
             self.head.setText(self.head.text().split(" • ")[0] + " • " + html.escape(meta['dzien']))
         src = lit.get('url', '')
-        if lit.get('zrodlo') == 'vatican':
+        if lit.get('zrodlo') == 'missale':
+            self.foot.setText(f"Missale Romanum 1962 – <a href='{src}'>{html.escape(src)}</a> (Missale Meum).")
+        elif lit.get('zrodlo') == 'vatican':
             self.foot.setText(_tr("Czytania: <a href='{a}'>{b}</a> (Vatican News, „Słowo na dziś”). Program tylko je "
                                   "wyświetla i pamięta w Twojej bazie, aby działały bez internetu.").replace(
                 "{a}", src).replace("{b}", html.escape(src)))
@@ -882,10 +955,13 @@ class LiturgyDialog(QDialog):
 
     def open_web(self):
         src = self.src.currentData()
+        if src == 'missale' and not (self.lit or {}).get('url'):
+            QDesktopServices.openUrl(QUrl(f"{MM_HOSTS[0]}/en/calendar/{self.date:%Y-%m-%d}"))
+            return
         if src == 'vatican' and not (self.lit or {}).get('url'):
             vl = self.lang if self.lang in VN_SLUGS else 'en'
             QDesktopServices.openUrl(QUrl(vatican_url(self.date, vl, VN_SLUGS[vl][0])))
             return
-        url = (self.lit or {}).get('url') or SOURCES['gregorianski' if src in ('auto', 'vatican') else src][1].format(
+        url = (self.lit or {}).get('url') or SOURCES['gregorianski' if src in ('auto', 'vatican', 'missale') else src][1].format(
             d=self.date.isoformat())
         QDesktopServices.openUrl(QUrl(url))
