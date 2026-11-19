@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.21.1
+# Liber Canticorum 0.21.2
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -184,7 +184,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.21.1/
+LiberCanticorum_0.21.2/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -387,7 +387,11 @@ kolektę, czytania, psalm z refrenem, aklamację, Ewangelię, modlitwę nad dara
 próbuje po kolei i uzupełnia brakujące części. Pobrana liturgia zostaje w bazie, więc potem działa bez internetu.
 Obok tekstów program pokazuje pieśni z Twojej bazy, które nawiązują do słów i fraz liturgii (np. refren psalmu,
 antyfona, Ewangelia), z podpowiedzią, do której części Mszy pasują; ★ oznacza pieśń z kategorii bieżącego okresu.
-Jedno kliknięcie dodaje pieśń do zestawu. Teksty liturgiczne należą do wydawców (Pallottinum/KEP) –
+Jedno kliknięcie dodaje pieśń do zestawu. **Dzień wybierasz w nagłówku okna:** kalendarz (dzień, miesiąc, rok), ◀ / ▶ – dzień wcześniej / później,
+◀◀ / ▶▶ – tydzień, „Dziś”, „Najbliższa niedziela” (okres liturgiczny i teksty zmieniają się same; pobrane dni
+program pamięta). **Dopasowanie** pieśni do liturgii: *Szeroko* (także pojedyncze wspólne słowa – więcej propozycji),
+*Zrównoważone* (zalecane), *Frazy* (co najmniej 3 kolejne słowa z liturgii), *Ściśle* (tylko długie frazy, 4+ słowa);
+do tego „Tylko pieśni z kategorii okresu”. Program pamięta wybór. Teksty liturgiczne należą do wydawców (Pallottinum/KEP) –
 program ich nie rozpowszechnia, tylko wyświetla je ze stron źródłowych.
 
 **📦 Materiały…** (zestaw) i Pieśń → „Eksport materiałów” – wszystko do jednego folderu: teksty (DOCX, TXT, HTML),

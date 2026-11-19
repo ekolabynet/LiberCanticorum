@@ -322,10 +322,19 @@ SECTION_WEIGHT = {'ant_wej': 1.3, 'psalm': 1.4, 'ewangelia': 1.3, 'ant_kom': 1.3
                   'sekwencja': 1.0}
 
 
-def suggest(liturgy, songs, okres=None, limit=40):
+MATCH_MODES = [  # (nazwa, min. długość frazy w słowach, waga pojedynczych słów, próg)
+    ("Szeroko – pojedyncze słowa i krótkie frazy (więcej propozycji)", 2, 1.3, 0.08),
+    ("Zrównoważone – słowa i frazy (zalecane)", 2, 1.0, 0.15),
+    ("Frazy – co najmniej 3 kolejne słowa z liturgii", 3, 0.5, 0.3),
+    ("Ściśle – tylko długie frazy (4+ słowa), najtrafniejsze", 4, 0.2, 0.4),
+]
+
+
+def suggest(liturgy, songs, okres=None, limit=40, mode=1, okres_only=False):
     """songs: [{'id','title','refren','zwrotki_raw' lub 'zwrotki','kategoria','tagi'}]
     → [{'id','title','score','parts','frazy': [(sekcja, fraza)], 'okres': bool}] od najlepszej."""
     import math
+    _, min_run, word_w, thr = MATCH_MODES[max(0, min(len(MATCH_MODES) - 1, mode))]
     docs = []
     df = {}
     for s in songs:
@@ -359,7 +368,7 @@ def suggest(liturgy, songs, okres=None, limit=40):
             hit = {t for t in stems if t in st}
             if not hit:
                 continue
-            sc = sum(idf.get(t, 0) * (0.3 if t in COMMON else 1.0) for t in hit) * w
+            sc = sum(idf.get(t, 0) * (0.3 if t in COMMON else 1.0) for t in hit) * w * word_w
             # frazy: kolejne słowa liturgii występujące obok siebie w pieśni
             best = []
             run = []
@@ -367,10 +376,10 @@ def suggest(liturgy, songs, okres=None, limit=40):
                 if run and (run[-1][0], t) in bigr:
                     run.append((t, o))
                 else:
-                    if len(run) >= 2:
+                    if len(run) >= min_run:
                         best.append(run)
                     run = [(t, o)] if t in st else []
-            if len(run) >= 2:
+            if len(run) >= min_run:
                 best.append(run)
             ph = 0.0
             seen = set()
@@ -386,9 +395,13 @@ def suggest(liturgy, songs, okres=None, limit=40):
             for p in SECTION_TO_PART.get(k, []):
                 parts[p] = parts.get(p, 0) + sc
         is_okres = bool(kat) and (s.get('kategoria') or "") == kat
+        if okres_only and not is_okres:
+            continue
+        if min_run >= 3 and not frazy:                       # tryb „frazy”: same pojedyncze słowa nie wystarczą
+            continue
         if is_okres:
             score += 0.4
-        if score <= 0.15:
+        if score <= thr:
             continue
         frazy.sort(key=lambda f: -len(f[1]))
         out.append({'id': s.get('id'), 'title': s.get('title'), 'score': round(score, 2),
@@ -436,7 +449,40 @@ class LiturgyDialog(QDialog):
         self.lit = None
         self.setWindowTitle(f"Liturgia dnia {date.strftime('%d.%m.%Y')} – propozycje pieśni")
         self.resize(1250, 780)
+        from PySide6.QtCore import QSettings, QDate, QLocale
+        from PySide6.QtWidgets import QDateEdit
+        self.qs = QSettings("LiberCanticorum", "LiberCanticorum")
         lay = QVBoxLayout(self)
+        # wybór dnia: ◀ / kalendarz (dzień, miesiąc, rok) / ▶ / Dziś
+        nav = QHBoxLayout()
+        for txt, d, tip in (("◀◀", -7, "Tydzień wcześniej"), ("◀", -1, "Dzień wcześniej")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            b.setFixedWidth(46)
+            b.clicked.connect(lambda _=False, d=d: self.shift(d))
+            nav.addWidget(b)
+        self.dedit = QDateEdit(QDate(date.year, date.month, date.day))
+        self.dedit.setCalendarPopup(True)
+        self.dedit.setDisplayFormat("dddd, d MMMM yyyy")
+        self.dedit.setLocale(QLocale(QLocale.Polish, QLocale.Poland))
+        self.dedit.setToolTip("Wybierz dzień z kalendarza albo zmień dzień, miesiąc i rok strzałkami / kółkiem myszy")
+        self.dedit.setStyleSheet("font-size: 13pt; padding: 3px;")
+        self.dedit.dateChanged.connect(lambda q: self.set_date(q.toPython()))
+        nav.addWidget(self.dedit)
+        for txt, d, tip in (("▶", 1, "Dzień później"), ("▶▶", 7, "Tydzień później")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            b.setFixedWidth(46)
+            b.clicked.connect(lambda _=False, d=d: self.shift(d))
+            nav.addWidget(b)
+        b = QPushButton("Dziś")
+        b.clicked.connect(lambda: self.dedit.setDate(QDate.currentDate()))
+        nav.addWidget(b)
+        b = QPushButton("Najbliższa niedziela")
+        b.clicked.connect(self.next_sunday)
+        nav.addWidget(b)
+        nav.addStretch(1)
+        lay.addLayout(nav)
         top = QHBoxLayout()
         info = okres_liturgiczny(date)
         self.head = QLabel(f"<b>{date.strftime('%d.%m.%Y')}</b> – {info['opis']}")
@@ -462,9 +508,27 @@ class LiturgyDialog(QDialog):
         rl = QVBoxLayout(right)
         rl.setContentsMargins(0, 0, 0, 0)
         rl.addWidget(QLabel("<b>Pieśni z bazy nawiązujące do liturgii</b> (★ = z kategorii okresu)"))
+        mrow = QHBoxLayout()
+        mrow.addWidget(QLabel("Dopasowanie:"))
+        self.mode = QComboBox()
+        for name, *_ in MATCH_MODES:
+            self.mode.addItem(name)
+        self.mode.setToolTip("Szeroko – więcej propozycji (także pojedyncze wspólne słowa).\n"
+                             "Frazy / ściśle – tylko pieśni, w których powtarzają się całe zwroty z czytań, psalmu, antyfon.")
+        self.mode.setCurrentIndex(int(self.qs.value("lit_match_mode", 1)))
+        self.mode.currentIndexChanged.connect(lambda i: (self.qs.setValue("lit_match_mode", i), self.suggest()))
+        mrow.addWidget(self.mode, 1)
+        rl.addLayout(mrow)
+        frow = QHBoxLayout()
         self.only = QCheckBox("Pokaż też słabsze dopasowania")
         self.only.toggled.connect(self.suggest)
-        rl.addWidget(self.only)
+        frow.addWidget(self.only)
+        self.okres_only = QCheckBox("Tylko pieśni z kategorii okresu")
+        self.okres_only.setChecked(self.qs.value("lit_okres_only", "false") == "true")
+        self.okres_only.toggled.connect(lambda on: (self.qs.setValue("lit_okres_only", on), self.suggest()))
+        frow.addWidget(self.okres_only)
+        frow.addStretch(1)
+        rl.addLayout(frow)
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Pieśń", "Pasuje do", "Nawiązania (słowa i frazy z liturgii)"])
         self.tree.setRootIsDecorated(False)
@@ -506,15 +570,22 @@ class LiturgyDialog(QDialog):
         self.b_fetch.setEnabled(False)
         self.text.setHtml("<p><i>Pobieram teksty liturgii…</i></p>")
 
+        day = self.date
+
         def run():
             try:
-                lit = fetch_any(self.date) if src == 'auto' else fetch(self.date, src)
-                self._done.emit(lit, "")
+                lit = fetch_any(day) if src == 'auto' else fetch(day, src)
+                self._done.emit((day, lit), "")
             except Exception as e:
-                self._done.emit(None, str(e))
+                self._done.emit((day, None), str(e))
         threading.Thread(target=run, daemon=True).start()
 
-    def _fetched(self, lit, err):
+    def _fetched(self, res, err):
+        day, lit = res
+        if lit is not None:
+            self.db.set_liturgy(day.isoformat(), lit)       # zapamiętaj także, gdy w międzyczasie wybrano inny dzień
+        if day != self.date:
+            return
         self.b_fetch.setEnabled(True)
         if lit is None:
             self.text.setHtml(f"<p><b>Nie udało się pobrać liturgii.</b></p><p>{html.escape(err)}</p>"
@@ -522,7 +593,6 @@ class LiturgyDialog(QDialog):
                               "Przycisk „Otwórz stronę” pokaże teksty w przeglądarce.</p>")
             self.suggest()
             return
-        self.db.set_liturgy(self.date.isoformat(), lit)
         self.show_lit(lit)
 
     def show_lit(self, lit):
@@ -554,7 +624,8 @@ class LiturgyDialog(QDialog):
         self.tree.clear()
         if not self.lit:
             return
-        res = suggest(self.lit, self.songs_fn(), self.okres, limit=80 if self.only.isChecked() else 30)
+        res = suggest(self.lit, self.songs_fn(), self.okres, limit=80 if self.only.isChecked() else 30,
+                      mode=self.mode.currentIndex(), okres_only=self.okres_only.isChecked())
         if not self.only.isChecked() and res:
             top = res[0]['score']
             res = [r for r in res if r['score'] >= top * 0.15]
@@ -568,6 +639,33 @@ class LiturgyDialog(QDialog):
             self.tree.addTopLevelItem(it)
         if not res:
             self.tree.addTopLevelItem(QTreeWidgetItem(["(brak wyraźnych nawiązań w bazie)", "", ""]))
+
+    def shift(self, days):
+        self.dedit.setDate(self.dedit.date().addDays(days))
+
+    def next_sunday(self):
+        import datetime as _dt
+        from PySide6.QtCore import QDate
+        t = _dt.date.today()
+        d = t + _dt.timedelta(days=(6 - t.weekday()) % 7)
+        self.dedit.setDate(QDate(d.year, d.month, d.day))
+
+    def set_date(self, d):
+        """Inny dzień: nagłówek, okres liturgiczny, teksty (z pamięci albo pobrane) i propozycje."""
+        if d == self.date:
+            return
+        self.date = d
+        info = okres_liturgiczny(d)
+        self.okres = info.get('okres') or self.okres
+        self.setWindowTitle(f"Liturgia dnia {d.strftime('%d.%m.%Y')} – propozycje pieśni")
+        self.head.setText(f"<b>{d.strftime('%d.%m.%Y')}</b> – {info['opis']}")
+        self.lit = None
+        self.tree.clear()
+        cached = self.db.get_liturgy(d.isoformat())
+        if cached:
+            self.show_lit(cached)
+        else:
+            self.fetch()
 
     def _sel(self, it, _prev=None):
         if it and it.data(1, Qt.UserRole):
