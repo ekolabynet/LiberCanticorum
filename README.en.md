@@ -5,6 +5,12 @@
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
 
+> **Available in 27 languages.** The program interface can be switched (🌐 on the Home screen) to: Polski · English ·
+> Français · Español · Deutsch · Italiano · Português · Українська · Čeština · Slovenčina · Hrvatski · Magyar ·
+> Română · Lietuvių · Svenska · Norsk · Íslenska · Kiswahili · Filipino (Tagalog) · Tiếng Việt · 日本語 · 中文 · 한국어 ·
+> മലയാളം · العربية · Latina. This description exists in Polish, English, French and Spanish; speakers of other
+> languages are welcome to use the English one – and to help translate (`program/i18n/<code>.json`).
+
 *Liber canticorum* is Latin for “book of songs”. *Liber* means “book” and also echoes *libre* – free, as in free
 software. The icon is the red initial **C** from a handwritten Czech hymnal of 1586
 (*Cantional písnek rozmaitých a nábožných*), set on a sheet of parchment.

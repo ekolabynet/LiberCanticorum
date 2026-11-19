@@ -5,6 +5,21 @@
 
 🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
 
+> **PL** – Wolny program (GNU GPL 3) do przygotowywania i wyświetlania tekstów pieśni na rzutniku, z nutami,
+> odtwarzaczem głosów, edytorem melodii, akordami, zestawem na Mszę i liturgią dnia. Pełny opis po polsku – poniżej.
+>
+> **EN** – Free software (GNU GPL 3) for preparing and projecting song lyrics in church, with scores, a voice player,
+> a melody editor, guitar chords, Mass sets and the liturgy of the day. It starts with an empty database – you add
+> the songs yourself. **Full description in English: [README.en.md](README.en.md).**
+>
+> **Interfejs programu / Program interface – 27 języków / languages:** Polski · English · Français · Español ·
+> Deutsch · Italiano · Português · Українська · Čeština · Slovenčina · Hrvatski · Magyar · Română · Lietuvių ·
+> Svenska · Norsk · Íslenska · Kiswahili · Filipino (Tagalog) · Tiếng Việt · 日本語 · 中文 · 한국어 · മലയാളം ·
+> العربية · Latina. Opis po francusku i hiszpańsku / description in French and Spanish:
+> [Français](README.fr.md) · [Español](README.es.md). Opis w pozostałych językach – w przygotowaniu; interfejs
+> jest już dostępny (🌐 na ekranie Start) / description in other languages coming; the interface is already available
+> (🌐 on the Home screen). *Tłumaczenia mile widziane / translations welcome: `program/i18n/<kod>.json`.*
+
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
 *libre*, czyli „wolny”, jak wolne oprogramowanie. Ikona to czerwone inicjałowe **C** z rękopiśmiennego
 czeskiego kancjonału z 1586 roku (*Cantional písnek rozmaitých a nábožných*), postawione na karcie pergaminu.
