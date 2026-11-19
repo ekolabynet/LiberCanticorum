@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.2
+# Liber Canticorum 0.27.3
 *Un recueil de chants libre pour les musiciens d'église, les chorales et les communautés de l'Église*
 
 🌐 [Polski](README.md) · [English](README.en.md) · **Français** · [Español](README.es.md)
@@ -114,7 +114,7 @@ plein écran par défaut (« ⚙ Plus de réglages »), enregistrement MP3 / OGG
 
 ## Installation
 
-Décompressez `LiberCanticorum_0.27.2.zip` et lancez :
+Décompressez `LiberCanticorum_0.27.3.zip` et lancez :
 - Windows : `Liber Canticorum.bat` (Python de python.org avec « Add python.exe to PATH »),
 - Linux : `Liber Canticorum.desktop` ou `program/start.sh` (Debian/Ubuntu : `sudo apt install python3-venv libportaudio2`),
 - macOS : `Liber Canticorum.command`.
@@ -128,8 +128,8 @@ Il est partagé par toutes les versions. En option : MuseScore (aperçu et conve
 Le programme est gratuit. S'il vous est utile, les tuiles de l'accueil indiquent comment soutenir :
 - **Centre pour aveugles de Laski**, fondé par la bienheureuse Mère Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002** ; [laski.edu.pl](https://laski.edu.pl/),
 - **Une paroisse Notre-Dame de Guadalupe** – hors de Pologne, cherchez la plus proche et soutenez-la (la tuile ouvre une carte) ; notre paroisse est Notre-Dame Reine du Mexique (de Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920** ; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
-- **Schola adHoc** – venez chanter avec nous le premier dimanche du mois à midi ; répétitions le mardi à 19 h à la
-  maison paroissiale. Vous habitez loin, sur un autre continent ? Priez avec nous et envoyez-nous votre intention ;-) ; [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
+- **Schola adHoc** – la schola liturgique de la paroisse Notre-Dame Reine du Mexique à Laski : venez chanter avec nous
+  à la messe le premier dimanche du mois à midi ; répétitions le mardi à 19 h à la maison paroissiale de cette paroisse. Vous habitez loin, sur un autre continent ? Priez avec nous et envoyez-nous votre intention ;-) ; [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – nouvelle musique pour le 500e anniversaire des apparitions sur la colline du Tepeyac
   (en préparation) – participez : composez, chantez, jouez, écrivez, traduisez.
 

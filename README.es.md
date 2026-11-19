@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.2
+# Liber Canticorum 0.27.3
 *Un cancionero libre para músicos de iglesia, coros y comunidades de la Iglesia*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -112,7 +112,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.27.2.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.27.3.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
@@ -126,8 +126,8 @@ partituras), una SoundFont para mejor sonido.
 El programa es gratuito. Si te resulta útil, los mosaicos de Inicio indican cómo apoyar:
 - **Centro para Ciegos de Laski**, fundado por la beata Madre Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002**; [laski.edu.pl](https://laski.edu.pl/),
 - **Una parroquia de Nuestra Señora de Guadalupe** – fuera de Polonia, busca la más cercana y apóyala (el mosaico abre un mapa); nuestra parroquia es Nuestra Señora Reina de México (de Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920**; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
-- **Schola adHoc** – ven a cantar con nosotros el primer domingo de mes a mediodía; ensayos los martes a las 19:00
-  en la casa parroquial. ¿Vives lejos, en otro continente? Reza con nosotros y envíanos tu intención ;-); [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
+- **Schola adHoc** – la schola litúrgica de la parroquia de Nuestra Señora Reina de México en Laski: ven a cantar con
+  nosotros en la Misa el primer domingo de mes a mediodía; ensayos los martes a las 19:00 en la casa parroquial. ¿Vives lejos, en otro continente? Reza con nosotros y envíanos tu intención ;-); [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – nueva música para el 500 aniversario de las apariciones en el cerro del Tepeyac
   (en preparación) – súmate: compón, canta, toca, escribe, traduce.
 
