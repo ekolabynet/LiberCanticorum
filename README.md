@@ -1,6 +1,6 @@
-<p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
+<p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.15.1
+# Liber Canticorum 0.16.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,30 +12,95 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.15.x, 0.16.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.16.x, 0.17.0 itd.
 
-## Widoki (zakładki u dołu okna)
+## Jak wygląda
 
-- **Start** – kafle najważniejszych funkcji: Teksty, Slajdy i pokaz, Nuty, Zestaw na Mszę, Nowa pieśń,
-  Import śpiewnika lub pliku, Akordy, Pilot w telefonie, Zaawansowane.
-- **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+), akordy jednym przyciskiem.
-- **Slajdy** – wybierz pieśń, zobacz slajdy i pokaż je na rzutniku jednym przyciskiem; także pokaz całego zestawu.
-- **Nuty** – nuty pieśni do przewijania i powiększania, odsłuch, „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”.
-- **Zaawansowane** – pełny edytor jak dotąd: wygląd slajdów, załączniki, wersje, akordy, zestaw, eksport.
+| Start | Teksty |
+|---|---|
+| ![Start – kafle najważniejszych funkcji](program/zrzuty/widok_start.png) | ![Teksty – przeglądanie słów pieśni](program/zrzuty/widok_teksty.png) |
+| **Slajdy** | **Nuty** |
+| ![Slajdy – podgląd i pokaz na rzutniku](program/zrzuty/widok_slajdy.png) | ![Nuty – podgląd, odsłuch, edytor melodii](program/zrzuty/widok_nuty.png) |
+| **Zaawansowane** | **Edytor melodii** |
+| ![Zaawansowane – pełny edytor](program/zrzuty/widok_zaawansowane.png) | ![Edytor melodii z czcionką nutową Leland](program/zrzuty/edytor_melodii.png) |
 
+*Na zrzutach są pieśni z domeny publicznej wpisane do pustej bazy. Program nie zawiera żadnych tekstów ani nut.*
+
+## Układ okna: zakładki u dołu
+
+Okno ma u dołu pięć zakładek. Pierwsze cztery są proste, dla każdego, piąta to pełny edytor.
+
+- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, Nowa pieśń,
+  Importuj śpiewnik lub plik, Akordy, Pilot w telefonie, Zaawansowane. Na górze liczba pieśni w bazie.
+- **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+),
+  akordy jednym przyciskiem, „Slajdy tej pieśni”, „Edytuj”.
+- **Slajdy** – wybierz pieśń, zobacz slajdy i pokaż je na rzutniku jednym przyciskiem („Pokaż na ekranie”);
+  także „Pokaż całego zestawu”.
+- **Nuty** – nuty pieśni do przewijania i powiększania (− / +), „Posłuchaj”, „Otwórz w MuseScore”,
+  **„Edytor melodii”**; gdy nut brak: „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”, „Wpisz melodię”.
+- **Zaawansowane** – pełny edytor: menu i pasek narzędzi, lista pieśni, wygląd slajdów, akordy,
+  załączniki („Nuty, wersje i nagrania”), wersje tekstu, zestaw na Mszę, eksport, ustawienia.
+
+Nad listą pieśni w prostych widokach są: wybór „Wszystkie pieśni / Pieśni z zestawu”, **kategoria** i wyszukiwanie.
 Wybrana pieśń zostaje ta sama we wszystkich zakładkach (Teksty, Slajdy, Nuty i edytor w „Zaawansowanych”) –
-nawet gdy w innej zakładce jest ustawiony filtr, który by ją ukrywał.
+nawet gdy w innej zakładce jest ustawiony filtr, który by ją ukrywał. Program pamięta ostatnio otwartą zakładkę.
+Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z kancjonału (logo programu)
+(Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
-We wszystkich prostych widokach lista pieśni może pokazywać wszystkie pieśni albo tylko pieśni z bieżącego zestawu.
-Wygląd: jasny pergamin bez ozdobników, w rogu inicjał „C” z kancjonału (logo programu) (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
-Program pamięta ostatnio otwartą zakładkę.
+## Krok po kroku: nowe funkcje
+
+**Wpisać melodię (edytor melodii, nowość w 0.16).** Zakładka Nuty → „🎼 Edytor melodii” (albo „Wpisz melodię”,
+Pieśń → „Edytor melodii…”, Ctrl+Shift+N, przycisk przy załącznikach w „Zaawansowanych”).
+1. U góry wybierz **tonację** (np. „G-dur / e-moll”), **metrum** (4/4, 3/4, 6/8…), ewentualnie **przedtakt** i tempo.
+2. Wpisuj nuty skrótami jak w MuseScore: najpierw cyfra – wartość (**4** ósemka, **5** ćwierćnuta, **6** półnuta,
+   **7** cała, **3** szesnastka; **.** – kropka), potem litera – wysokość: **c d e f g a h** (polskie **b** = B♭).
+   Znaki przy kluczu działają same, oktawę program dobiera najbliżej poprzedniej nuty. **0** – pauza.
+3. Poprawki: **↑ / ↓** o półton, **Ctrl+↑ / ↓** o oktawę, **← / →** wybór nuty (cyfra zmienia wtedy jej wartość),
+   **+** łuk, **Backspace** usuń, **Ctrl+Z** cofnij. Kliknięcie myszą też zaznacza nutę. Nuta dłuższa niż reszta taktu
+   sama dzieli się na dwie połączone łukiem.
+4. **Ctrl+L** – słowa: piszesz sylabę, **spacja** przechodzi do następnej nuty, **-** dzieli wyraz, **Esc** kończy.
+5. **Ctrl+K** – akordy: „G”, „e”, „D7”, „Fis-moll”, „C/E” (polskie: mała litera = moll, H i B); spacja – następna nuta.
+6. **♫ Odtwórz** – melodia brzmi jak **chór (Choir Aahs, głos „Sopran”)**, akordy jak **organy (Church Organ)**,
+   jeśli jest SoundFont (zob. „Odtwarzacz głosów”).
+7. **💾 Zapisz w pieśni** – do pieśni trafiają plik MusicXML (z nutami, słowami, akordami i partią organów,
+   do otwarcia w MuseScore) i MIDI. Ponowne otwarcie tego pliku w edytorze pozwala dalej go poprawiać.
+   **„Akordy ze słowami → widok gitarowy”** wstawia słowa z akordami (ChordPro) do zakładki Akordy.
+   Eksport MusicXML i MIDI do pliku – przyciskami w oknie.
+
+Nuty rysuje czcionka **Leland** – ta sama, której używa MuseScore 4 – a słowa i akordy czcionka **Edwin**
+(obie z MuseScore, licencja SIL OFL, dołączone w `czcionki/`).
+
+**Importować śpiewnik.** Start → „Importuj śpiewnik lub plik” (albo Plik → Importuj z pliku): program sam rozpoznaje
+rodzaj PDF-a – śpiewnik z nutami, śpiewnik z nutami jako obrazkami albo śpiewnik tekstowy (także z akordami
+nad tekstem lub z boku) – i pokazuje listę pieśni do zaznaczenia. Pieśni, które już są w bazie, można połączyć
+(inny tekst zostaje wersją, plik nut – aranżacją). Strony WWW: Plik → „Importuj ze strony WWW” (np. dział
+Śpiewnika ks. Siedleckiego – program pobiera wszystkie pieśni działu ze zwrotkami i linkami do nagrań).
+
+**Cofnąć import.** Plik → „Cofnij ostatnie zmiany w bazie” (Ctrl+Shift+Z) – wybierasz zmianę z listy.
+
+**Usunąć duplikaty.** Plik → „Znajdź i połącz duplikaty pieśni” – dla każdej grupy wybierasz pieśń główną,
+„Połącz” albo „To nie są duplikaty”; jednym przyciskiem łączysz pieśni o identycznym tekście.
+
+**Nadać kategorię wielu pieśniom.** W „Zaawansowanych” zaznacz pieśni (Ctrl+klik, Shift+klik, Ctrl+A),
+prawy przycisk myszy → „Kategoria dla zaznaczonych…” albo „Tagi dla zaznaczonych…”.
+
+**Akordy dla gitarzystów.** Kafel „Akordy”, przycisk „Akordy” w Tekstach albo Ctrl+G: akordy nad sylabami,
+transpozycja, pełny ekran, PDF. Akordy wpisuje się w zakładce „Akordy” w ChordPro: `[a]Chwalcie [E]Pana`.
+
+**Znaleźć nuty.** Nuty → „Szukaj nut w MuseScore” (Ctrl+M) – szuka tytułu pieśni na musescore.com; pobrany plik
+sam trafia do pieśni. Nuty tylko na papierze: zeskanuj i „Rozpoznaj nuty ze skanu” (Audiveris) – albo wpisz
+melodię w edytorze melodii.
+
+**Posłuchać i ćwiczyć głos.** Nuty → „Posłuchaj”: pasek odtwarzania nad nutami (⏮ ⏪ Odtwórz ⏹ ⏩, suwak,
+spacja i strzałki), głosy S A T B osobno, „Ćwicz głos”, tempo, transpozycja, **👁 Pięciolinie** – pokaż ukryte
+w pliku MuseScore pięciolinie (np. akompaniament).
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.15.1/
+LiberCanticorum_0.16.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -104,6 +169,9 @@ python3 -m venv .venv
 | `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
 | `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
 | `modul_omr.py` | rozpoznawanie nut ze skanu programem Audiveris (MusicXML) |
+| `modul_edytor.py` | edytor melodii: nuty, słowa, akordy; zapis MusicXML (Sopran – chór, Organy) i MIDI |
+| `czcionki/` | czcionki z MuseScore: Leland (znaki nutowe, SMuFL) i Edwin (tekst), licencja SIL OFL 1.1 |
+| `zrzuty/` | zrzuty ekranu do tej dokumentacji |
 | `modul_nuty.py` | wyszukiwanie nut (CPDL, MuseScore, IMSLP), podgląd nut, odtwarzacz MIDI z głosami |
 | `modul_brzmienia.py` | brzmienia odtwarzacza: odtwarzacz SoundFont (.sf2/.sf3) – chór, organy |
 | `modul_youtube.py` | wyszukiwanie i odtwarzanie nagrań z YouTube |
@@ -464,7 +532,7 @@ Własny obraz tła wybierzesz opcją „Inny plik…”, a własny motyw dodasz,
 
 ## Licencja
 
-- **Kod programu:** GNU General Public License w wersji 3 lub późniejszej (GPL-3.0-or-later), pełny tekst w pliku `LICENSE`.
+- **Kod programu:** GNU General Public License w wersji 3 lub późniejszej (GPL-3.0-or-later), pełny tekst w pliku [`LICENSE`](LICENSE).
   Możesz używać, kopiować, zmieniać i rozpowszechniać program, także zmieniony, pod warunkiem
   udostępnienia kodu źródłowego na tej samej licencji. Program jest dostarczany bez gwarancji.
 - **Ikony** (`ikony/`): [Font Awesome Free](https://fontawesome.com) 7, Fonticons, Inc., licencja CC BY 4.0
@@ -481,6 +549,8 @@ Własny obraz tła wybierzesz opcją „Inny plik…”, a własny motyw dodasz,
   [Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360).
   Litera została wycięta ze zdjęcia, oczyszczona z tła i zamieniona na wektor. Ikona jest utworem zależnym,
   więc też jest na licencji **CC BY-SA 4.0** (zgodnej w jedną stronę z GPL-3.0). Szczegóły w `ikony/LICENSE-ikona.txt`.
+- **Czcionki** (`czcionki/`): Leland i Edwin, © MuseScore Limited, licencja **SIL Open Font License 1.1**
+  (`czcionki/Leland-OFL.txt`, `czcionki/Edwin-OFL.txt`) – można je rozpowszechniać razem z programem bez zmian.
 - **Obrazy teł** (`tla/`): CC0 1.0, czyli domena publiczna. Możesz z nimi robić, co chcesz (`tla/LICENSE-CC0.txt`).
 - **Biblioteki** mają licencje zgodne z GPL: PySide6 (LGPL-3), python-pptx, python-docx i mido (MIT),
   pypdf, numpy, sounddevice, soundfile i qrcode (BSD/MIT), pypdfium2 (Apache-2.0 / BSD).

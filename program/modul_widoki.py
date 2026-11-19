@@ -463,7 +463,7 @@ class SlidesPage(QWidget):
 class ScoresPage(QWidget):
     """Przeglądanie nut: pliki nut pieśni, strony do przewijania, odsłuch."""
 
-    def __init__(self, db, set_ids, pages_fn, on_play, on_open, on_search, on_omr, parent=None):
+    def __init__(self, db, set_ids, pages_fn, on_play, on_open, on_search, on_omr, on_melody=None, parent=None):
         super().__init__(parent)
         self.db, self.pages_fn, self.sid = db, pages_fn, None
         self.on_play, self.on_open = on_play, on_open
@@ -484,6 +484,11 @@ class ScoresPage(QWidget):
         self.b_open = QPushButton("Otwórz w MuseScore / programie")
         self.b_open.clicked.connect(lambda: self.aid() and on_open(self.sid, self.aid()))
         bar.addWidget(self.b_open)
+        if on_melody:
+            b = QPushButton("🎼 Edytor melodii")
+            b.setToolTip("Nowa melodia albo dalsza edycja zaznaczonej (z edytora): nuty, słowa, akordy")
+            b.clicked.connect(lambda: self.sid and on_melody(self.sid, self.aid()))
+            bar.addWidget(b)
         for txt, d in (("−", -0.15), ("+", 0.15)):
             b = QPushButton(txt)
             b.setFixedWidth(36)
@@ -508,6 +513,10 @@ class ScoresPage(QWidget):
         b = QPushButton("📷 Rozpoznaj nuty ze skanu")
         b.clicked.connect(lambda: self.sid and on_omr(self.sid))
         el.addWidget(b)
+        if on_melody:
+            b = QPushButton("🎼 Wpisz melodię")
+            b.clicked.connect(lambda: self.sid and on_melody(self.sid, None))
+            el.addWidget(b)
         rl.addWidget(self.empty)
         self.scale, self._imgs = 1.0, []
         _with_picker(self, self.picker, right)
@@ -524,6 +533,7 @@ class ScoresPage(QWidget):
         from liber_canticorum import SCORE_EXT
         atts = [a for a in self.db.attachments(sid)
                 if a['name'].lower().endswith(('.pdf', '.png', '.jpg', '.jpeg', '.mid', '.midi', '.kar') + SCORE_EXT)]
+        atts.sort(key=lambda a: a['name'].lower().endswith(('.mid', '.midi', '.kar')))   # nuty przed samym MIDI
         key = (sid, tuple(a['id'] for a in atts))
         if key == getattr(self, '_shown', None):
             self.sid = sid

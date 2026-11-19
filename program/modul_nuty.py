@@ -1198,6 +1198,7 @@ class Voice:
     enabled: bool = True
     volume: float = 1.0
     instrument: str = None                           # None = brzmienie wspólne
+    program: int = None                              # program GM zapisany w pliku (gdy plik o to prosi)
 
     @property
     def mean_pitch(self):
@@ -1234,13 +1235,16 @@ def load_midi(data):
             events.append((tick, 0 if msg.type == 'set_tempo' else 1, ti, msg))
     events.sort(key=lambda e: (e[0], e[1]))
     tempo, last, t = 500000, 0, 0.0
-    open_notes, groups = {}, {}
+    open_notes, groups, progs = {}, {}, {}
+    use_prog = any(m.type == 'marker' and m.text.startswith('lc:programs') for tr in mid.tracks for m in tr)
     for tick, _, ti, msg in events:
         if tick != last:
             t += mido.tick2second(tick - last, mid.ticks_per_beat, tempo)
             last = tick
         if msg.type == 'set_tempo':
             tempo = msg.tempo
+        elif msg.type == 'program_change' and use_prog:
+            progs.setdefault((ti, msg.channel), msg.program)
         elif msg.type in ('note_on', 'note_off') and msg.channel != 9:
             key = (ti, msg.channel, msg.note)
             if key in open_notes:
@@ -1258,7 +1262,7 @@ def load_midi(data):
         name = names.get(ti, f"Ścieżka {ti + 1}")
         if per_track[ti] > 1:
             name += f" (kanał {ch + 1})"
-        voices.append(Voice(name, sorted(notes)))
+        voices.append(Voice(name, sorted(notes), program=progs.get((ti, ch))))
     length = max((n[0] + n[1] for v in voices for n in v.notes), default=0)
     return voices, length
 
@@ -1365,8 +1369,8 @@ def split_chords(voice, n=None):
     akordów przesuwają numerację (np. gdy bas trzyma, a górne głosy się ruszają)."""
     n = n or min(4, voice.polyphony())
     if n <= 1:
-        return [Voice(voice.name, list(voice.notes))]
-    out = [Voice(f"{voice.name} – głos {k + 1}") for k in range(n)]
+        return [Voice(voice.name, list(voice.notes), program=voice.program)]
+    out = [Voice(f"{voice.name} – głos {k + 1}", program=voice.program) for k in range(n)]
     notes = sorted(voice.notes, key=lambda x: (x[0], -x[2]))
     assigned = []                                  # (koniec, wysokość, głos)
     i = 0
@@ -1389,8 +1393,8 @@ def split_chords(voice, n=None):
 def prepare_voices(raw, split=True):
     voices = []
     for v in raw:
-        voices += split_chords(v) if split else [Voice(v.name, list(v.notes))]
-    voices = [Voice(v.name, sorted(v.notes)) for v in voices]
+        voices += split_chords(v) if split else [Voice(v.name, list(v.notes), program=v.program)]
+    voices = [Voice(v.name, sorted(v.notes), program=v.program) for v in voices]
     if len(voices) == 4:                       # czterogłos: nazwij S A T B wg średniej wysokości
         for name, v in zip(SATB, sorted(voices, key=lambda v: -v.mean_pitch)):
             v.name = f"{name}  ({v.name})" if not v.name.startswith(tuple(SATB)) else v.name
@@ -1952,6 +1956,13 @@ class MidiPlayerDialog(QDialog):
             for key, label in self.instrument_list():
                 vc.addItem(label, key)
             vc.currentIndexChanged.connect(lambda _=0, vc=vc, v=v: (setattr(v, 'instrument', vc.currentData()), self.params_changed()))
+            if v.program is not None:                     # plik z edytora melodii: chór / organy
+                k = vc.findData(f"sf:0:{v.program}")
+                if k >= 0:
+                    vc.blockSignals(True)
+                    vc.setCurrentIndex(k)
+                    vc.blockSignals(False)
+                    v.instrument = vc.currentData()
             self.voice_box.addWidget(cb, i // 2, (i % 2) * 3)
             self.voice_box.addWidget(sl, i // 2, (i % 2) * 3 + 1)
             self.voice_box.addWidget(vc, i // 2, (i % 2) * 3 + 2)

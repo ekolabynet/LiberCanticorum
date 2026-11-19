@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.15.1"
+VERSION = "0.16.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1407,6 +1407,13 @@ class SongDB:
 
     def attachment(self, aid):
         return self.con.execute("SELECT * FROM attachments WHERE id=?", (aid,)).fetchone()
+
+    def replace_attachment_data(self, aid, data):
+        """Nowa treść załącznika (np. poprawiona melodia); pliki pochodne do przeliczenia."""
+        self.con.execute("UPDATE attachments SET data=?, added=? WHERE id=?",
+                         (data, datetime.datetime.now().isoformat(timespec='seconds'), aid))
+        self.con.execute("DELETE FROM derived WHERE att_id=?", (aid,))
+        self.con.commit()
 
     def get_derived(self, aid):
         return self.con.execute("SELECT pdf, mid, pos FROM derived WHERE att_id=?", (aid,)).fetchone()
@@ -2804,6 +2811,7 @@ class MainWindow(QMainWindow):
                 ('search', "Szukaj nut w MuseScore…", self.search_scores),
                 ('lyrics', "Słowa z tych nut → do tekstu pieśni…", self.lyrics_from_attachment),
                 ('omr', "Rozpoznaj nuty z tego skanu (Audiveris)…", self.omr_attachment),
+                ('melody', "🎼 Edytor melodii (nowa / ta melodia)…", lambda: self.melody_editor(self._sel_aid())),
                 ('desc', "Wersja / aranżacja (opis)…", self.describe_attachment),
                 ('merge', "Połącz z inną pieśnią…", self.merge_song_dialog)]):
             b = QPushButton(txt)
@@ -2885,7 +2893,7 @@ class MainWindow(QMainWindow):
         self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
                                       lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
         self.v_scores = mw.ScoresPage(self.db, self.set_entries, self._attachment_pages, self._v_play,
-                                      self._v_open, self._v_search, self._v_omr)
+                                      self._v_open, self._v_search, self._v_omr, self._v_melody)
         for w, name in ((self.home, "Start"), (self.v_texts, "Teksty"), (self.v_slides, "Slajdy"),
                         (self.v_scores, "Nuty"), (self.advanced, "Zaawansowane")):
             self.views.addTab(w, name)
@@ -2985,6 +2993,62 @@ class MainWindow(QMainWindow):
         if self._ensure_open(sid):
             self.search_scores()
 
+    def _v_melody(self, sid, aid=None):
+        if self._ensure_open(sid, aid):
+            self.melody_editor(aid)
+            self.v_scores._shown = None
+            self.v_scores.show_song(sid)
+
+    def _sel_aid(self):
+        it = self.att_list.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def melody_editor(self, aid=None):
+        """Prosty edytor melodii: nowa melodia albo dalsza edycja zapisanego pliku MusicXML."""
+        import modul_edytor as me
+        if not self.ensure_saved("Aby zapisać melodię w pieśni"):
+            return
+        sid, title = self.song['id'], self.song.get('title', '')
+        mel, edit_aid = None, None
+        row = self.db.attachment(aid) if aid else None
+        if row and row['name'].lower().endswith(('.musicxml', '.xml')):
+            try:
+                mel, edit_aid = me.Melody.from_musicxml(bytes(row['data'])), aid
+            except Exception as e:
+                QMessageBox.warning(self, APP_NAME, f"Nie udało się odczytać melodii z tego pliku:\n{e}\nOtwieram nową melodię.")
+        state = {'aid': edit_aid}
+
+        def save(m):
+            base = re.sub(r'[\\/:*?"<>|]+', "_", m.title or title or "melodia").strip() or "melodia"
+            xml, mid = m.musicxml(), m.midi()
+            if state['aid']:
+                xname = self.db.attachment(state['aid'])['name']
+                self.db.replace_attachment_data(state['aid'], xml)
+            else:
+                xname = base + " (melodia).musicxml"
+                state['aid'] = self.db.add_attachment_bytes(sid, xname, xml, "Melodia – edytor")
+            mname = os.path.splitext(xname)[0] + ".mid"
+            old = [a for a in self.db.attachments(sid) if a['name'] == mname]
+            if old:
+                self.db.replace_attachment_data(old[0]['id'], mid)
+            else:
+                self.db.add_attachment_bytes(sid, mname, mid, "Melodia – edytor")
+            self.convert_in_background(state['aid'])
+            self.pilot_invalidate()
+            self.refresh_media()
+            self.refresh_list()
+            return f"Zapisano w pieśni „{title}”: {xname} i {mname}"
+
+        def chords(text):
+            cur = self.e_chords.toPlainText().strip()
+            if cur and QMessageBox.question(self, APP_NAME, "Pieśń ma już akordy. Zastąpić je słowami z akordami z edytora melodii?") != QMessageBox.Yes:
+                return
+            self.e_chords.setPlainText(text)
+            self.statusBar().showMessage("Akordy wstawione – zapisz pieśń (Ctrl+S).", 6000)
+
+        dlg = me.MelodyEditor(self, mel, title, on_save=save, on_chords=chords)
+        dlg.exec()
+
     def _v_omr(self, sid):
         if self._ensure_open(sid):
             self.omr_from_file()
@@ -3050,6 +3114,7 @@ class MainWindow(QMainWindow):
         act(m_song, "Usuń z bazy", self.delete_song)
         act(m_song, "Szukaj nut w MuseScore (po tytule)…", self.search_scores, "Ctrl+M")
         act(m_song, "Rozpoznaj nuty ze skanu / zdjęcia (Audiveris)…", self.omr_from_file)
+        act(m_song, "🎼 Edytor melodii (nuty, słowa, akordy)…", lambda: self.melody_editor(), "Ctrl+Shift+N")
         act(m_song, "🎸 Akordy – widok dla gitarzystów…", self.show_chords, "Ctrl+G")
         act(m_song, "🎸 Akordy całego zestawu…", self.show_set_chords)
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
