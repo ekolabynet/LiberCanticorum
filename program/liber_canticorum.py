@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.16.0"
+VERSION = "0.16.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -2880,6 +2880,8 @@ class MainWindow(QMainWindow):
              lambda: self.views.setCurrentIndex(self.V_SCORES)),
             ("⛪", "Zestaw na Mszę", "Zaplanuj pieśni na Mszę: części, liturgia dnia, eksport i pokaz.",
              self._go_set),
+            ("🎵", "Edytor melodii", "Wpisz nuty, słowa i akordy jak w MuseScore; posłuchaj (chór i organy) i zapisz w pieśni.",
+             self._go_melody),
             ("✚", "Nowa pieśń", "Wpisz albo wklej tekst nowej pieśni.", self._go_new),
             ("📥", "Importuj śpiewnik lub plik", "PDF, DOCX, TXT, nuty MuseScore – także całe śpiewniki.",
              self.import_files),
@@ -2992,6 +2994,36 @@ class MainWindow(QMainWindow):
     def _v_search(self, sid):
         if self._ensure_open(sid):
             self.search_scores()
+
+    def _go_melody(self):
+        """Kafel „Edytor melodii”: melodia bieżącej pieśni albo nowa pieśń z melodią."""
+        sid = self.cur_sid if self.cur_sid and self.db.get(self.cur_sid) else None
+        if sid:
+            s = self.db.get(sid)
+            box = QMessageBox(QMessageBox.Question, APP_NAME, f"Edytor melodii – dla której pieśni?", parent=self)
+            b_cur = box.addButton(f"„{s['title']}”", QMessageBox.AcceptRole)
+            b_new = box.addButton("Nowa pieśń", QMessageBox.ActionRole)
+            box.addButton("Anuluj", QMessageBox.RejectRole)
+            box.exec()
+            if box.clickedButton() not in (b_cur, b_new):
+                return
+            if box.clickedButton() is b_new:
+                sid = None
+        if sid is None:
+            title, ok = QInputDialog.getText(self, APP_NAME, "Tytuł nowej pieśni (słowa można dopisać później):")
+            if not ok or not title.strip():
+                return
+            sid = self.db.save({'title': title.strip(), 'refren': '', 'zwrotki_raw': '', 'config': self.default_cfg()})
+            self.refresh_list()
+            self.cur_sid = sid
+        aid = None
+        for a in self.db.attachments(sid):                     # ostatnio zapisana melodia z edytora
+            if a['name'].lower().endswith('.musicxml') and a['opis'].startswith("Melodia"):
+                aid = a['id']
+        self.views.setCurrentIndex(self.V_SCORES)
+        self.v_scores.picker.reset_filters()
+        self.v_scores.picker.select(sid)
+        self._v_melody(sid, aid)
 
     def _v_melody(self, sid, aid=None):
         if self._ensure_open(sid, aid):

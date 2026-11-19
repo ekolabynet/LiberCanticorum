@@ -37,6 +37,19 @@ KEYS = [(-7, "Ces-dur / as-moll"), (-6, "Ges-dur / es-moll"), (-5, "Des-dur / b-
         (5, "H-dur / gis-moll"), (6, "Fis-dur / dis-moll"), (7, "Cis-dur / ais-moll")]
 METERS = ["4/4", "3/4", "2/4", "2/2", "3/2", "6/8", "3/8", "9/8", "12/8", "5/4", "6/4"]
 PROG_CHOIR, PROG_ORGAN = 52, 19            # GM (od zera): Choir Aahs, Church Organ
+DUR_STEPS = [Q // 16, Q // 8, Q // 4, 3 * Q // 8, Q // 2, 3 * Q // 4, Q, 3 * Q // 2, 2 * Q, 3 * Q, 4 * Q, 6 * Q, 8 * Q]
+
+
+def step_dur(dur, d):
+    """Następna krótsza (d<0) / dłuższa (d>0) wartość, także z kropką."""
+    k = min(range(len(DUR_STEPS)), key=lambda j: abs(DUR_STEPS[j] - dur))
+    return DUR_STEPS[max(0, min(len(DUR_STEPS) - 1, k + d))]
+
+
+def best_fifths(f):
+    """Tonacja o najmniejszej liczbie znaków spośród enharmonicznych (−6…6; Fis-dur zamiast Ges-dur)."""
+    f = (f + 5) % 12 - 5                         # −5 … 6
+    return f
 
 
 def key_alter(fifths, step):
@@ -227,6 +240,25 @@ class Melody:
         if cur:
             out.append(cur)
         return out
+
+    def transpose(self, n, indices=None):
+        """Transpozycja o n półtonów: całość (z tonacją i akordami) albo tylko wskazane nuty."""
+        if indices is None:
+            new_f = best_fifths(self.fifths + 7 * n)
+            if n % 12:
+                try:
+                    from modul_akordy import transpose_chord
+                    for ev in self.events:
+                        if ev['chord'].strip():
+                            ev['chord'] = transpose_chord(ev['chord'].strip(), n, flat=new_f < 0)
+                except Exception:
+                    pass
+            self.fifths = new_f
+            indices = range(len(self.events))
+        for i in indices:
+            ev = self.events[i]
+            if not is_rest(ev):
+                ev['step'], ev['oct'], ev['alt'] = spell(pitch(ev) + n, self.fifths, n >= 0)
 
     # --- MusicXML
     def musicxml(self):
@@ -593,6 +625,7 @@ class ScoreCanvas(QWidget):
         self.cur_dur, self.cur_dot = Q, False
         self.mode = 'notes'                     # notes / lyric / chord
         self.nav = False                        # ostatnio poruszano się strzałkami → cyfra zmienia zaznaczoną nutę
+        self.anchor = None                      # początek zaznaczenia wielu nut (Shift)
         self.undo_stack = []
         self.hits = []                          # (QRectF, indeks)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -607,7 +640,7 @@ class ScoreCanvas(QWidget):
 
     # --- zmiany
     def push_undo(self):
-        self.undo_stack.append((copy.deepcopy(self.mel.events), self.sel))
+        self.undo_stack.append((copy.deepcopy(self.mel.events), self.sel, self.mel.fifths))
         del self.undo_stack[:-100]
 
     def touch(self):
@@ -620,7 +653,9 @@ class ScoreCanvas(QWidget):
         dname = {Q // 16: "64-ka", Q // 8: "32-ka", Q // 4: "szesnastka", Q // 2: "ósemka", Q: "ćwierćnuta",
                  2 * Q: "półnuta", 4 * Q: "cała nuta", 8 * Q: "brevis"}[self.cur_dur] + (" z kropką" if self.cur_dot else "")
         mode = {'notes': "Nuty", 'lyric': "SŁOWA (Esc – koniec)", 'chord': "AKORDY (Esc – koniec)"}[self.mode]
-        return f"Tryb: {mode}   |   wartość: {dname}"
+        n = len(self.sel_range())
+        extra = f"   |   zaznaczone nuty: {n}" if n > 1 else ""
+        return f"Tryb: {mode}   |   wartość: {dname}{extra}"
 
     def input_dur(self):
         return self.cur_dur * 3 // 2 if self.cur_dot else self.cur_dur
@@ -639,7 +674,27 @@ class ScoreCanvas(QWidget):
         best = min(range(2, 7), key=lambda o: abs(midi_of(step, o, alter) - ref))
         self.insert(new_event(step, best, alter, self.input_dur()))
 
+    def sel_range(self):
+        """Indeksy zaznaczonych nut (jedna albo zakres od kotwicy do bieżącej)."""
+        if self.sel is None:
+            return []
+        if self.anchor is None or self.anchor >= len(self.mel.events):
+            return [self.sel]
+        a, b = sorted((self.anchor, self.sel))
+        return list(range(a, b + 1))
+
+    def set_durs(self, dur=None, step=0):
+        idx = self.sel_range()
+        if not idx:
+            return
+        self.push_undo()
+        for i in idx:
+            ev = self.mel.events[i]
+            ev['dur'] = dur if dur is not None else step_dur(ev['dur'], step)
+        self.touch()
+
     def insert(self, ev):
+        self.anchor = None
         self.push_undo()
         pos = (self.sel + 1) if self.sel is not None else len(self.mel.events)
         self.mel.events.insert(pos, ev)
@@ -648,20 +703,28 @@ class ScoreCanvas(QWidget):
         self.touch()
 
     def set_pitch(self, delta):
-        if self.sel is None or is_rest(self.mel.events[self.sel]):
+        idx = [i for i in self.sel_range() if not is_rest(self.mel.events[i])]
+        if not idx:
             return
         self.push_undo()
-        ev = self.mel.events[self.sel]
-        if abs(delta) == 12:
-            ev['oct'] += 1 if delta > 0 else -1
-        else:
-            ev['step'], ev['oct'], ev['alt'] = spell(pitch(ev) + delta, self.mel.fifths, delta > 0)
+        for i in idx:
+            ev = self.mel.events[i]
+            if abs(delta) == 12:
+                ev['oct'] += 1 if delta > 0 else -1
+            else:
+                ev['step'], ev['oct'], ev['alt'] = spell(pitch(ev) + delta, self.mel.fifths, delta > 0)
         self.touch()
 
     def delete(self, back=True):
         if self.sel is None or not self.mel.events:
             return
         self.push_undo()
+        idx = self.sel_range()
+        if len(idx) > 1:
+            del self.mel.events[idx[0]:idx[-1] + 1]
+            self.anchor = None
+            self.sel = idx[0] - 1 if idx[0] > 0 else (0 if self.mel.events else None)
+            return self.touch()
         del self.mel.events[self.sel]
         if back:
             self.sel = self.sel - 1 if self.sel > 0 else (0 if self.mel.events else None)
@@ -673,7 +736,8 @@ class ScoreCanvas(QWidget):
 
     def undo(self):
         if self.undo_stack:
-            self.mel.events, self.sel = self.undo_stack.pop()
+            self.mel.events, self.sel, self.mel.fifths = self.undo_stack.pop()
+            self.anchor = None
             self.touch()
 
     # --- klawiatura
@@ -688,6 +752,16 @@ class ScoreCanvas(QWidget):
             return self.undo()
         if self.mode != 'notes':
             return self.text_key(e)
+        shift = bool(mod & Qt.ShiftModifier)
+        if ctrl and k == Qt.Key_A and self.mel.events:
+            self.anchor, self.sel, self.nav = 0, len(self.mel.events) - 1, True
+            return self.touch()
+        if k in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End):
+            if shift and self.sel is not None:
+                if self.anchor is None:
+                    self.anchor = self.sel
+            else:
+                self.anchor = None
         if k in (Qt.Key_Left, Qt.Key_Right):
             if self.mel.events:
                 n = len(self.mel.events)
@@ -710,18 +784,17 @@ class ScoreCanvas(QWidget):
             return self.delete(False)
         if k == Qt.Key_Escape:
             self.nav = False
-            return
+            self.anchor = None
+            return self.touch()
         if txt and txt in "12345678" and not ctrl:
             self.cur_dur, self.cur_dot = DUR_KEYS[int(txt)], False
             if self.nav and self.sel is not None:
-                self.push_undo()
-                self.mel.events[self.sel]['dur'] = self.input_dur()
+                return self.set_durs(self.input_dur())
             return self.touch()
         if txt == '.':
             self.cur_dot = not self.cur_dot and self.cur_dur >= Q // 8
             if self.nav and self.sel is not None:
-                self.push_undo()
-                self.mel.events[self.sel]['dur'] = self.input_dur()
+                return self.set_durs(self.input_dur())
             return self.touch()
         if txt == '0':
             return self.insert(new_event(dur=self.input_dur()))
@@ -795,12 +868,37 @@ class ScoreCanvas(QWidget):
 
     # --- mysz
     def mousePressEvent(self, e):
+        """Klik – zaznacz; Shift+klik – zaznacz kilka; lewy na zaznaczonej – krótsza wartość, prawy – dłuższa."""
         self.setFocus()
+        if self.mode != 'notes':
+            self.mode = 'notes'
         for r, i in self.hits:
-            if r.contains(e.position()):
-                self.sel, self.nav = i, True
-                self.touch()
-                return
+            if not r.contains(e.position()):
+                continue
+            right = e.button() == Qt.RightButton
+            inside = i in self.sel_range()
+            if e.modifiers() & Qt.ShiftModifier and self.sel is not None:
+                if self.anchor is None:
+                    self.anchor = self.sel
+                self.sel = i
+            elif right:
+                if not inside:
+                    self.sel, self.anchor = i, None
+                self.nav = True
+                return self.set_durs(step=+1)
+            elif inside and self.nav:
+                return self.set_durs(step=-1)
+            else:
+                self.sel, self.anchor = i, None
+            self.nav = True
+            self.touch()
+            return
+        if not e.modifiers() & Qt.ShiftModifier and self.anchor is not None:
+            self.anchor = None
+            self.touch()
+
+    def contextMenuEvent(self, e):
+        e.accept()                               # prawy przycisk zmienia wartość nuty – bez menu
 
     # --- rysowanie
     def layout(self, width):
@@ -872,6 +970,7 @@ class ScoreCanvas(QWidget):
                        "Wpisz nuty literami c d e f g a h (b = B♭), wartości cyframi 1–8, pauza 0. "
                        "Ctrl+L – słowa, Ctrl+K – akordy.")
             return
+        chosen = set(self.sel_range())
         for si, sysm in enumerate(systems):
             top = y0 + si * sh
             end_x = sysm[-1][2] + sysm[-1][3]
@@ -882,7 +981,9 @@ class ScoreCanvas(QWidget):
                     i, pos, ln, first, tie_on = chunk
                     ev = self.mel.events[i]
                     x = mx + off
-                    selc = QColor(ACCENT) if i == self.sel else QColor("#111")
+                    selc = QColor(ACCENT) if i in chosen else QColor("#111")
+                    if len(chosen) > 1 and i in chosen:
+                        p.fillRect(QRectF(x - 5, top - 1.5 * SP, SP * 2.6, 7 * SP), QColor(122, 46, 58, 28))
                     r = self.draw_event(p, ev, x, top, base, dot, selc, shown, first and pj == 0)
                     self.hits.append((r, i))
                     # łuk z poprzedniego kawałka
@@ -1154,7 +1255,8 @@ class MelodyEditor(QDialog):
 
     HELP = ("<b>Skróty (jak w MuseScore):</b> c d e f g a h – nuty (b = B♭), 0 – pauza, 1–8 – wartość "
             "(4 ósemka, 5 ćwierćnuta, 6 półnuta, 7 cała), . – kropka, ↑↓ półton, Ctrl+↑↓ oktawa, "
-            "←→ wybór nuty (potem cyfra zmienia jej wartość), + łuk, Backspace – usuń, Ctrl+Z – cofnij. "
+            "←→ wybór nuty (potem cyfra zmienia jej wartość), Shift+←→ / Shift+klik / Ctrl+A – wiele nut, "
+            "klik na zaznaczonej nucie – krótsza, prawy klik – dłuższa, + łuk, Backspace – usuń, Ctrl+Z – cofnij. "
             "<b>Ctrl+L</b> – słowa (spacja = następna nuta, - = dzielenie), <b>Ctrl+K</b> – akordy, Esc – koniec.")
 
     def __init__(self, parent=None, melody=None, title="", on_save=None, on_chords=None, sf_path=None):
@@ -1218,6 +1320,7 @@ class MelodyEditor(QDialog):
         for label, fn, tip in (("♫ Odtwórz", self.play, "Sopran – chór, akordy – organy"),
                                ("Słowa (Ctrl+L)", lambda: self._mode('lyric'), ""),
                                ("Akordy (Ctrl+K)", lambda: self._mode('chord'), ""),
+                               ("⇅ Transponuj…", self.transpose_dialog, "Całość z tonacją i akordami albo zaznaczone nuty"),
                                ("Eksport MusicXML…", self.export_xml, "Do MuseScore i innych programów"),
                                ("Eksport MIDI…", self.export_midi, "")):
             b = QPushButton(label)
@@ -1245,12 +1348,46 @@ class MelodyEditor(QDialog):
             w.setFocusPolicy(Qt.ClickFocus)
         self.canvas.setFocus()
 
+    def transpose_dialog(self):
+        from PySide6.QtWidgets import QInputDialog
+        if not self.mel.events:
+            return
+        names = dict(KEYS)
+        sel = self.canvas.sel_range()
+        items, vals = [], []
+        for n in list(range(-12, 0)) + list(range(1, 13)):
+            f = best_fifths(self.mel.fifths + 7 * n)
+            label = {12: "o oktawę w górę", -12: "o oktawę w dół"}.get(n, f"o {abs(n)} półton{'' if abs(n) == 1 else ('y' if abs(n) < 5 else 'ów')} {'w górę' if n > 0 else 'w dół'}")
+            items.append(f"{label}  →  {names[f]}")
+            vals.append(n)
+        default = vals.index(2)
+        what = "całą melodię (z tonacją i akordami)"
+        if len(sel) > 1:
+            what = f"zaznaczone nuty ({len(sel)}) – tonacja bez zmian"
+        choice, ok = QInputDialog.getItem(self, "Transpozycja", f"Transponuj {what}:", items, default, False)
+        if ok:
+            n = vals[items.index(choice)]
+            self.canvas.push_undo()
+            if len(sel) > 1:
+                self.mel.transpose(n, sel)
+            else:
+                self.mel.transpose(n)
+                self.c_key.blockSignals(True)
+                self.c_key.setCurrentIndex(self.mel.fifths + 7)
+                self.c_key.blockSignals(False)
+            self.canvas.touch()
+        self.canvas.setFocus()
+
     def _mode(self, m):
         self.canvas.enter_mode(m)
         self.canvas.setFocus()
 
     def _dirty(self):
         self.saved = False
+        if self.c_key.currentData() != self.mel.fifths:          # np. po cofnięciu transpozycji
+            self.c_key.blockSignals(True)
+            self.c_key.setCurrentIndex(self.mel.fifths + 7)
+            self.c_key.blockSignals(False)
 
     def _meta(self, *_):
         self.mel.title = self.e_title.text().strip()

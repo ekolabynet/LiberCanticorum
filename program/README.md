@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.16.0
+# Liber Canticorum 0.16.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -30,7 +30,7 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 Okno ma u dołu pięć zakładek. Pierwsze cztery są proste, dla każdego, piąta to pełny edytor.
 
-- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, Nowa pieśń,
+- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, **Edytor melodii**, Nowa pieśń,
   Importuj śpiewnik lub plik, Akordy, Pilot w telefonie, Zaawansowane. Na górze liczba pieśni w bazie.
 - **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+),
   akordy jednym przyciskiem, „Slajdy tej pieśni”, „Edytuj”.
@@ -49,8 +49,9 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 
 ## Krok po kroku: nowe funkcje
 
-**Wpisać melodię (edytor melodii, nowość w 0.16).** Zakładka Nuty → „🎼 Edytor melodii” (albo „Wpisz melodię”,
-Pieśń → „Edytor melodii…”, Ctrl+Shift+N, przycisk przy załącznikach w „Zaawansowanych”).
+**Wpisać melodię (edytor melodii, nowość w 0.16).** Kafel **„🎵 Edytor melodii”** na ekranie Start (dla wybranej
+pieśni albo nowej – wystarczy podać tytuł), zakładka Nuty → „🎼 Edytor melodii” (albo „Wpisz melodię”),
+Pieśń → „Edytor melodii…” (Ctrl+Shift+N) albo przycisk przy załącznikach w „Zaawansowanych”.
 1. U góry wybierz **tonację** (np. „G-dur / e-moll”), **metrum** (4/4, 3/4, 6/8…), ewentualnie **przedtakt** i tempo.
 2. Wpisuj nuty skrótami jak w MuseScore: najpierw cyfra – wartość (**4** ósemka, **5** ćwierćnuta, **6** półnuta,
    **7** cała, **3** szesnastka; **.** – kropka), potem litera – wysokość: **c d e f g a h** (polskie **b** = B♭).
@@ -58,6 +59,12 @@ Pieśń → „Edytor melodii…”, Ctrl+Shift+N, przycisk przy załącznikach 
 3. Poprawki: **↑ / ↓** o półton, **Ctrl+↑ / ↓** o oktawę, **← / →** wybór nuty (cyfra zmienia wtedy jej wartość),
    **+** łuk, **Backspace** usuń, **Ctrl+Z** cofnij. Kliknięcie myszą też zaznacza nutę. Nuta dłuższa niż reszta taktu
    sama dzieli się na dwie połączone łukiem.
+   **Myszą:** kliknięcie zaznacza nutę; **lewy przycisk na zaznaczonej nucie – krótsza wartość, prawy – dłuższa**
+   (po kolei: … ósemka, ósemka z kropką, ćwierćnuta, ćwierćnuta z kropką, półnuta …).
+   **Wiele nut naraz:** Shift+← / → albo Shift+klik zaznacza zakres, Ctrl+A – wszystko, Esc – koniec zaznaczenia.
+   Zaznaczone nuty razem przesuwasz strzałkami, zmieniasz im wartość (cyfra, kropka, lewy/prawy przycisk) i usuwasz.
+   **⇅ Transponuj…** – cała melodia o wybraną liczbę półtonów lub o oktawę: program sam zmienia tonację
+   i przepisuje akordy (np. G-dur → A-dur, akord D7 → E7); przy zaznaczonych nutach transponuje tylko je.
 4. **Ctrl+L** – słowa: piszesz sylabę, **spacja** przechodzi do następnej nuty, **-** dzieli wyraz, **Esc** kończy.
 5. **Ctrl+K** – akordy: „G”, „e”, „D7”, „Fis-moll”, „C/E” (polskie: mała litera = moll, H i B); spacja – następna nuta.
 6. **♫ Odtwórz** – melodia brzmi jak **chór (Choir Aahs, głos „Sopran”)**, akordy jak **organy (Church Organ)**,
@@ -100,7 +107,7 @@ w pliku MuseScore pięciolinie (np. akompaniament).
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.16.0/
+LiberCanticorum_0.16.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
