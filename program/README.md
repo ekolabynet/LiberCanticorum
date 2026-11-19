@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.21.0
+# Liber Canticorum 0.21.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -30,7 +30,7 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 ## Języki / Languages / Langues / Idiomas
 
-Interfejs jest po polsku, angielsku, francusku i hiszpańsku – **Ustawienia → 🌐 Język / Language**
+Interfejs jest po polsku, angielsku, francusku i hiszpańsku – przycisk **🌐 PL** w prawym górnym rogu ekranu Start albo **Ustawienia → 🌐 Język / Language**
 (zmiana po ponownym uruchomieniu; domyślnie język systemu). Teksty i nuty pieśni się nie zmieniają.
 
 **Jak dodać albo poprawić tłumaczenie** (bez programowania): pliki `i18n/en.json`, `fr.json`, `es.json` zawierają
@@ -184,7 +184,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.21.0/
+LiberCanticorum_0.21.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

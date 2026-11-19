@@ -200,6 +200,7 @@ class HomePage(QWidget):
         self.sub.setObjectName("homeSub")
         tl.addWidget(self.sub)
         head.addLayout(tl, 1)
+        self.head = head
         outer.addLayout(head)
         outer.addSpacing(14)
         grid = QGridLayout()
@@ -229,6 +230,10 @@ class HomePage(QWidget):
 
     def set_info(self, text):
         self.sub.setText(text)
+
+    def add_corner(self, w):
+        """Widżet w prawym górnym rogu ekranu Start (np. wybór języka)."""
+        self.head.addWidget(w, 0, Qt.AlignTop | Qt.AlignRight)
 
 
 class SongPicker(QWidget):

@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.21.0"
+VERSION = "0.21.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -3374,6 +3374,7 @@ class MainWindow(QMainWindow):
         ]
         self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t, d=d, a=a: self._open_support(t, u, d, a)))
                                                 for ic, t, d, u, a in SUPPORT])
+        self._add_lang_button()
         self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
         self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
                                       lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
@@ -4187,9 +4188,33 @@ class MainWindow(QMainWindow):
         d.resize(760, 720)
         d.exec()
 
+    def _add_lang_button(self):
+        """Przycisk języka na ekranie Start: 🌐 + kod języka, menu z dostępnymi językami."""
+        from PySide6.QtWidgets import QToolButton, QMenu
+        try:
+            import modul_i18n
+        except Exception:
+            return
+        cur = self.settings.value("language", "") or modul_i18n.LANG
+        b = QToolButton()
+        b.setText(f"🌐 {cur.upper()}")
+        b.setToolTip("Język / Language / Langue / Idioma")
+        b.setPopupMode(QToolButton.InstantPopup)
+        b.setStyleSheet("QToolButton { font-size: 14pt; padding: 6px 12px; border: 1px solid #D9C49A; border-radius: 8px; }"
+                        " QToolButton::menu-indicator { image: none; }")
+        m = QMenu(b)
+        for code, name in modul_i18n.available():
+            a = m.addAction(("✓ " if code == cur else "    ") + name)
+            a.triggered.connect(lambda _=False, c=code: self.set_language(c))
+        b.setMenu(m)
+        self.home.add_corner(b)
+        self.lang_button = b
+
     def set_language(self, code):
         self.settings.setValue("language", code)
         self.settings.sync()
+        if getattr(self, 'lang_button', None) is not None:
+            self.lang_button.setText(f"🌐 {code.upper()}")
         import modul_i18n
         msg = {'pl': "Język zmieni się po ponownym uruchomieniu programu.",
                'en': "The language will change after restarting the program.",
