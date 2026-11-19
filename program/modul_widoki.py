@@ -51,6 +51,9 @@ def apply_theme(app, on=True):
         QTabWidget#views::pane {{ border: none; }}
         QFrame#tile {{ background: {PAPER}; border: 1px solid {LINE}; border-radius: 10px; }}
         QFrame#tile:hover {{ border: 1px solid {ACCENT}; background: #FFFDF7; }}
+        QFrame#tile[support="true"] {{ background: #FBF4E6; border: 1px solid #D9C49A; border-left: 4px solid #B8893A; }}
+        QFrame#tile[support="true"]:hover {{ border: 1px solid {ACCENT}; border-left: 4px solid {ACCENT}; }}
+        QLabel#supportHead {{ font-size: 15pt; color: {INK}; }}
         QLabel#tileTitle {{ font-size: 14pt; font-weight: bold; color: {INK}; }}
         QLabel#tileText {{ font-size: 10pt; color: {MUTED}; }}
         QLabel#tileIcon {{ font-size: 26pt; }}
@@ -165,9 +168,17 @@ class Tile(QFrame):
 class HomePage(QWidget):
     """Start: kafle najważniejszych funkcji."""
 
-    def __init__(self, tiles, info="", parent=None):
+    def __init__(self, tiles, info="", parent=None, support=None):
         super().__init__(parent)
-        outer = QVBoxLayout(self)
+        page = QVBoxLayout(self)
+        page.setContentsMargins(0, 0, 0, 0)
+        sc = QScrollArea()
+        sc.setWidgetResizable(True)
+        sc.setFrameShape(QFrame.NoFrame)
+        inner = QWidget()
+        sc.setWidget(inner)
+        page.addWidget(sc)
+        outer = QVBoxLayout(inner)
         outer.setContentsMargins(36, 24, 36, 20)
         head = QHBoxLayout()
         head.addWidget(Monogram(84))
@@ -189,6 +200,22 @@ class HomePage(QWidget):
             tile.clicked.connect(fn)
             grid.addWidget(tile, k // 3, k % 3)
         outer.addLayout(grid)
+        if support:
+            outer.addSpacing(22)
+            h = QLabel("Wesprzyj")
+            h.setObjectName("supportHead")
+            h.setFont(serif_font(22))
+            outer.addWidget(h)
+            outer.addSpacing(4)
+            sg = QGridLayout()
+            sg.setSpacing(14)
+            for k, (icon, title, text, fn) in enumerate(support):
+                tile = Tile(icon, title, text)
+                tile.setProperty("support", True)
+                tile.setMaximumHeight(190)
+                tile.clicked.connect(fn)
+                sg.addWidget(tile, k // 2, k % 2)
+            outer.addLayout(sg)
         outer.addStretch(1)
 
     def set_info(self, text):

@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.19.3
+# Liber Canticorum 0.20.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.19.x, 0.20.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.20.x, 0.21.0 itd.
 
 ## Jak wygląda
 
@@ -25,6 +25,17 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 | ![Zaawansowane – pełny edytor](program/zrzuty/widok_zaawansowane.png) | ![Edytor melodii z czcionką nutową Leland](program/zrzuty/edytor_melodii.png) |
 
 *Na zrzutach są pieśni z domeny publicznej wpisane do pustej bazy. Program nie zawiera żadnych tekstów ani nut.*
+
+## Wesprzyj
+
+Program jest darmowy. Jeśli Ci się przydaje, wesprzyj – kafle u dołu ekranu Start otwierają strony:
+- **Ośrodek dla Niewidomych w Laskach** – Towarzystwo Opieki nad Ociemniałymi (1,5% podatku: KRS 0000054086),
+- **Parafia M.B. Królowej Meksyku** (Matki Bożej z Guadalupe, Laski),
+- **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin
+  (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-),
+- **Guadeloupe500.org** – nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).
+
+Adresy stron są w pliku `wsparcie.json` (obok programu) i można je tam zmienić.
 
 ## Układ okna: zakładki u dołu
 
@@ -148,7 +159,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.19.3/
+LiberCanticorum_0.20.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -217,6 +228,7 @@ python3 -m venv .venv
 | `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
 | `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
 | `modul_omr.py` | rozpoznawanie nut ze skanu programem Audiveris (MusicXML) |
+| `wsparcie.json` | adresy stron kafli „Wesprzyj” na ekranie Start |
 | `modul_instrumenty.py` | klawiatura w odtwarzaczu, chwyty gitarowe na gryfie |
 | `modul_edytor.py` | edytor melodii: nuty, słowa, akordy; zapis MusicXML (Sopran – chór, Organy) i MIDI |
 | `czcionki/` | czcionki z MuseScore: Leland (znaki nutowe, SMuFL) i Edwin (tekst), licencja SIL OFL 1.1 |

@@ -57,9 +57,35 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.19.3"
+VERSION = "0.20.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
+
+# kafle „Wesprzyj” na ekranie Start: (ikona, tytuł, opis, adres). Adresy można zmienić w pliku wsparcie.json obok programu.
+SUPPORT = [
+    ("🤍", "Wesprzyj Ośrodek dla Niewidomych w Laskach",
+     "Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
+     "https://www.laski.edu.pl/"),
+    ("⛪", "Wesprzyj Parafię M.B. Królowej Meksyku",
+     "Parafia Matki Bożej z Guadalupe, Królowej Meksyku – Laski.", ""),
+    ("🎶", "Wesprzyj Scholę adHoc",
+     "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
+     "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
+     "https://dowiaryprzezliturgie.pl/adhoc/"),
+    ("🌹", "Wesprzyj projekt Guadeloupe500.org",
+     "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
+     "https://guadeloupe500.org/"),
+]
+
+
+def support_url(title, default):
+    """Adres z pliku wsparcie.json (obok programu), jeśli jest – inaczej domyślny."""
+    try:
+        with open(os.path.join(APP_DIR, "wsparcie.json"), encoding="utf-8") as f:
+            return json.load(f).get(title, default)
+    except (OSError, ValueError):
+        return default
+
 
 DEFAULT_CATEGORIES = [
     "Adwent", "Boże Narodzenie", "Wielki Post", "Triduum Paschalne", "Wielkanoc", "Zesłanie Ducha Świętego",
@@ -3084,7 +3110,8 @@ class MainWindow(QMainWindow):
             ("⚙", "Zaawansowane", "Pełny edytor: wygląd slajdów, załączniki, wersje, eksport, ustawienia.",
              lambda: self.views.setCurrentIndex(self.V_ADV)),
         ]
-        self.home = mw.HomePage(tiles)
+        self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t: self._open_support(t, u)))
+                                                for ic, t, d, u in SUPPORT])
         self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
         self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
                                       lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
@@ -3810,6 +3837,13 @@ class MainWindow(QMainWindow):
         elif action == 'categories':
             self.category_manager()
         self._refresh_pickers()
+
+    def _open_support(self, title, url):
+        url = support_url(title, url)
+        if url:
+            QDesktopServices.openUrl(QUrl(url))
+        else:
+            QMessageBox.information(self, title, "Strona jest w przygotowaniu – zajrzyj wkrótce.")
 
     def tidy_dialog(self):
         """Kafel „Porządki w bazie”: duże przyciski do najczęstszych porządków."""
