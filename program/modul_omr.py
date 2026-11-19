@@ -71,6 +71,66 @@ def work_dir():
     return tempfile.mkdtemp(prefix="omr_", dir=base)
 
 
+def parse_pages(sheets, n):
+    """„3”, „3-4”, „1 3 5” → numery stron od 1 (puste = wszystkie)."""
+    out = []
+    for part in (sheets or "").replace(",", " ").split():
+        a, _, b = part.partition("-")
+        try:
+            lo, hi = int(a), int(b or a)
+        except ValueError:
+            continue
+        out += [i for i in range(lo, hi + 1) if 1 <= i <= n and i not in out]
+    return out or list(range(1, n + 1))
+
+
+def pdf_is_vector(path, pages=None):
+    """True, gdy któraś ze stron PDF nie zawiera obrazu skanu (nuty zapisane wektorowo, np. z MuseScore,
+    Sibeliusa, LilyPonda) – Audiveris rozpoznaje tylko obrazy, więc taki PDF trzeba najpierw zrasteryzować."""
+    try:
+        import pypdfium2 as pdfium
+        import pypdfium2.raw as raw
+    except ImportError:
+        return False
+    try:
+        doc = pdfium.PdfDocument(path)
+        for i in (pages or range(1, len(doc) + 1)):
+            page = doc[i - 1]
+            w, h = page.get_size()
+            area = 0.0
+            for obj in page.get_objects(filter=[raw.FPDF_PAGEOBJ_IMAGE], max_depth=4):
+                l, b, r, t = obj.get_pos()
+                area += max(0.0, r - l) * max(0.0, t - b)
+            if area < 0.5 * w * h:                 # brak obrazu na pół strony – to nie jest skan
+                return True
+        return False
+    except Exception:
+        return False
+    finally:
+        try:
+            doc.close()
+        except Exception:
+            pass
+
+
+def rasterize_pdf(path, out_path, pages=None, dpi=300):
+    """Kopia rastrowa PDF (strony jako obrazy w skali szarości, 300 dpi) – do rozpoznawania w Audiveris.
+    pages – numery stron od 1 (domyślnie wszystkie). Zwraca liczbę stron."""
+    import pypdfium2 as pdfium
+    doc = pdfium.PdfDocument(path)
+    try:
+        imgs = []
+        for i in (pages or range(1, len(doc) + 1)):
+            bmp = doc[i - 1].render(scale=dpi / 72, grayscale=True, fill_color=(255, 255, 255, 255))
+            imgs.append(bmp.to_pil().convert("L"))
+    finally:
+        doc.close()
+    if not imgs:
+        return 0
+    imgs[0].save(out_path, save_all=True, append_images=imgs[1:], resolution=dpi, quality=95)
+    return len(imgs)
+
+
 def args_for(src, out_dir, sheets="", lang="pol", variant=0):
     """Argumenty Audiveris. variant: 0 – język OCR przez -constant (5.3+), 1 – przez -option (starsze), 2 – bez."""
     a = ["-batch", "-export", "-output", out_dir]

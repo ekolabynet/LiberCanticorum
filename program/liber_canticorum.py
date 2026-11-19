@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.1"
+VERSION = "0.29.2"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -7114,7 +7114,7 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         if not cmd:
             modul_omr.install_help(self)
             return
-        sheets = ""
+        sheets, orig = "", path
         if path.lower().endswith('.pdf'):
             try:
                 import pypdfium2 as pdfium
@@ -7129,6 +7129,19 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
                 if not ok:
                     return
                 sheets = txt.strip()
+            pages = modul_omr.parse_pages(sheets, n)
+            if modul_omr.pdf_is_vector(path, pages):
+                # PDF wektorowy (np. z programu do nut) – Audiveris widzi tylko obrazy: kopia rastrowa 300 dpi
+                ras = os.path.join(modul_omr.work_dir(), os.path.splitext(os.path.basename(path))[0] + " (300 dpi).pdf")
+                try:
+                    QApplication.setOverrideCursor(Qt.WaitCursor)
+                    modul_omr.rasterize_pdf(path, ras, pages)
+                    path, sheets = ras, ""              # w kopii są już tylko wybrane strony
+                    self.statusBar().showMessage("PDF wektorowy – rozpoznaję z kopii rastrowej 300 dpi", 8000)
+                except Exception as e:
+                    QMessageBox.warning(self, APP_NAME, f"Nie udało się zrobić kopii rastrowej PDF:\n{e}")
+                finally:
+                    QApplication.restoreOverrideCursor()
         dlg = modul_omr.OmrDialog(cmd, path, sheets, "pol", self)
         got = []
         dlg.finished_ok.connect(got.extend)
@@ -7139,7 +7152,7 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
                                         "albo spróbuj skanu w 300 dpi.")
             return
         sid = self.song['id']
-        base = os.path.splitext(os.path.basename(path))[0]
+        base = os.path.splitext(os.path.basename(orig))[0]
         new_ids = []
         for k, f in enumerate(got):
             with open(f, 'rb') as fh:

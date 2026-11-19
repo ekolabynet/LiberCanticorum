@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.1
+# Liber Canticorum 0.29.2
 *Wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła*  
 *A free liturgical songbook for musicians, choirs and Church communities*
 
@@ -287,7 +287,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.29.1/
+LiberCanticorum_0.29.2/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -513,7 +513,8 @@ sprawdzenia”. Gdy pieśń nie ma tekstu, słowa spod nut można od razu wstawi
 poprawia się błędy rozpoznania; z nut powstaje też MIDI i nagrania do nauki. Audiveris instaluje się osobno
 (instalator z wbudowaną Javą z github.com/Audiveris/audiveris/releases albo Flatpak `org.audiveris.audiveris`);
 program znajduje go sam, a w razie potrzeby: Ustawienia → Ścieżka do Audiveris. Przy PDF-ie wielostronicowym
-wybiera się strony. Uwaga na prawa: melodie dawnych pieśni są wspólne, ale współczesne wydania (redakcja, harmonizacje,
+wybiera się strony. PDF wektorowy (np. zapisany z MuseScore, Sibeliusa albo LilyPonda, bez obrazu skanu) program
+sam zamienia w locie na kopię rastrową 300 dpi, bo Audiveris rozpoznaje tylko obrazy. Uwaga na prawa: melodie dawnych pieśni są wspólne, ale współczesne wydania (redakcja, harmonizacje,
 skład) bywają chronione – rozpoznane nuty do użytku we własnej parafii, bez publikowania.
 
 **Czyste brzmienie z SoundFontu (od 0.16.2).** Odtwarzacz sam dostraja próbki dźwięków trwających (chór, organy)
