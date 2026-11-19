@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.24.0"
+VERSION = "0.25.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -100,6 +100,13 @@ do liturgii, i opisane źródła:</p>
 <p>Wszystkie śpiewy przeznaczone do liturgii powinny mieć aprobatę Konferencji Episkopatu Polski albo władzy
 diecezjalnej (Instrukcja Episkopatu Polski z 1979 r., n. 10).</p>
 
+<h2>Podziel się własną pracą</h2>
+<p>Wpisałeś melodię albo przygotowałeś własne opracowanie (na scholę, chór, organy)? <b>Udostępnij je na
+<a href="https://musescore.com/">MuseScore.com</a> z licencją otwartą</b> – CC0 (domena publiczna) albo CC BY /
+CC BY-SA – żeby mogły z niej korzystać inne wspólnoty. W edytorze melodii: „🌍 Udostępnij na MuseScore.com…”.
+Udostępniaj tylko to, do czego masz prawo: własne opracowania i melodie z domeny publicznej; w opisie podaj
+źródło melodii i słów.</p>
+
 <h2>Dokumenty Kościoła o muzyce</h2>
 <ul>
 <li>Sobór Watykański II, konstytucja <i>Sacrosanctum Concilium</i> (1963), rozdz. VI „Muzyka sakralna” – podstawa,</li>
@@ -121,7 +128,7 @@ diecezjalnej (Instrukcja Episkopatu Polski z 1979 r., n. 10).</p>
 
 SUPPORT = [
     ("🤍", "Wesprzyj Ośrodek dla Niewidomych w Laskach",
-     "Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
+     "Ośrodek założony przez bł. Matkę Elżbietę Różę Czacką. Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
      "https://laski.edu.pl/",
      {'odbiorca': "Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin",
       'konta': [("mBank S.A. – konto do darowizn", "02 1140 1010 0000 4399 5800 1002")],
@@ -133,15 +140,20 @@ SUPPORT = [
      "https://parafiawlaskach.pl/",
      {'odbiorca': "Parafia Matki Bożej Królowej Meksyku, ul. 3 Maja 40/42, 05-080 Laski",
       'konta': [("PKO BP", "18 1020 1026 0000 1102 0016 9920")],
+      'szukaj_parafii': True,
       'tytul': "Ofiara na rzecz parafii",
       'zrodlo': "parafiawlaskach.pl/kontakt"}),
     ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
      "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
-     "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
+     "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-). "
+     "Mieszkasz daleko, np. na innym kontynencie? Módl się z nami i przyślij swoją intencję ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
      {'zaangazuj': "Najlepiej wesprzesz nas, przychodząc i śpiewając razem z nami: w I niedzielę miesiąca, "
                    "w samo południe, w kościele Matki Bożej Królowej Meksyku w Laskach (ul. 3 Maja 40/42). "
-                   "Próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę!",
+                   "Próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! "
+                   "Nie możesz przyjść, bo mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami "
+                   "w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – "
+                   "polecimy ją Bogu na Mszy.",
       'baner': "ikony/adhoc_baner.png"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
@@ -3785,6 +3797,8 @@ class MainWindow(QMainWindow):
             ("⚙", "Zaawansowane", "Pełny edytor: wygląd slajdów, załączniki, wersje, eksport, ustawienia.",
              lambda: self.views.setCurrentIndex(self.V_ADV)),
         ]
+        if __import__('modul_i18n').LANG == 'la':          # po łacinie (dla tradycjonalistów) – bez kafla gitary :-)
+            tiles = [t for t in tiles if t[1] != "Akordy"]
         self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t, d=d, a=a: self._open_support(t, u, d, a)))
                                                 for ic, t, d, u, a in SUPPORT])
         self._add_lang_button()
@@ -4144,6 +4158,8 @@ class MainWindow(QMainWindow):
             "Pilot w telefonie: Pokaz → Pilot w telefonie (Ctrl+P), zeskanuj kod QR.")))
         act(m_help, "O programie i licencja", self.about)
         act(m_help, "© Prawa autorskie do pieśni, dobre źródła, dokumenty Kościoła…", self.copyright_info)
+        act(m_help, "🌍 Udostępnij swoje melodie i aranżacje na MuseScore.com…",
+            lambda: __import__('modul_edytor').share_musescore(self))
         ikony.apply_icons(self)
         self.search_icon = self.search.addAction(ikony.fa_icon("magnifying-glass"), QLineEdit.LeadingPosition)
         self.search_icon.setProperty("fa_name", "magnifying-glass")
@@ -4549,6 +4565,8 @@ class MainWindow(QMainWindow):
     def _open_support(self, title, url, desc="", acc=None):
         """Kafel „Wesprzyj”: okno z opisem, numerem konta (do skopiowania) i stroną WWW."""
         url = support_url(title, url)
+        import modul_i18n
+        title, desc = modul_i18n.tr(title), modul_i18n.tr(desc)
         d = QDialog(self)
         d.setWindowTitle(title)
         lay = QVBoxLayout(d)
@@ -4562,12 +4580,24 @@ class MainWindow(QMainWindow):
         h = QLabel(f"<h2>{H.escape(title)}</h2><p>{H.escape(desc)}</p>")
         h.setWordWrap(True)
         lay.addWidget(h)
+        if acc and acc.get('szukaj_parafii'):
+            if modul_i18n.LANG != 'pl':                      # za granicą: najbliższa parafia MB z Guadalupe
+                from urllib.parse import quote
+                q = modul_i18n.tr("parafia Matki Bożej z Guadalupe")
+                bf = QPushButton("🔎 Znajdź najbliższą parafię Matki Bożej z Guadalupe")
+                f_ = bf.font()
+                f_.setPointSizeF(f_.pointSizeF() * 1.2)
+                f_.setBold(True)
+                bf.setFont(f_)
+                bf.clicked.connect(lambda: QDesktopServices.openUrl(
+                    QUrl("https://www.google.com/maps/search/" + quote(q))))
+                lay.addWidget(bf)
         if acc and acc.get('zaangazuj'):
-            z = QLabel(f"<b>Jak się włączyć?</b><br>{H.escape(acc['zaangazuj'])}")
+            z = QLabel(f"<b>{modul_i18n.tr('Jak się włączyć?')}</b><br>{H.escape(modul_i18n.tr(acc['zaangazuj']))}")
             z.setWordWrap(True)
             lay.addWidget(z)
         if acc and acc.get('konta'):
-            lay.addWidget(QLabel(f"<b>Odbiorca:</b> {H.escape(acc['odbiorca'])}", wordWrap=True))
+            lay.addWidget(QLabel(f"<b>{modul_i18n.tr('Odbiorca:')}</b> {H.escape(acc['odbiorca'])}", wordWrap=True))
             for bank, nr in acc['konta']:
                 row = QHBoxLayout()
                 lab = QLabel(f"<b>{H.escape(bank)}:</b><br><span style='font-size:15pt; font-family:monospace'>{nr}</span>")
@@ -4579,7 +4609,7 @@ class MainWindow(QMainWindow):
                 row.addWidget(b)
                 lay.addLayout(row)
             if acc.get('tytul'):
-                lay.addWidget(QLabel(f"<b>Tytuł przelewu (propozycja):</b> {H.escape(acc['tytul'])}", wordWrap=True))
+                lay.addWidget(QLabel(f"<b>{modul_i18n.tr('Tytuł przelewu (propozycja):')}</b> {H.escape(acc['tytul'])}", wordWrap=True))
             if acc.get('inne'):
                 lay.addWidget(QLabel(H.escape(acc['inne']), wordWrap=True))
             src = QLabel(f"<span style='color:gray'>Dane ze strony {H.escape(acc.get('zrodlo', ''))} – przed przelewem "

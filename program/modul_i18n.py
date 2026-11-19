@@ -20,7 +20,8 @@ DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "i18n")
 NAMES = {'pl': "Polski", 'en': "English", 'fr': "Français", 'es': "Español", 'de': "Deutsch", 'it': "Italiano",
          'cs': "Čeština", 'sk': "Slovenčina", 'uk': "Українська", 'pt': "Português", 'sw': "Kiswahili",
          'ja': "日本語", 'zh': "中文", 'vi': "Tiếng Việt", 'nb': "Norsk", 'sv': "Svenska", 'is': "Íslenska",
-         'hr': "Hrvatski", 'ar': "العربية", 'lt': "Lietuvių", 'tl': "Filipino (Tagalog)"}
+         'hr': "Hrvatski", 'ar': "العربية", 'lt': "Lietuvių", 'tl': "Filipino (Tagalog)", 'hu': "Magyar",
+         'ro': "Română", 'ko': "한국어", 'ml': "മലയാളം", 'la': "Latina"}
 RTL = {'ar', 'he', 'fa', 'ur'}                       # języki pisane od prawej do lewej
 ALIASES = {'no': 'nb', 'nn': 'nb', 'fil': 'tl'}       # kody systemowe → pliki tłumaczeń
 

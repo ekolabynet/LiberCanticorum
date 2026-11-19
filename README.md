@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.24.0
+# Liber Canticorum 0.25.0
 *wolny śpiewnik dla wspólnot*
 
 🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
@@ -34,9 +34,10 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 Opis po angielsku, francusku i hiszpańsku: [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md).
 
-Interfejs jest w **21 językach**: polskim, angielskim, francuskim, hiszpańskim, niemieckim, ukraińskim, czeskim,
+Interfejs jest w **27 językach**: polskim, angielskim, francuskim, hiszpańskim, niemieckim, ukraińskim, czeskim,
 włoskim, portugalskim, suahili, japońskim, chińskim, wietnamskim, norweskim, szwedzkim, islandzkim, chorwackim,
-arabskim (od prawej do lewej), litewskim i filipińskim (tagalskim). Przycisk **🌐** w prawym górnym rogu ekranu
+arabskim (od prawej do lewej), litewskim, filipińskim (tagalskim), słowackim, węgierskim, rumuńskim,
+koreańskim, malajalam i **po łacinie** (dla miłośników tradycji – bez kafla gitarowego :-) ). Przycisk **🌐** w prawym górnym rogu ekranu
 Start albo **Ustawienia → 🌐 Język / Language** (zmiana po ponownym uruchomieniu; domyślnie język systemu).
 Teksty i nuty pieśni się nie zmieniają.
 
@@ -66,9 +67,9 @@ Program jest darmowy. Jeśli Ci się przydaje, wesprzyj – kafle u dołu ekranu
 
 | Na co | Konto do wpłat | Strona |
 |---|---|---|
-| **Ośrodek dla Niewidomych w Laskach** – Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin | mBank S.A. **02 1140 1010 0000 4399 5800 1002**; BLIK na telefon 572 896 588; 1,5% podatku: KRS 0000054086 | [laski.edu.pl](https://laski.edu.pl/) (darowizny: [wpłać darowiznę](https://laski.edu.pl/wplac-darowizne/)) |
+| **Ośrodek dla Niewidomych w Laskach** – założony przez bł. Matkę Elżbietę Różę Czacką; Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin | mBank S.A. **02 1140 1010 0000 4399 5800 1002**; BLIK na telefon 572 896 588; 1,5% podatku: KRS 0000054086 | [laski.edu.pl](https://laski.edu.pl/) (darowizny: [wpłać darowiznę](https://laski.edu.pl/wplac-darowizne/)) |
 | **Parafia M.B. Królowej Meksyku** (z Guadalupe), ul. 3 Maja 40/42, 05-080 Laski | PKO BP **18 1020 1026 0000 1102 0016 9920** | [parafiawlaskach.pl](https://parafiawlaskach.pl/) (konto: [kontakt](https://parafiawlaskach.pl/kontakt)) |
-| **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-) | bez konta – **przyjdź i śpiewaj z nami** (kościół M.B. Królowej Meksyku w Laskach, ul. 3 Maja 40/42); próby we wtorki o 19:00 w domu parafialnym | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
+| **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-). Mieszkasz daleko, np. na innym kontynencie? Módl się z nami i przyślij swoją intencję ;-) | bez konta – **przyjdź i śpiewaj z nami** (kościół M.B. Królowej Meksyku w Laskach, ul. 3 Maja 40/42); próby we wtorki o 19:00 w domu parafialnym | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
 | **Guadalupe500.org** – nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu) | bez konta – **włącz się**: komponujesz, śpiewasz, grasz, piszesz teksty, tłumaczysz? | guadalupe500.org |
 
 Numery kont pochodzą ze stron odbiorców (stan: listopad 2026) – przed przelewem sprawdź je u źródła.
@@ -100,6 +101,16 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Podziel się melodią lub aranżacją (nowość w 0.25).** Wpisaną melodię albo własne opracowanie (na scholę, chór,
+organy) udostępnij na [MuseScore.com](https://musescore.com/) **z licencją otwartą** – CC0 (domena publiczna) albo
+CC BY / CC BY-SA – żeby mogły z niej korzystać inne wspólnoty. W edytorze melodii: „🌍 Udostępnij na MuseScore.com…”
+(eksport MusicXML, przycisk „Upload” i krótka instrukcja), także Pomoc → „🌍 Udostępnij swoje melodie…”.
+Udostępniaj tylko to, do czego masz prawo: własne opracowania i melodie z domeny publicznej; w opisie podaj źródło
+melodii i słów.
+
+**Za granicą.** W innych językach niż polski kafel parafii zachęca, by znaleźć najbliższą parafię Matki Bożej
+z Guadalupe i ją wesprzeć (przycisk „🔎 Znajdź najbliższą parafię…” otwiera mapę).
 
 **Uwagi do pieśni w zestawie (nowość w 0.23).** W zakładce **Msza** przy każdej pieśni jest **📝** – wykonawca
 (np. schola, organista, kantor; program pamięta wpisanych), tonacja, uwagi (np. „zwrotki 1, 3, 5”) i **na co zwrócić
@@ -226,7 +237,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.24.0/
+LiberCanticorum_0.25.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

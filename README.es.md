@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.24.0
+# Liber Canticorum 0.25.0
 *un cancionero libre para las comunidades*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -30,9 +30,9 @@ Los números de versión son 0.x.y: el programa sigue desarrollándose rápidame
 
 ## Idiomas
 
-La interfaz está en **21 idiomas**: polaco, inglés, francés, español, alemán, ucraniano, checo, italiano, portugués,
-suajili, japonés, chino, vietnamita, noruego, sueco, islandés, croata, árabe (de derecha a izquierda), lituano y
-filipino (tagalo). Botón **🌐** en la pantalla de Inicio o **Configuración → Idioma** (tras reiniciar; por defecto,
+La interfaz está en **27 idiomas**: polaco, inglés, francés, español, alemán, ucraniano, checo, italiano, portugués,
+suajili, japonés, chino, vietnamita, noruego, sueco, islandés, croata, árabe (de derecha a izquierda), lituano,
+filipino (tagalo), eslovaco, húngaro, rumano, coreano, malayalam y **latín** (para los amantes de la tradición – sin el mosaico de guitarra :-) ). Botón **🌐** en la pantalla de Inicio o **Configuración → Idioma** (tras reiniciar; por defecto,
 el idioma del sistema). Las letras y partituras de los cantos no se traducen.
 
 El polaco, el inglés, el francés y el español cubren las partes principales; los demás idiomas, las más visibles
@@ -61,6 +61,12 @@ Las listas se filtran por **categoría**, **fuente (cancionero)** y búsqueda. C
 (Mayús/Ctrl+clic) se pueden fusionar o asignarles a la vez categoría, etiquetas o fuente.
 
 ## Novedades paso a paso
+
+**Comparte tus melodías y arreglos (0.25).** Una melodía que hayas introducido o tu propio arreglo (schola, coro,
+órgano) puede ayudar a otras comunidades: compártelo en [MuseScore.com](https://musescore.com/) **con licencia
+abierta** – CC0 (dominio público) o CC BY / CC BY-SA. En el editor de melodías: «🌍 Compartir en MuseScore.com…»
+(exportación MusicXML, botón Upload y una breve guía); también Ayuda → «🌍 Comparte tus melodías…». Comparte solo
+aquello sobre lo que tienes derecho – tus arreglos y melodías de dominio público – e indica la fuente.
 
 **Notas para los cantos del repertorio (0.23).** En la pestaña **Misa** cada canto tiene un botón **📝**: intérprete
 (coro, organista, cantor – el programa los recuerda), tonalidad, observaciones (p. ej. «estrofas 1, 3, 5») y
@@ -94,7 +100,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.24.0.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.25.0.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
@@ -106,10 +112,10 @@ partituras), una SoundFont para mejor sonido.
 ## Apoyar
 
 El programa es gratuito. Si te resulta útil, los mosaicos de Inicio indican cómo apoyar:
-- **Centro para Ciegos de Laski** – mBank **02 1140 1010 0000 4399 5800 1002**; [laski.edu.pl](https://laski.edu.pl/),
-- **Parroquia de Nuestra Señora Reina de México (de Guadalupe)**, Laski – PKO BP **18 1020 1026 0000 1102 0016 9920**; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
+- **Centro para Ciegos de Laski**, fundado por la beata Madre Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002**; [laski.edu.pl](https://laski.edu.pl/),
+- **Una parroquia de Nuestra Señora de Guadalupe** – fuera de Polonia, busca la más cercana y apóyala (el mosaico abre un mapa); nuestra parroquia es Nuestra Señora Reina de México (de Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920**; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
 - **Schola adHoc** – ven a cantar con nosotros el primer domingo de mes a mediodía; ensayos los martes a las 19:00
-  en la casa parroquial; [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
+  en la casa parroquial. ¿Vives lejos, en otro continente? Reza con nosotros y envíanos tu intención ;-); [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – nueva música para el 500 aniversario de las apariciones en el cerro del Tepeyac
   (en preparación) – súmate: compón, canta, toca, escribe, traduce.
 

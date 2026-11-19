@@ -1322,7 +1322,9 @@ class MelodyEditor(QDialog):
                                ("Akordy (Ctrl+K)", lambda: self._mode('chord'), ""),
                                ("⇅ Transponuj…", self.transpose_dialog, "Całość z tonacją i akordami albo zaznaczone nuty"),
                                ("Eksport MusicXML…", self.export_xml, "Do MuseScore i innych programów"),
-                               ("Eksport MIDI…", self.export_midi, "")):
+                               ("Eksport MIDI…", self.export_midi, ""),
+                               ("🌍 Udostępnij na MuseScore.com…", lambda: share_musescore(self, self.export_xml),
+                                "Twoja melodia lub aranżacja może pomóc innym wspólnotom – z licencją otwartą")):
             b = QPushButton(label)
             b.setToolTip(tip)
             b.setFocusPolicy(Qt.NoFocus)
@@ -1426,10 +1428,12 @@ class MelodyEditor(QDialog):
         return re.sub(r'[\\/:*?"<>|]+', "_", self.mel.title or "melodia").strip() or "melodia"
 
     def export_xml(self):
+        """Zapis MusicXML (zwraca ścieżkę albo None)."""
         path, _ = QFileDialog.getSaveFileName(self, "Eksport MusicXML", self._safe_name() + ".musicxml", "MusicXML (*.musicxml)")
         if path:
             with open(path, 'wb') as f:
                 f.write(self.mel.musicxml())
+        return path or None
 
     def export_midi(self):
         path, _ = QFileDialog.getSaveFileName(self, "Eksport MIDI", self._safe_name() + ".mid", "MIDI (*.mid)")
@@ -1464,3 +1468,55 @@ class MelodyEditor(QDialog):
             if r == QMessageBox.Save:
                 self.save()
         super().closeEvent(e)
+
+
+SHARE_HTML = """
+<h3>Podziel się melodią lub aranżacją</h3>
+<p>Wpisana przez Ciebie melodia, opracowanie na scholę, chór czy organy może przydać się innym wspólnotom.
+Udostępnij ją na <a href="https://musescore.com/">MuseScore.com</a> (bezpłatne konto) <b>z licencją otwartą</b>:</p>
+<ul>
+<li><b>CC0 / domena publiczna</b> – każdy może korzystać bez ograniczeń,</li>
+<li><b>CC BY</b> albo <b>CC BY-SA</b> – każdy może korzystać i opracowywać dalej, podając Ciebie jako autora
+(przy BY-SA – na tej samej licencji).</li>
+</ul>
+<p><b>Jak:</b> 1. „Eksport MusicXML…” (albo zapis w MuseScore jako .mscz), 2. na MuseScore.com „Upload”,
+3. w opisie podaj źródło melodii i tekstu, 4. w polu licencji wybierz CC0 albo CC BY / CC BY-SA,
+5. dodaj tagi, np. <i>liturgia, schola, psalm, Adwent</i>.</p>
+<p><b>Uwaga:</b> udostępniaj tylko to, do czego masz prawo – własne opracowania i melodie z domeny publicznej.
+Słowa pieśni i oryginalna melodia mogą mieć innych autorów: sprawdź ich prawa (zob. Pomoc → „© Prawa autorskie”).
+Dziękujemy – tak powstaje wspólny, dobry śpiewnik dla wszystkich!</p>
+"""
+
+
+def share_musescore(parent, export_fn=None):
+    """Zachęta do udostępnienia własnej melodii / aranżacji na MuseScore.com z licencją otwartą."""
+    from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser, QHBoxLayout, QPushButton
+    from PySide6.QtGui import QDesktopServices
+    from PySide6.QtCore import QUrl
+    try:
+        import modul_i18n
+        html = modul_i18n.tr(SHARE_HTML.strip())
+    except Exception:
+        html = SHARE_HTML
+    d = QDialog(parent)
+    d.setWindowTitle("Udostępnij na MuseScore.com")
+    lay = QVBoxLayout(d)
+    tb = QTextBrowser()
+    tb.setOpenExternalLinks(True)
+    tb.setHtml(html)
+    lay.addWidget(tb, 1)
+    row = QHBoxLayout()
+    if export_fn:
+        b = QPushButton("💾 Eksport MusicXML…")
+        b.clicked.connect(export_fn)
+        row.addWidget(b)
+    b = QPushButton("🌍 Otwórz MuseScore.com – Upload")
+    b.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://musescore.com/upload")))
+    row.addWidget(b)
+    row.addStretch(1)
+    b = QPushButton("Zamknij")
+    b.clicked.connect(d.accept)
+    row.addWidget(b)
+    lay.addLayout(row)
+    d.resize(680, 520)
+    d.exec()
