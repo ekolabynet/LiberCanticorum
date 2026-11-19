@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.15.0
+# Liber Canticorum 0.15.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -35,7 +35,7 @@ Program pamięta ostatnio otwartą zakładkę.
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.15.0/
+LiberCanticorum_0.15.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -252,10 +252,16 @@ program znajduje go sam, a w razie potrzeby: Ustawienia → Ścieżka do Audiver
 wybiera się strony. Uwaga na prawa: melodie dawnych pieśni są wspólne, ale współczesne wydania (redakcja, harmonizacje,
 skład) bywają chronione – rozpoznane nuty do użytku we własnej parafii, bez publikowania.
 
+**Odtwarzacz głosów:** pasek odtwarzania nad nutami – ⏮ od początku, ⏪ / ⏩ 5 s, Odtwórz/Pauza, ⏹, suwak położenia
+i czas (spacja – odtwórz/pauza, strzałki – przewijanie). **👁 Pięciolinie** – pokaż albo ukryj pięciolinie w nutach,
+np. akompaniament ukryty w pliku MuseScore, który gra, ale go nie widać (wymaga MuseScore; dźwięk się nie zmienia).
+Wybór zapamiętuje się dla pliku i obowiązuje też w podglądzie i w zakładce Nuty.
+
 **Szukaj nut w MuseScore po tytule** (Pieśń → „Szukaj nut w MuseScore”, Ctrl+M, albo przycisk w zakładce „Nuty,
 wersje i nagrania”): okno od razu szuka tytułu bieżącej pieśni na musescore.com („Msza Rycerska – Kyrie” → „Msza
 Rycerska Kyrie”). Jeśli jest wbudowana przeglądarka (moduł PySide6-Addons – program proponuje doinstalowanie,
-ok. 150 MB), MuseScore otwiera się w oknie programu: wybierasz nuty, klikasz *Download* (PDF albo MuseScore) i plik
+ok. 150 MB; przed użyciem program sprawdza ją w osobnym procesie, a gdy nie działa – pokazuje dlaczego i pozwala ją
+odinstalować), MuseScore otwiera się w oknie programu: wybierasz nuty, klikasz *Download* (PDF albo MuseScore) i plik
 od razu trafia do pieśni; logowanie w MuseScore (darmowe konto) program pamięta. Bez niej MuseScore otwiera się
 w zwykłej przeglądarce, a pobrany plik pojawia się w oknie sam (folder Pobrane). CPDL, IMSLP i Google są w zakładce
 „Inne źródła”. (MuseScore chroni wyszukiwarkę przed programami, dlatego wyniki ogląda się w przeglądarce.)

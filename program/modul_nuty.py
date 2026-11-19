@@ -37,9 +37,9 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog,
                                QMessageBox, QPushButton, QScrollArea, QTabWidget, QSlider, QSpinBox, QVBoxLayout, QWidget,
                                QApplication)
 
-USER_AGENT = "LiberCanticorum/0.15.0 (program parafialny; GPL)"
+USER_AGENT = "LiberCanticorum/0.15.1 (program parafialny; GPL)"
 BROWSER_HEADERS = {
-    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.15.0",
+    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.15.1",
     'Accept': "application/json,text/html;q=0.9,*/*;q=0.8", 'Accept-Language': "pl,en;q=0.8",
 }
 VOICE_COLORS = ['#e05656', '#e0a030', '#4caf50', '#3f7fd9', '#a05ad9', '#30b0b0', '#c0c040', '#d070a0']
@@ -327,6 +327,79 @@ def score_info(name, data):
         return {}
 
 
+# ---------------------------------------------------------------------
+# Pięciolinie ukryte w pliku MuseScore (np. akompaniament, który gra, ale go nie widać)
+# ---------------------------------------------------------------------
+
+_RE_PART = re.compile(r"<Part\b[^>]*>.*?</Part>", re.S)
+
+
+def _mscx_of(name, data):
+    """(tekst .mscx, nazwa w archiwum albo None) – główna partytura."""
+    low = name.lower()
+    if low.endswith('.mscx'):
+        return data.decode('utf-8', 'replace'), None
+    if low.endswith('.mscz'):
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            names = [n for n in z.namelist() if n.lower().endswith('.mscx')]
+            inner = [n for n in names if not n.lower().startswith('excerpts')] or names
+            if inner:
+                return z.read(inner[0]).decode('utf-8', 'replace'), inner[0]
+    return None, None
+
+
+def staves_visibility(name, data):
+    """[(nazwa partii, widoczna?)] z pliku MuseScore albo [] (inne formaty)."""
+    try:
+        xml, _ = _mscx_of(name, data)
+    except (zipfile.BadZipFile, KeyError):
+        return []
+    if not xml:
+        return []
+    out = []
+    for k, m in enumerate(_RE_PART.finditer(xml)):
+        block = m.group(0)
+        nm = re.search(r"<trackName>([^<]*)</trackName>", block) or re.search(r"<longName>([^<]*)</longName>", block)
+        hidden = bool(re.search(r"<show>0</show>", block)) or bool(re.search(r"<invisible>1</invisible>", block))
+        out.append(((nm.group(1).strip() if nm and nm.group(1).strip() else f"Partia {k + 1}"), not hidden))
+    return out
+
+
+def set_staves_visibility(name, data, visible):
+    """Kopia pliku MuseScore z widocznością partii wg listy visible (True/False w kolejności partii)."""
+    xml, inner = _mscx_of(name, data)
+    if not xml:
+        return None
+    k = [0]
+
+    def fix(m):
+        block = m.group(0)
+        i = k[0]
+        k[0] += 1
+        if i >= len(visible):
+            return block
+        block = re.sub(r"\s*<show>0</show>", "", block)
+        block = re.sub(r"\s*<invisible>1</invisible>", "", block)
+        if not visible[i]:
+            pos = block.rfind("</Staff>")
+            pos = pos + len("</Staff>") if pos >= 0 else block.find(">") + 1
+            block = block[:pos] + "\n      <show>0</show>" + block[pos:]
+        return block
+    new = _RE_PART.sub(fix, xml)
+    if inner is None:
+        return new.encode('utf-8')
+    buf = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(data)) as zin, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for it in zin.infolist():
+            if it.filename == inner:
+                zout.writestr(it, new.encode('utf-8'))
+            elif it.filename.lower().startswith('thumbnails/'):
+                continue                                  # miniatura byłaby nieaktualna
+            else:
+                zout.writestr(it, zin.read(it.filename))
+    return buf.getvalue()
+
+
 def _icons(widget):
     try:
         import ikony
@@ -355,13 +428,67 @@ def is_pdf(data):
 _WEB_PROFILE = None
 
 
-def webengine_available():
-    """Czy jest wbudowana przeglądarka (QtWebEngine z PySide6-Addons)."""
+def webengine_installed():
     try:
         import importlib.util
         return importlib.util.find_spec("PySide6.QtWebEngineWidgets") is not None
     except Exception:
         return False
+
+
+def _pyside_version():
+    try:
+        import PySide6
+        return PySide6.__version__
+    except Exception:
+        return "?"
+
+
+def webengine_available():
+    """Czy wbudowana przeglądarka (QtWebEngine) jest zainstalowana I sprawdzona w osobnym procesie.
+    Bez sprawdzenia jej nie wczytujemy – gdyby się wysypała, wysypałby się cały program."""
+    if not webengine_installed():
+        return False
+    from PySide6.QtCore import QSettings
+    return QSettings("LiberCanticorum", "LiberCanticorum").value("webengine_ok", "") == _pyside_version()
+
+
+WEB_TEST = r"""
+import sys
+from PySide6.QtCore import QCoreApplication, Qt, QTimer
+QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+from PySide6.QtWidgets import QApplication
+from PySide6.QtWebEngineWidgets import QWebEngineView
+app = QApplication(sys.argv)
+v = QWebEngineView()
+ok = []
+v.loadFinished.connect(lambda r: (ok.append(r), app.quit()))
+v.setHtml("<p>test</p>")
+v.resize(200, 100)
+v.show()
+QTimer.singleShot(20000, app.quit)
+app.exec()
+print("WEBENGINE_OK" if ok and ok[0] else "WEBENGINE_FAIL")
+"""
+
+
+def test_webengine(timeout=60):
+    """Próba wbudowanej przeglądarki w osobnym procesie → (ok, dziennik). Zapisuje wynik w ustawieniach."""
+    import subprocess
+    import sys
+    from PySide6.QtCore import QSettings
+    try:
+        r = subprocess.run([sys.executable, "-c", WEB_TEST], capture_output=True, text=True, timeout=timeout)
+        log = (r.stdout + "\n" + r.stderr).strip()
+        ok = r.returncode == 0 and "WEBENGINE_OK" in r.stdout
+        if not ok and r.returncode < 0:
+            log += f"\n(proces przerwany sygnałem {-r.returncode})"
+    except subprocess.TimeoutExpired:
+        ok, log = False, "Przekroczony czas próby."
+    except Exception as e:
+        ok, log = False, str(e)
+    QSettings("LiberCanticorum", "LiberCanticorum").setValue("webengine_ok", _pyside_version() if ok else "")
+    return ok, log[-3000:]
 
 
 def web_search_urls(q):
@@ -478,8 +605,14 @@ class ScoreSearchDialog(QDialog):
         ml.setContentsMargins(0, 4, 0, 0)
         self.web = None
         if webengine_available():
-            self._build_web(ml)
-        else:
+            try:
+                self._build_web(ml)
+            except Exception as e:                       # nie działa – zwykła przeglądarka
+                print("Wbudowana przeglądarka niedostępna:", e)
+                self.web = None
+                from PySide6.QtCore import QSettings
+                QSettings("LiberCanticorum", "LiberCanticorum").setValue("webengine_ok", "")
+        if self.web is None:
             steps = QLabel(
                 "<b>Jak to działa:</b><ol>"
                 "<li>Kliknij <b>„Szukaj w MuseScore”</b> – otworzy się przeglądarka z wynikami dla tytułu.</li>"
@@ -490,8 +623,12 @@ class ScoreSearchDialog(QDialog):
                 "<li>Pobrany plik pojawi się poniżej na liście sam – kliknij <b>„Dołącz zaznaczone do pieśni”</b>.</li>"
                 "</ol>", wordWrap=True)
             ml.addWidget(steps)
-            inst = QPushButton("Wygodniej: otwieraj MuseScore w oknie programu (jednorazowo pobierze ok. 150 MB)…")
-            inst.clicked.connect(self.install_webengine)
+            if webengine_installed():
+                inst = QPushButton("Sprawdź i włącz MuseScore w oknie programu (moduł przeglądarki jest zainstalowany)…")
+                inst.clicked.connect(self.check_webengine)
+            else:
+                inst = QPushButton("Wygodniej: otwieraj MuseScore w oknie programu (jednorazowo pobierze ok. 150 MB)…")
+                inst.clicked.connect(self.install_webengine)
             ml.addWidget(inst)
             ml.addStretch(1)
         self.tabs.addTab(ms, "MuseScore")
@@ -692,6 +829,40 @@ class ScoreSearchDialog(QDialog):
         lay.addWidget(hint)
         self.web.urlChanged.connect(lambda u: self.addr.setText(u.toString()[:120]))
 
+    def check_webengine(self, after_install=False):
+        """Próba przeglądarki w osobnym procesie; gdy działa – włącza ją, gdy nie – pokazuje dlaczego."""
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            ok, log = test_webengine()
+        finally:
+            QApplication.restoreOverrideCursor()
+        if ok:
+            QMessageBox.information(self, "MuseScore w programie",
+                                    "Przeglądarka działa. Zamknij to okno i otwórz „Szukaj nut” ponownie – "
+                                    "MuseScore otworzy się w oknie programu.")
+            self.status.setText("Przeglądarka sprawdzona – otwórz okno ponownie.")
+            return
+        box = QMessageBox(self)
+        box.setWindowTitle("MuseScore w programie")
+        box.setIcon(QMessageBox.Warning)
+        box.setText("Moduł przeglądarki " + ("zainstalował się, ale " if after_install else "") +
+                    "nie uruchamia się na tym komputerze, więc program go nie używa – MuseScore otwiera się "
+                    "w zwykłej przeglądarce (to działa tak samo, tylko plik dołączasz z listy pobranych).")
+        box.setDetailedText(log or "(brak komunikatu)")
+        b_rm = box.addButton("Odinstaluj moduł przeglądarki", QMessageBox.DestructiveRole)
+        box.addButton(QMessageBox.Close)
+        box.exec()
+        if box.clickedButton() is b_rm:
+            import subprocess
+            import sys
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "PySide6-Addons"],
+                               capture_output=True, timeout=300)
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.status.setText("Moduł przeglądarki odinstalowany.")
+
     def search_musescore(self):
         q = self.q.text().strip()
         if not q:
@@ -756,10 +927,9 @@ class ScoreSearchDialog(QDialog):
 
         def done(code, _status):
             if code == 0:
-                QMessageBox.information(self, "MuseScore w programie",
-                                        "Zainstalowano. Zamknij i uruchom program ponownie – MuseScore otworzy się "
-                                        "w oknie „Szukaj nut”.")
-                self.status.setText("Zainstalowano – uruchom program ponownie.")
+                self.status.setText("Zainstalowano – sprawdzam, czy przeglądarka działa…")
+                QApplication.processEvents()
+                self.check_webengine(after_install=True)
             else:
                 QMessageBox.warning(self, "MuseScore w programie", "Instalacja się nie udała:\n" +
                                     "".join(log)[-1500:])
@@ -1588,9 +1758,11 @@ class ScoreFollow(QScrollArea):
 # =====================================================================
 
 class MidiPlayerDialog(QDialog):
-    def __init__(self, data, title="MIDI", parent=None, score=None):
-        """score – (pdf, spos) z MuseScore: nuty ze słowami z kursorem podczas odtwarzania."""
+    def __init__(self, data, title="MIDI", parent=None, score=None, staves=None):
+        """score – (pdf, spos) z MuseScore: nuty ze słowami z kursorem podczas odtwarzania.
+        staves – ([(nazwa, widoczna)], funkcja(lista_bool) → (pdf, spos)): odkrywanie ukrytych pięciolinii."""
         super().__init__(parent)
+        self.staves, self.data_bytes = staves, data
         _need('mido')
         _need('numpy')
         self.setWindowTitle(f"MIDI – odtwarzanie głosów – {title}")
@@ -1704,6 +1876,13 @@ class MidiPlayerDialog(QDialog):
                 views.addWidget(b)
             self.follow.zoom_changed.connect(lambda z: (self.zoom_lbl.setText(f"{int(z * 100)}%"),
                                                         self._qs.setValue("score_zoom", z)))
+            if self.staves and len(self.staves[0]) > 1:
+                n_hid = sum(1 for _, v in self.staves[0] if not v)
+                self.b_staves = QPushButton("👁 Pięciolinie" + (f" ({n_hid} ukr.)" if n_hid else ""))
+                self.b_staves.setToolTip("Pokaż albo ukryj pięciolinie w nutach (np. ukryty akompaniament, który gra,\n"
+                                         "ale go nie widać). Dźwięk się nie zmienia – głosy wyciszasz wyżej.")
+                self.b_staves.clicked.connect(self.choose_staves)
+                views.addWidget(self.b_staves)
             self.follow.zoom = float(self._qs.value("score_zoom", 0.75))
             self.zoom_lbl.setText(f"{int(self.follow.zoom * 100)}%")
         self.lyr_size = int(self._qs.value("lyrics_size", 30))
@@ -1717,7 +1896,9 @@ class MidiPlayerDialog(QDialog):
             self.lyr_buttons.append(b)
         lay.addLayout(views)
         from PySide6.QtWidgets import QSplitter
+        lay.addLayout(self._build_transport())        # pasek odtwarzania – nad nutami, zawsze widoczny
         split = QSplitter(Qt.Vertical)
+        self.vsplit = split
         if self.follow:
             split.addWidget(self.follow)
         split.addWidget(self.scroll)
@@ -1740,22 +1921,12 @@ class MidiPlayerDialog(QDialog):
         lay.addWidget(self.lyr_lbl)
         if self.follow:
             self.resize(1150, 900)
+        try:                                              # nie większe niż ekran – pasek odtwarzania ma być widać
+            av = (self.screen() or QApplication.primaryScreen()).availableGeometry()
+            self.resize(min(self.width(), av.width() - 40), min(self.height(), av.height() - 60))
+        except Exception:
+            pass
 
-        ctl = QHBoxLayout()
-        self.b_play = QPushButton("Odtwórz")
-        self.b_play.setIcon(_icon("play"))
-        self.b_play.clicked.connect(self.toggle)
-        b_start = QPushButton("Od początku")
-        b_start.clicked.connect(lambda: self.seek_to(0))
-        b_wav = QPushButton("Zapisz WAV…")
-        b_wav.clicked.connect(self.save_wav)
-        self.pos_lbl = QLabel()
-        ctl.addWidget(b_start)
-        ctl.addWidget(self.b_play)
-        ctl.addWidget(self.pos_lbl)
-        ctl.addStretch()
-        ctl.addWidget(b_wav)
-        lay.addLayout(ctl)
         self.rebuild_voices()
         _icons(self)
 
@@ -1871,6 +2042,60 @@ class MidiPlayerDialog(QDialog):
             self.dirty = False
         return self.buf
 
+    def _build_transport(self):
+        bar = QHBoxLayout()
+        bar.setSpacing(4)
+
+        def btn(txt, tip, fn, w=None):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            if w:
+                b.setFixedWidth(w)
+            b.clicked.connect(fn)
+            bar.addWidget(b)
+            return b
+        btn("⏮", "Od początku (Home)", lambda: self.seek_to(0), 40)
+        btn("⏪", "5 sekund wstecz (←)", lambda: self.seek_to(self.current_pos() - 5), 40)
+        self.b_play = btn("Odtwórz", "Odtwórz / pauza (spacja)", self.toggle)
+        self.b_play.setIcon(_icon("play"))
+        self.b_play.setMinimumWidth(110)
+        f = self.b_play.font()
+        f.setBold(True)
+        self.b_play.setFont(f)
+        btn("⏹", "Zatrzymaj i wróć na początek", lambda: (self.stop(), self.seek_to(0)), 40)
+        btn("⏩", "5 sekund do przodu (→)", lambda: self.seek_to(self.current_pos() + 5), 40)
+        self.pos_slider = QSlider(Qt.Horizontal)
+        self.pos_slider.setRange(0, 1000)
+        self.pos_slider.setToolTip("Przesuń, aby przejść w inne miejsce utworu")
+        self.pos_slider.sliderReleased.connect(
+            lambda: self.seek_to(self.pos_slider.value() / 1000 * self.total_time()))
+        bar.addWidget(self.pos_slider, 1)
+        self.time_lbl = QLabel("0:00 / 0:00")
+        self.time_lbl.setMinimumWidth(90)
+        bar.addWidget(self.time_lbl)
+        self.pos_lbl = QLabel()
+        bar.addWidget(self.pos_lbl)
+        btn("Zapisz WAV…", "Zapisz nagranie w pliku WAV", self.save_wav)
+        return bar
+
+    def total_time(self):
+        if self.buf is not None and not self.dirty:
+            return len(self.buf) / self.sr
+        return self.length / max(0.01, self.tempo.value() / 100)
+
+    def keyPressEvent(self, e):
+        k = e.key()
+        if k == Qt.Key_Space:
+            self.toggle()
+        elif k == Qt.Key_Home:
+            self.seek_to(0)
+        elif k == Qt.Key_Left:
+            self.seek_to(self.current_pos() - 5)
+        elif k == Qt.Key_Right:
+            self.seek_to(self.current_pos() + 5)
+        else:
+            super().keyPressEvent(e)
+
     # --- odtwarzanie
     def current_pos(self):
         return self.offset + (self.clock.elapsed() / 1000 if self.playing else 0)
@@ -1924,7 +2149,7 @@ class MidiPlayerDialog(QDialog):
     def seek_to(self, s):
         was = self.playing
         self.stop()
-        self.offset = max(0.0, s)
+        self.offset = max(0.0, min(s, self.total_time()))
         self.update_pos(self.offset)
         if was:
             self.play()
@@ -1939,11 +2164,73 @@ class MidiPlayerDialog(QDialog):
         self.update_pos(pos)
 
     def update_pos(self, pos):
+        tot = self.total_time()
+        if hasattr(self, 'pos_slider') and not self.pos_slider.isSliderDown():
+            self.pos_slider.blockSignals(True)
+            self.pos_slider.setValue(int(1000 * pos / tot) if tot else 0)
+            self.pos_slider.blockSignals(False)
+        if hasattr(self, 'time_lbl'):
+            self.time_lbl.setText(f"{int(pos) // 60}:{int(pos) % 60:02d} / {int(tot) // 60}:{int(tot) % 60:02d}")
         self.roll.set_pos(pos)
         if self.follow:
             self.follow.set_time(pos * (self.tempo.value() / 100) * 1000)
         if self.lyrics:
             self.show_lyrics(pos * (self.tempo.value() / 100))
+
+    def choose_staves(self):
+        """Okno z listą partii: zaznaczone są widoczne w nutach."""
+        from PySide6.QtWidgets import QDialogButtonBox
+        parts, render = self.staves
+        d = QDialog(self)
+        d.setWindowTitle("Pięciolinie w nutach")
+        lay = QVBoxLayout(d)
+        lay.addWidget(QLabel("Zaznacz pięciolinie, które mają być widoczne w nutach.\n"
+                             "Ukryte w pliku są odznaczone. Odtwarzanie się nie zmienia."))
+        boxes = []
+        for nm, vis in parts:
+            cb = QCheckBox(nm + ("" if vis else "   (ukryta w pliku)"))
+            cb.setChecked(vis)
+            lay.addWidget(cb)
+            boxes.append(cb)
+        row = QHBoxLayout()
+        b_all = QPushButton("Pokaż wszystkie")
+        b_all.clicked.connect(lambda: [b.setChecked(True) for b in boxes])
+        row.addWidget(b_all)
+        row.addStretch()
+        lay.addLayout(row)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lay.addWidget(bb)
+        if not d.exec():
+            return
+        want = [b.isChecked() for b in boxes]
+        if not any(want) or want == [v for _, v in parts]:
+            return
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            res = render(want)
+        finally:
+            QApplication.restoreOverrideCursor()
+        if not res or not res[0] or not res[1]:
+            QMessageBox.warning(self, "Pięciolinie", "MuseScore nie przeliczył nut z nowym układem pięciolinii.")
+            return
+        try:
+            new = ScoreFollow(res[0], res[1], midi_timing(self.data_bytes))
+        except Exception as e:
+            QMessageBox.warning(self, "Pięciolinie", f"Nie udało się pokazać nut: {e}")
+            return
+        new.seek.connect(lambda ms: self.seek_to(ms / 1000 / (self.tempo.value() / 100)))
+        new.zoom_changed.connect(lambda z: (self.zoom_lbl.setText(f"{int(z * 100)}%"), self._qs.setValue("score_zoom", z)))
+        new.zoom = self.follow.zoom
+        old = self.follow
+        self.vsplit.replaceWidget(self.vsplit.indexOf(old), new)
+        old.deleteLater()
+        self.follow = new
+        new.setVisible(self.show_score.isChecked())
+        self.staves = ([(nm, w) for (nm, _), w in zip(parts, want)], render)
+        n_hid = sum(1 for w in want if not w)
+        self.b_staves.setText("👁 Pięciolinie" + (f" ({n_hid} ukr.)" if n_hid else ""))
 
     def set_lyrics_size(self, px):
         self.lyr_size = max(14, min(72, px))

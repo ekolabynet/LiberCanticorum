@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.15.0 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.15.1 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.15.0"
+VERSION = "0.15.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.15.0)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.15.1)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -4820,7 +4820,7 @@ class MainWindow(QMainWindow):
         """PDF/MIDI z pliku MuseScore – z bazy albo przeliczone teraz (z kursorem oczekiwania)."""
         d = self.db.get_derived(aid)
         exe = self.musescore()
-        if d and (d['pdf'] or d['mid']) and (d['pos'] or not exe):
+        if d and (d['pdf'] or d['mid']) and ((d['pos'] and d['mid']) or not exe):
             return d['pdf'], d['mid'], d['pos']
         if not exe:
             return None, None, None
@@ -4835,6 +4835,37 @@ class MainWindow(QMainWindow):
         self.db.set_derived(aid, res.get('pdf'), res.get('mid'), res.get('spos'))
         self.pilot_invalidate()
         return res.get('pdf'), res.get('mid'), res.get('spos')
+
+    def _staves_for(self, a):
+        """(partie z widocznością, funkcja przeliczająca nuty z inną widocznością) dla pliku MuseScore."""
+        import modul_nuty
+        name, data, aid = a['name'], a['data'], a['id']
+        parts = modul_nuty.staves_visibility(name, data)
+        if len(parts) < 2 or not self.musescore():
+            return None
+        saved = self.settings.value(f"staves/{aid}", "")
+        try:
+            want = json.loads(saved) if saved else None
+        except ValueError:
+            want = None
+        if want and len(want) == len(parts):
+            parts = [(nm, bool(w)) for (nm, _), w in zip(parts, want)]
+
+        def render(want):
+            new = modul_nuty.set_staves_visibility(name, data, want)
+            if not new:
+                return None
+            d = self.db.get_derived(aid)
+            need_mid = not (d and d['mid'])
+            res = modul_nuty.convert_score(self.musescore(), name, new,
+                                           outs=('pdf', 'spos', 'mid') if need_mid else ('pdf', 'spos'))
+            if res.get('pdf') and res.get('spos'):
+                mid = res.get('mid') if need_mid else d['mid']        # dźwięk ten sam – widoczność go nie zmienia
+                self.db.set_derived(aid, res['pdf'], mid, res['spos'])   # widać wszędzie (podgląd, Nuty, odtwarzacz)
+                self.settings.setValue(f"staves/{aid}", json.dumps([bool(w) for w in want]))
+                self.pilot_invalidate()
+            return res.get('pdf'), res.get('spos')
+        return parts, render
 
     def preview_attachment(self):
         it = self.att_list.currentItem()
@@ -4885,9 +4916,11 @@ class MainWindow(QMainWindow):
             if not data:
                 self.musescore_failed("MIDI – odtwarzanie głosów")
                 return
+        staves = self._staves_for(a) if score else None
         try:
             import modul_nuty
-            dlg = modul_nuty.MidiPlayerDialog(data, f"{self.song['title']} – {a['name']}", self, score=score)
+            dlg = modul_nuty.MidiPlayerDialog(data, f"{self.song['title']} – {a['name']}", self, score=score,
+                                              staves=staves)
         except Exception as e:
             QMessageBox.critical(self, APP_NAME, f"Nie można uruchomić odtwarzacza MIDI:\n{e}")
             return
@@ -5927,10 +5960,9 @@ def main():
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LiberCanticorum.LiberCanticorum")
         except Exception:
             pass
-    try:                                       # wbudowana przeglądarka (MuseScore w oknie programu) – jeśli jest
+    try:                                       # pozwala później (po sprawdzeniu) wczytać wbudowaną przeglądarkę
         from PySide6.QtCore import QCoreApplication
         QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
-        import PySide6.QtWebEngineWidgets      # noqa: F401 – musi być wczytany przed QApplication
     except Exception:
         pass
     app = QApplication(sys.argv)
