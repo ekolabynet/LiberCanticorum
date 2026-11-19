@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.0
+# Liber Canticorum 0.29.1
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -23,15 +23,6 @@ a melody editor, guitar chords, a phone remote and an offline songbook. It runs 
 package contains no songs.
 
 Version numbers are 0.x.y: the program is still developing quickly.
-
-## 📱 Phone app (Android, iPhone) – new in 0.29
-
-**<https://ekolabynet.github.io/LiberCanticorum/>** – open it in Chrome and choose ⋮ → *Install app*
-(on iPhone: Safari → Share → *Add to Home Screen*). It works offline: songs with search and filters, large lyrics,
-chords with transposition, Mass sets with notes for musicians, and full-screen scores (turn pages by tapping or with
-a pedal). The app ships with no songs: in the desktop program choose **File → 📱 Export to the mobile app**
-(or in the phone remote **⇩ Offline → Library for the app**), then tap **📥 Import** on the phone.
-Details: [mobile/README.md](mobile/README.md).
 
 ## What it looks like
 
@@ -78,6 +69,12 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 (Shift/Ctrl+click) lets you merge them, set a category, tags or source for all of them at once.
 
 ## New features step by step
+
+**New in 0.29 – a richer offline songbook for the phone.** The offline songbook (File → Export offline HTML songbook,
+or ⇩ Offline in the phone remote) now has **chord transposition** by semitones (sharps or flats, remembered per song)
+and shows the **Mass set divided into parts with notes for musicians** (performer, key, notes, what to watch out for).
+It is a single file opened in any browser: nothing to install, no internet needed, and it sends nothing anywhere.
+With scores included, the organist and choir see the scores full screen and turn pages by tapping or with a pedal.
 
 **New in 0.27 – readings in other languages.** When the interface is not Polish, “Today's liturgy” fetches the
 reading and Gospel of the day from **Vatican News** (“Word of the day”) in the interface language (English, Spanish,
@@ -138,7 +135,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.29.0.zip` and run:
+Unpack `LiberCanticorum_0.29.1.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

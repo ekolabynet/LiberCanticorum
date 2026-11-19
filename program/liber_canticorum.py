@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.0"
+VERSION = "0.29.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -4122,7 +4122,6 @@ class MainWindow(QMainWindow):
         act(m_file, "📚 Menedżer źródeł – śpiewników (zmiana nazw, łączenie, usuwanie)…", self.source_manager)
         m_file.addSeparator()
         act(m_file, "Eksport śpiewnika offline HTML (telefon, tablet)…", lambda: self.export_html(None), "Ctrl+H")
-        act(m_file, "📱 Eksport do aplikacji mobilnej (Android, iPhone)…", self.export_mobile)
         m_file.addSeparator()
         act(m_file, "Otwórz / utwórz inną bazę…", self.choose_db)
         act(m_file, "Zakończ", self.close, "Ctrl+Q")
@@ -6572,8 +6571,16 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             self.statusBar().showMessage(f"Śpiewnik HTML: {i + 1}/{n} – {t}")
             QApplication.processEvents()
 
+        notes, parts, seen = self.setlist.all_notes(), [], {}
+        for part, sid in self.set_entries():             # części zestawu z uwagami dla muzyków
+            j = seen.get(part, 0)
+            seen[part] = j + 1
+            nn = notes.get(part) or []
+            if not parts or parts[-1][0] != part:
+                parts.append((part, []))
+            parts[-1][1].append({'id': sid, 'notes': {k: v for k, v in ((nn[j] if j < len(nn) else {}) or {}).items() if v}})
         return modul_html.build_songbook_html(songs, title, atts if scores else None, scores,
-                                              set_ids=self.set_ids(), progress=progress)
+                                              set_ids=self.set_ids(), progress=progress, set_parts=parts)
 
     def export_html(self, scope=None):
         if scope is None:
@@ -6604,67 +6611,6 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             QMessageBox.critical(self, APP_NAME, f"Błąd eksportu:\n{e}")
         finally:
             QApplication.restoreOverrideCursor()
-
-    MOBILE_URL = "https://ekolabynet.github.io/LiberCanticorum/"
-
-    def build_mobile(self, scope, scores):
-        """Plik dla aplikacji mobilnej (.lcm.json): pieśni z zakresu, zapisane zestawy i bieżący zestaw."""
-        import modul_mobile
-        songs = self._songbook_songs(scope)
-        sets = []
-        for z in self.db.sets():
-            g = self.db.get_set(z['id'])
-            if g:
-                sets.append((g['id'], g['nazwa'], g['data'], g['dane']))
-        cur = {'czesci': self._set_parts(), 'uwagi': self.setlist.all_notes()}
-        saved = next((z for z in sets if z[0] == getattr(self, 'current_set_id', None)), None)
-        if saved and {k: saved[3].get(k) for k in cur} == cur:
-            sets.remove(saved)                          # bieżący zestaw = zapisany: na początek listy
-            sets.insert(0, saved)
-        elif self.set_entries():
-            meta = self.mass_meta()
-            sets.insert(0, (0, "Bieżący zestaw – " + meta['data'], meta['data'],
-                            {'meta': meta, 'czesci': self._set_parts(), 'uwagi': self.setlist.all_notes()}))
-        if scope == 'set':
-            sets = sets[:1]
-
-        def progress(i, n, t):
-            self.statusBar().showMessage(f"Aplikacja mobilna: {i + 1}/{n} – {t}")
-            QApplication.processEvents()
-        return modul_mobile.build_export(self.db, songs, sets, scores, SCORE_EXT, VERSION, progress)
-
-    def export_mobile(self):
-        items = ["Cała baza", "Tylko pieśni widoczne na liście (wyszukiwanie / filtr)", "Tylko zestaw"]
-        choice, ok = QInputDialog.getItem(self, "Aplikacja mobilna", "Co wyeksportować?", items, 0, False)
-        if not ok:
-            return
-        scope = ['all', 'filter', 'set'][items.index(choice)]
-        scores = QMessageBox.question(self, "Aplikacja mobilna",
-                                      "Dołączyć nuty (PDF i zdjęcia)? Plik będzie większy.") == QMessageBox.Yes
-        last = self.settings.value("html_dir", self.settings.value("export_dir", os.path.expanduser("~")))
-        path, _ = QFileDialog.getSaveFileName(self, "Aplikacja mobilna",
-                                              os.path.join(last, f"LiberCanticorum_{datetime.date.today()}.lcm.json"),
-                                              "Liber Canticorum Mobile (*.lcm.json *.json)")
-        if not path:
-            return
-        if not path.lower().endswith('.json'):
-            path += '.lcm.json'
-        self.settings.setValue("html_dir", os.path.dirname(path))
-        try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            text = self.build_mobile(scope, scores)
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(text)
-        except Exception as e:
-            QMessageBox.critical(self, APP_NAME, "Błąd eksportu:" + f"\n{e}")
-            return
-        finally:
-            QApplication.restoreOverrideCursor()
-        QMessageBox.information(self, "Aplikacja mobilna", (
-            "Zapisano plik ({a} KB):\n{b}\n\nNa telefonie otwórz aplikację {c} (w Chrome: menu ⋮ → "
-            "„Zainstaluj aplikację”), a potem 📥 Importuj i wskaż ten plik.\n"
-            "Plik możesz przesłać e-mailem, przez komunikator albo pobrać w pilocie (zakładka „Offline”).").format(
-            a=len(text.encode()) // 1024, b=path, c=self.MOBILE_URL))
 
     # ================= pilot w telefonie =================
     def open_pilot(self):
@@ -6782,16 +6728,6 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         self.statusBar().showMessage(f"Z telefonu dodano: {name}", 6000)
 
     def on_pilot_songbook(self, scope, scores):
-        if scope.startswith('mobile'):
-            try:
-                text = self.build_mobile('set' if scope == 'mobile_set' else 'all', scores)
-                self.pilot.provide_songbook(scope, scores, text.encode('utf-8'),
-                                            f"LiberCanticorum_{datetime.date.today()}.lcm.json")
-                self.statusBar().showMessage(f"Pilot: aplikacja mobilna ({len(text.encode()) // 1024} KB)", 6000)
-            except Exception as e:
-                self.pilot.provide_songbook(scope, scores, None, "")
-                self.statusBar().showMessage(f"Pilot: {e}", 8000)
-            return
         try:
             text = self.build_songbook(scope, scores)
             name = ("Zestaw" if scope == 'set' else "Spiewnik") + f"_{datetime.date.today()}.html"

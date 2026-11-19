@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.0
+# Liber Canticorum 0.29.1
 *Un recueil de chants liturgiques libre pour les musiciens, les chorales et les communautés de l'Église*
 
 🌐 [Polski](README.md) · [English](README.en.md) · **Français** · [Español](README.es.md)
@@ -17,15 +17,6 @@ Il fonctionne sous Windows, macOS et Linux. **Il démarre avec une base vide : v
 les textes, partitions et enregistrements** – le paquet ne contient aucun chant.
 
 Les numéros de version sont 0.x.y : le programme évolue encore rapidement.
-
-## 📱 Application pour téléphone (Android, iPhone) – nouveau en 0.29
-
-**<https://ekolabynet.github.io/LiberCanticorum/>** – ouvrez-la dans Chrome puis ⋮ → *Installer l'application*
-(sur iPhone : Safari → Partager → *Sur l'écran d'accueil*). Elle fonctionne hors ligne : chants avec recherche et filtres,
-paroles en grand, accords avec transposition, programmes de messe avec notes pour les musiciens, partitions en plein
-écran (page suivante d'un toucher ou avec une pédale). L'application ne contient aucun chant : dans le programme,
-choisissez **Fichier → 📱 Export vers l'application mobile**, puis **📥 Importer** sur le téléphone.
-Détails : [mobile/README.md](mobile/README.md).
 
 ## Aperçu
 
@@ -74,6 +65,11 @@ Les listes se filtrent par **catégorie**, **source (recueil)** et recherche. Pl
 (Maj/Ctrl+clic) peuvent être fusionnés ou recevoir ensemble une catégorie, des étiquettes ou une source.
 
 ## Nouveautés pas à pas
+
+**Nouveau en 0.29 – un recueil hors ligne plus riche pour le téléphone.** Le recueil hors ligne (Fichier → Export du
+recueil HTML hors ligne, ou ⇩ Offline dans la télécommande) permet maintenant de **transposer les accords** par demi-tons
+et affiche le **programme de messe par parties avec les notes pour les musiciens**. C'est un seul fichier ouvert dans
+n'importe quel navigateur : rien à installer, pas besoin d'internet, et il n'envoie rien.
 
 **Nouveau en 0.27 – lectures dans d'autres langues.** Si l'interface n'est pas en polonais, la « Liturgie du jour »
 télécharge la lecture et l'Évangile du jour depuis **Vatican News** (« Parole du jour ») dans la langue de l'interface
@@ -125,7 +121,7 @@ plein écran par défaut (« ⚙ Plus de réglages »), enregistrement MP3 / OGG
 
 ## Installation
 
-Décompressez `LiberCanticorum_0.29.0.zip` et lancez :
+Décompressez `LiberCanticorum_0.29.1.zip` et lancez :
 - Windows : `Liber Canticorum.bat` (Python de python.org avec « Add python.exe to PATH »),
 - Linux : `Liber Canticorum.desktop` ou `program/start.sh` (Debian/Ubuntu : `sudo apt install python3-venv libportaudio2`),
 - macOS : `Liber Canticorum.command`.

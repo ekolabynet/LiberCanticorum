@@ -1,4 +1,4 @@
-// Liber Canticorum Mobile – akordy (ChordPro), transpozycja. Port z program/modul_akordy.py.
+// Liber Canticorum – akordy (ChordPro), transpozycja dla śpiewnika offline HTML. Port z modul_akordy.py.
 // GPL-3.0-or-later
 'use strict';
 (function (root) {

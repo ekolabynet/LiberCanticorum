@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.0
+# Liber Canticorum 0.29.1
 *Un cancionero litúrgico libre para músicos, coros y comunidades de la Iglesia*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -17,15 +17,6 @@ Funciona en Windows, macOS y Linux. **Empieza con una base vacía: las letras, p
 introduces o importas tú** – el paquete no contiene ningún canto.
 
 Los números de versión son 0.x.y: el programa sigue desarrollándose rápidamente.
-
-## 📱 Aplicación para el móvil (Android, iPhone) – novedad en 0.29
-
-**<https://ekolabynet.github.io/LiberCanticorum/>** – ábrela en Chrome y elige ⋮ → *Instalar aplicación*
-(en iPhone: Safari → Compartir → *Añadir a pantalla de inicio*). Funciona sin internet: cantos con búsqueda y filtros,
-letra grande, acordes con transposición, repertorios para la Misa con notas para los músicos y partituras a pantalla
-completa (pasar página tocando o con un pedal). La aplicación no incluye ningún canto: en el programa elige
-**Archivo → 📱 Exportar a la aplicación móvil** y luego **📥 Importar** en el móvil.
-Detalles: [mobile/README.md](mobile/README.md).
 
 ## Aspecto
 
@@ -72,6 +63,11 @@ Las listas se filtran por **categoría**, **fuente (cancionero)** y búsqueda. C
 (Mayús/Ctrl+clic) se pueden fusionar o asignarles a la vez categoría, etiquetas o fuente.
 
 ## Novedades paso a paso
+
+**Novedad en 0.29 – un cancionero sin conexión más completo para el móvil.** El cancionero sin conexión (Archivo →
+Exportar cancionero HTML sin conexión, o ⇩ Offline en el mando) ahora permite **transponer los acordes** por semitonos
+y muestra el **repertorio de la Misa por partes con notas para los músicos**. Es un solo archivo que se abre en
+cualquier navegador: no hay que instalar nada, funciona sin internet y no envía nada.
 
 **Novedad en 0.27 – lecturas en otros idiomas.** Si la interfaz no está en polaco, la «Liturgia del día» descarga
 la lectura y el Evangelio del día de **Vatican News** («Palabra del día») en el idioma de la interfaz y propone cantos a
@@ -123,7 +119,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.29.0.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.29.1.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

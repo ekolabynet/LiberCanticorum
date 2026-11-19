@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.0
+# Liber Canticorum 0.29.1
 *Wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła*  
 *A free liturgical songbook for musicians, choirs and Church communities*
 
@@ -34,15 +34,6 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
 0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.21.x, 0.22.1 itd.
-
-## 📱 Aplikacja na telefon (Android, iPhone) – nowość w 0.29
-
-**<https://ekolabynet.github.io/LiberCanticorum/>** – otwórz w Chrome i wybierz ⋮ → *Zainstaluj aplikację*
-(na iPhonie: Safari → Udostępnij → *Do ekranu początkowego*). Działa bez internetu: pieśni z wyszukiwaniem i filtrami,
-tekst dużą czcionką, akordy z transpozycją, zestawy na Mszę z uwagami dla muzyków, nuty na pełnym ekranie
-(przewracanie dotknięciem albo pedałem). Aplikacja nie zawiera żadnych pieśni: w programie wybierz
-**Plik → 📱 Eksport do aplikacji mobilnej** (albo w pilocie **⇩ Offline → Biblioteka do aplikacji**),
-a w telefonie **📥 Importuj**. Szczegóły: [mobile/README.md](mobile/README.md).
 
 ## Jak wygląda
 
@@ -129,6 +120,13 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Nowość w 0.29 – bogatszy śpiewnik offline na telefon.** Śpiewnik offline (Plik → Eksport śpiewnika offline HTML
+albo ⇩ Offline w pilocie) ma teraz **transpozycję akordów** o pół tonu (krzyżyki albo bemole, zapamiętana dla każdej
+pieśni) i pokazuje **zestaw na Mszę z podziałem na części i uwagami dla muzyków** (wykonawca, tonacja, uwagi, na co
+zwrócić uwagę). To jeden plik otwierany w przeglądarce: nic nie trzeba instalować ani publikować, działa bez internetu
+i niczego nie wysyła. Z dołączonymi nutami organista i chórzyści widzą nuty na pełnym ekranie i przewracają strony
+dotknięciem albo pedałem.
 
 **Nowość w 0.27 – czytania w innych językach.** Gdy interfejs nie jest po polsku, „Liturgia z dnia” pobiera
 czytanie i Ewangelię dnia z **Vatican News** („Słowo na dziś”) w języku interfejsu (angielski, hiszpański, francuski,
@@ -289,7 +287,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.29.0/
+LiberCanticorum_0.29.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -694,21 +692,18 @@ Nic nie trzeba instalować, działa też na iPhonie i iPadzie. Pilot ma zakładk
   oraz **„Dodaj z telefonu”**: zdjęcie nut, PDF albo MIDI trafia od razu do pieśni w bazie,
 - **Zestaw:** pieśni zestawu i pokaz całości,
 - **⇩ Offline:** pobranie śpiewnika offline na telefon albo tablet (cały albo sam zestaw, z nutami lub bez).
-  Tu jest też **⇩ Biblioteka do aplikacji** – plik dla [aplikacji na telefon](https://ekolabynet.github.io/LiberCanticorum/).
 
 Dostęp chroni 6-cyfrowy PIN zawarty w kodzie QR. Pilot działa tylko wtedy, gdy go włączysz.
 Na Windowsie zezwól zaporze na dostęp w sieci prywatnej.
 
-**Aplikacja na telefon** (<https://ekolabynet.github.io/LiberCanticorum/>, instalowana z przeglądarki) przechowuje
-całą bibliotekę na stałe w telefonie, ma akordy z transpozycją i zestawy z uwagami. Dane przenosisz plikiem `.lcm.json`
-z menu Plik → 📱 Eksport do aplikacji mobilnej. Zob. [mobile/README.md](mobile/README.md).
-
 **Śpiewnik offline** to jeden plik HTML. Pobierzesz go przez pilota albo zapiszesz w menu
 Plik → Eksport śpiewnika offline lub przyciskiem „HTML (telefon)” przy zestawie.
-Działa bez internetu i bez komputera, w każdej przeglądarce:
+Działa bez internetu i bez komputera, w każdej przeglądarce. Nic nie trzeba instalować, a plik niczego nie wysyła:
 - **tekst** dla śpiewających: duża czcionka, motyw jasny, sepia lub ciemny,
 - **slajdy** na pełnym ekranie z tłami, np. telefon podłączony do rzutnika kablem USB-C–HDMI,
 - **nuty** dla organisty i chóru: przewracanie dotknięciem lub pedałem Bluetooth, w poziomie dwie strony, ekran nie gaśnie,
+- **akordy** z transpozycją o pół tonu (krzyżyki albo bemole, tonacja zapamiętana dla każdej pieśni),
+- **zestaw na Mszę** z podziałem na części i uwagami dla muzyków (wykonawca, tonacja, uwagi, na co zwrócić uwagę),
 - wyszukiwanie, kategorie, zestaw w kolejności.
 
 **Chmura (Nextcloud, Google Drive) – na razie:** trzymaj `liber_canticorum.db` i wyeksportowany śpiewnik HTML

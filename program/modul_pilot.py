@@ -273,20 +273,6 @@ class PilotServer(QObject):
                         self.end_headers()
                         self.wfile.write(row[4])
                         return
-                if u.path == "/biblioteka.lcm.json":
-                    scores = (qs.get("nuty") or ["0"])[0] == "1"
-                    scope = "mobile_set" if (qs.get("zakres") or ["all"])[0] == "set" else "mobile"
-                    got = server._get_songbook(scope, scores)
-                    if not got or not got[0]:
-                        return self._send(503, {"error": "Nie udało się przygotować pliku"})
-                    data, fname = got
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json; charset=utf-8")
-                    self.send_header("Content-Disposition", "attachment; filename*=UTF-8''" + urllib.parse.quote(fname))
-                    self.send_header("Content-Length", str(len(data)))
-                    self.end_headers()
-                    self.wfile.write(data)
-                    return
                 if u.path == "/spiewnik.html":
                     scope = (qs.get("zakres") or ["all"])[0]
                     scores = (qs.get("nuty") or ["0"])[0] == "1"
@@ -524,11 +510,6 @@ li button{flex:none}
  <label style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="withSc" style="width:auto" checked> z nutami (większy plik)</label>
  <button class="big go" style="width:100%;margin-bottom:10px" onclick="dl('all')">⇩ Cały śpiewnik</button>
  <button class="big" style="width:100%" onclick="dl('set')">⇩ Tylko zestaw</button>
- <h3>📱 Aplikacja Liber Canticorum</h3><p style="color:var(--mut)">Pieśni, akordy z transpozycją, zestawy na Mszę i nuty –
- w aplikacji instalowanej z <a href="https://ekolabynet.github.io/LiberCanticorum/" style="color:inherit">ekolabynet.github.io/LiberCanticorum</a>.
- Pobierz plik, a w aplikacji wybierz 📥 Importuj.</p>
- <button class="big go" style="width:100%;margin-bottom:10px" onclick="dlm('all')">⇩ Biblioteka do aplikacji</button>
- <button class="big" style="width:100%" onclick="dlm('set')">⇩ Tylko zestaw do aplikacji</button>
  <p id="dlmsg" style="color:var(--mut)"></p></section>
 <div id="pv" style="position:fixed;inset:0;background:#fff;z-index:20;display:none" onclick="pvStep(event)"><img id="pvImg" style="width:100%;height:100%;object-fit:contain"><span id="pvCnt" style="position:absolute;left:8px;bottom:6px;color:#555;font-size:13px"></span><button class="btn" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation();pvClose()">✕</button></div>
 </div>
@@ -583,8 +564,6 @@ function pvClose(){$('pv').style.display='none';if(document.fullscreenElement)do
 async function upload(files){if(!S.song_id){msg('Najpierw wybierz pieśń');return;}
  for(const f of files){msg('Wysyłam: '+f.name);try{await api(`/api/upload?song=${S.song_id}&name=${encodeURIComponent(f.name)}`,{method:'POST',body:f});msg('Dodano: '+f.name);}catch(e){msg('Błąd wysyłania');}}
  $('up').value='';setTimeout(poll,500);}
-function dlm(scope){$('dlmsg').textContent='Przygotowuję plik…';
- location.href=`/biblioteka.lcm.json?zakres=${scope}&nuty=${$('withSc').checked?1:0}&k=${PIN}`;setTimeout(()=>$('dlmsg').textContent='',15000);}
 function dl(scope){$('dlmsg').textContent='Przygotowuję plik – przy dużej bazie z nutami może to potrwać minutę…';
  location.href=`/spiewnik.html?zakres=${scope}&nuty=${$('withSc').checked?1:0}&k=${PIN}`;setTimeout(()=>$('dlmsg').textContent='',15000);}
 document.addEventListener('keydown',e=>{if($('pv').style.display!=='block')return;if(['ArrowRight','PageDown',' '].includes(e.key)){pvi=Math.min(PV.length-1,pvi+1);pvDraw();}

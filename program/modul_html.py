@@ -36,8 +36,14 @@ def _b64(data, mime="image/jpeg"):
     return f"data:{mime};base64," + base64.b64encode(data).decode("ascii")
 
 
+def _chords_js():
+    """Transpozycja akordów (ten sam algorytm co modul_akordy.py) – wklejana do pliku, bez zewnętrznych skryptów."""
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "akordy.js"), encoding="utf-8") as f:
+        return f.read()
+
+
 def build_songbook_html(songs, title="Śpiewnik", attachments_for=None, include_scores=True,
-                        include_backgrounds=True, set_ids=None, progress=None):
+                        include_backgrounds=True, set_ids=None, progress=None, set_parts=None):
     """songs – lista pieśni (słowniki z bazy); attachments_for(song_id) -> [(nazwa, rodzaj, bajty)].
     set_ids – kolejność zestawu (opcjonalnie). Zwraca tekst HTML."""
     import modul_nuty
@@ -93,10 +99,13 @@ def build_songbook_html(songs, title="Śpiewnik", attachments_for=None, include_
         })
     data = {'title': title, 'made': datetime.date.today().isoformat(), 'songs': out_songs,
             'set': [i for i in (set_ids or []) if any(s['id'] == i for s in out_songs)],
+            'parts': [{'part': p, 'items': [it for it in items if any(s['id'] == it['id'] for s in out_songs)]}
+                      for p, items in (set_parts or [])],
             'version': S.VERSION}
     js_data = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     js_assets = json.dumps(assets).replace("</", "<\\/")
     return (TEMPLATE.replace("__TITLE__", html.escape(title))
+            .replace("__CHORDS_JS__", _chords_js().replace("</", "<\\/"))
             .replace("__DATA__", js_data).replace("__ASSETS__", js_assets).replace("__FAVICON__", favicon_uri()))
 
 
@@ -136,6 +145,10 @@ h2.cat{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--
 .chd .l{white-space:pre-wrap;margin:0}.chd .w{display:inline-block;position:relative;padding-top:1.15em;white-space:pre}
 .chd .w b{position:absolute;top:0;left:0;color:var(--acc);font-size:.85em}.chd .side{float:right;color:var(--acc);font-weight:700;font-size:.85em}
 .chd .gap{height:.7em}
+#key{display:inline-block;min-width:3.4em;text-align:center;color:var(--acc)}button.on{outline:2px solid var(--acc)}
+.nb{border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:6px 0 10px}.nb b{color:var(--acc)}
+.part{margin:12px 0 2px;color:var(--acc);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.song .sn{display:block;color:var(--mut);font-size:13px}
 /* pełny ekran: slajdy i nuty */
 #stage{position:fixed;inset:0;background:#000;display:none;z-index:20;touch-action:manipulation;user-select:none}
 #slide{position:absolute;overflow:hidden;background:#000 center/cover no-repeat}
@@ -159,13 +172,14 @@ footer{color:var(--mut);font-size:12px;text-align:center;margin:30px 0}
 <div class="view act" id="vList"><div id="setbox"></div><div id="songs"></div><footer id="foot"></footer></div>
 <div class="view" id="vSong">
  <div class="tools"><button class="acc" onclick="present(cur,0)">▶ Slajdy</button><button id="bScore" onclick="scoresFull(cur)">♪ Nuty</button>
- <button id="bCh" onclick="toggleCh()">🎸 Akordy</button><span id="trb" hidden><button onclick="tr(-1)">♭−</button><button onclick="tr(1)">♯+</button></span>
+ <button id="bCh" onclick="toggleCh()">🎸 Akordy</button><span id="trb" hidden><button onclick="tr(-1)" title="Transpozycja o pół tonu w dół">−½</button><b id="key" title="Tonacja"></b><button onclick="tr(1)" title="Transpozycja o pół tonu w górę">+½</button><button onclick="tr(0)" title="Bez transpozycji">0</button><button id="bFl" onclick="flat()" title="Bemole zamiast krzyżyków (Es, As zamiast Dis, Gis)">♭</button></span>
  <button onclick="fs(-2)">A−</button><button onclick="fs(2)">A+</button><button onclick="nextSong(-1)">◀ pieśń</button><button onclick="nextSong(1)">pieśń ▶</button></div>
- <div class="meta" id="smeta"></div><div class="lyr" id="lyr"></div><div class="sc" id="sc"></div>
+ <div class="meta" id="smeta"></div><div class="nb" id="snotes" hidden></div><div class="lyr" id="lyr"></div><div class="sc" id="sc"></div>
 </div>
 </main>
 <div id="stage"><div id="slide"><div id="veil"></div><div id="tbox"></div></div><div id="pages" hidden></div>
 <div id="hud"><button onclick="step(-1)">◀</button><button onclick="step(1)">▶</button><button onclick="closeStage()">✕</button></div><div id="cnt"></div></div>
+<script>__CHORDS_JS__</script>
 <script id="data" type="application/json">__DATA__</script>
 <script id="assets" type="application/json">__ASSETS__</script>
 <script>
@@ -187,8 +201,12 @@ function fs(d){FS=Math.max(14,Math.min(48,FS+d));document.documentElement.style.
 function init(){$('h1').textContent=D.title;const cats=[...new Set(D.songs.map(s=>s.cat||''))].sort();
  $('cat').innerHTML='<option value="*">wszystkie</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c||'(bez kategorii)')}</option>`).join('');
  $('foot').textContent=`${D.songs.length} pieśni · ${D.made} · działa bez internetu · Liber Canticorum`;
- if(D.set.length){$('setbox').innerHTML=`<h2 class="cat">Zestaw</h2>`+D.set.map((id,i)=>{const s=byId[id];
-  return `<div class="song" onclick="openSong(${id},true)"><span>${i+1}. ${esc(s.title)}</span><button class="acc" onclick="event.stopPropagation();presentSet(${i})">▶</button></div>`}).join('')
+ if(D.set.length){let i=0,h=`<h2 class="cat">Zestaw</h2>`;
+  const P=(D.parts&&D.parts.length)?D.parts:[{part:'',items:D.set.map(id=>({id,notes:{}}))}];
+  P.forEach(p=>{if(!p.items.length)return;if(p.part)h+=`<div class="part">${esc(p.part)}</div>`;
+   p.items.forEach(it=>{const s=byId[it.id];if(!s)return;const n=noteLine(it.notes);SETN.push(it.notes||{});
+    h+=`<div class="song" onclick="openSong(${it.id},true,${i})"><span>${i+1}. ${esc(s.title)}${n?`<small class="sn">${esc(n)}</small>`:''}</span><button class="acc" onclick="event.stopPropagation();presentSet(${i})">▶</button></div>`;i++;});});
+  $('setbox').innerHTML=h
   +`<div class="tools"><button class="acc" onclick="presentSet(0)">▶ Slajdy całego zestawu</button></div>`;}
  list();}
 function list(){const q=fold($('q').value),c=$('cat').value;
@@ -199,8 +217,14 @@ function list(){const q=fold($('q').value),c=$('cat').value;
  $('setbox').hidden=!!(q||c!=='*');order=L;}
 function home(){show('vList');$('back').hidden=true;$('filters').hidden=false;$('h1').textContent=D.title;history.replaceState(null,'','#');}
 function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('act',x.id===v));scrollTo(0,0);}
+// ---- uwagi dla muzyków przy pieśniach zestawu
+const SETN=[],NF=[['wykonawca','Wykonawca'],['tonacja','Tonacja'],['uwagi','Uwagi'],['zwroc','Na co zwrócić uwagę']];
+function noteLine(n){n=n||{};return NF.filter(([f])=>n[f]).map(([f,l])=>f==='tonacja'?l+': '+n[f]:n[f]).join(' · ');}
+let setIdx=-1;
 // ---- pieśń
-function openSong(id,fromSet){const s=byId[id];cur=s;if(fromSet)order=D.set.map(i=>byId[i]);
+function openSong(id,fromSet,idx){const s=byId[id];cur=s;if(fromSet){order=D.set.map(i=>byId[i]);setIdx=idx!==undefined?idx:D.set.indexOf(id);}else setIdx=-1;
+ const n=setIdx>=0?SETN[setIdx]||{}:{},nl=NF.filter(([f])=>n[f]);
+ $('snotes').hidden=!nl.length;$('snotes').innerHTML=nl.map(([f,l])=>`<div><b>${esc(l)}:</b> ${esc(n[f])}</div>`).join('');
  $('h1').textContent=s.title;$('back').hidden=false;$('filters').hidden=true;
  $('smeta').textContent=[s.cat,s.notes].filter(Boolean).join(' · ');
  const L=s.lyrics;let h='';if(L.ref.length)h+=`<p class="ref"><span class="lab">Refren</span>${L.ref.map(esc).join('<br>')}</p>`;
@@ -212,24 +236,24 @@ function openSong(id,fromSet){const s=byId[id];cur=s;if(fromSet)order=D.set.map(
  $('bScore').hidden=!s.scores.length;
  $('sc').innerHTML=s.scores.map(sc=>`<h2 class="cat">${esc(sc.name)}</h2>`+sc.pages.map(k=>`<img loading="lazy" src="${A[k]}">`).join('')).join('');
  show('vSong');history.replaceState(null,'','#'+id);}
-function nextSong(d){if(!cur)return;const i=order.indexOf(cur);const n=order[i+d];if(n)openSong(n.id,order!==D.songs&&D.set.length&&order.length===D.set.length);}
+function nextSong(d){if(!cur)return;const inSet=setIdx>=0;const i=inSet?setIdx:order.indexOf(cur);const n=order[i+d];if(n)inSet?openSong(n.id,true,i+d):openSong(n.id);}
 // ---- akordy (widok dla gitarzystów)
-let CH=store('sp_ch')==='1',TR=0;
-const PL=['C','Cis','D','Dis','E','F','Fis','G','Gis','A','B','H'],BASE={C:0,D:2,E:4,F:5,G:7,A:9,H:11,B:10};
-function tch(c,k){const m=c.match(/^([A-Ha-h])(is|es|s)?(.*?)(?:\/([A-Ha-h])(is|es|s)?)?$/);if(!m||!k)return c;
- const one=(r,a)=>{let n=BASE[r.toUpperCase()];if(a==='is')n++;else if(a)n--;let x=PL[((n+k)%12+12)%12];return r===r.toLowerCase()?x.toLowerCase():x;};
- return one(m[1],m[2])+m[3]+(m[4]?'/'+one(m[4],m[5]):'');}
-function tline(t){return t.replace(/[A-Ha-h](?:is|es|s)?[^\s\]\/]*(?:\/[A-Ha-h](?:is|es|s)?)?/g,x=>tch(x,TR));}
-function drawCh(){const s=cur;let h='';(s.chords||'').split('\n').forEach(line=>{const [body,side]=line.split('‖');
+let CH=store('sp_ch')==='1',TR=0,FL=store('sp_fl')==='1';
+function trKey(){return 'sp_tr_'+(cur&&cur.id);}
+function tline(t){return TR?Chords.transposeText(t,TR,FL):t;}
+function drawCh(){const s=cur;let h='';TR=+(store(trKey())||0);const txt=tline(s.chords||'');
+ const key=Chords.firstChord(txt);$('key').textContent=(key||'·')+(TR?` (${TR>0?'+':''}${TR})`:'');$('bFl').classList.toggle('on',FL);
+ txt.split('\n').forEach(line=>{const [body,side]=line.split('‖');
  if(!body.trim()&&!side){h+='<div class="gap"></div>';return;}
  let parts=body.split(/(\[[^\]]*\])/),out='',pend='';
- parts.forEach(p=>{if(/^\[.*\]$/.test(p)){if(pend)out+=`<span class="w"><b>${esc(pend)}</b> </span>`;pend=tline(p.slice(1,-1));return;}
+ parts.forEach(p=>{if(/^\[.*\]$/.test(p)){if(pend)out+=`<span class="w"><b>${esc(pend)}</b> </span>`;pend=p.slice(1,-1);return;}
   if(!p&&!pend)return;out+=pend?`<span class="w"><b>${esc(pend)}</b>${esc(p)||' '}</span>`:esc(p);pend='';});
  if(pend)out+=`<span class="w"><b>${esc(pend)}</b> </span>`;
- h+=`<p class="l">${side?`<span class="side">${esc(tline(side.trim()))}</span>`:''}${out}</p>`;});
+ h+=`<p class="l">${side?`<span class="side">${esc(side.trim())}</span>`:''}${out}</p>`;});
  $('lyr').innerHTML=`<div class="chd">${h}</div>`;$('trb').hidden=false;$('bCh').textContent='🎸 Tekst';}
-function toggleCh(){CH=!CH;store('sp_ch',CH?'1':'0');TR=0;$('bCh').textContent='🎸 Akordy';openSong(cur.id);}
-function tr(d){TR+=d;drawCh();}
+function toggleCh(){CH=!CH;store('sp_ch',CH?'1':'0');$('bCh').textContent='🎸 Akordy';setIdx>=0?openSong(cur.id,true,setIdx):openSong(cur.id);}
+function tr(d){TR=d?(((TR+d)%12)+18)%12-6:0;store(trKey(),TR);drawCh();}
+function flat(){FL=!FL;store('sp_fl',FL?'1':'0');drawCh();}
 // ---- pełny ekran
 async function enter(){const st=$('stage');st.style.display='block';
  try{if(st.requestFullscreen)await st.requestFullscreen();else if(st.webkitRequestFullscreen)st.webkitRequestFullscreen();}catch(e){}
