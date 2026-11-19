@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.28.1"
+VERSION = "0.28.2"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -4230,9 +4230,9 @@ class MainWindow(QMainWindow):
             "na tej samej licencji. Program jest dostarczany bez żadnej gwarancji.<br>"
             "Obrazy teł z folderu <i>tla</i>: CC0 (domena publiczna).<br>"
             "Ikony: <a href='https://fontawesome.com'>Font Awesome Free</a> (Fonticons, Inc.), licencja CC BY 4.0.<br>"
-            "Ikona programu: inicjał C z rękopiśmiennego kancjonału z 1586 r. "
-            "(<i>Cantional písnek rozmaitých a nábožných</i>), fot. Mkonik80, "
-            "<a href='https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360'>Wikimedia Commons</a>, "
+            "Ikona programu: inicjał C z pierwszej strony Kancjonału staniąteckiego A z 1586 r. "
+            "(<i>Cancional pyosnek rozmaitich a naboznych</i>; Opactwo Mniszek Benedyktynek w Staniątkach), fot. Mkonik80, "
+            "<a href='https://commons.wikimedia.org/wiki/File:Staniatki-kanc-A-001.jpg'>Wikimedia Commons</a>, "
             "CC BY-SA 4.0; ikona: CC BY-SA 4.0.<br><br>"
             "Teksty pieśni, nuty i nagrania dodaje użytkownik – za prawa do nich odpowiada on sam."))
 

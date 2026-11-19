@@ -1,9 +1,10 @@
 Ikona programu Liber Canticorum (liber_canticorum.svg / .png / .ico) oraz pliki w ikony/zrodla/
 
-Litera: inicjał „C” z karty tytułowej rękopiśmiennego kancjonału z 1586 r.
-        („Cantional písnek rozmaitých a nábožných, napsaný roku Páně 1586”) – sam rękopis jest w domenie publicznej.
+Litera: inicjał „C” z pierwszej strony Kancjonału staniąteckiego A z 1586 r.
+        („Cancional pyosnek rozmaitich a naboznych, napysany roku panskeho 1586”) – rękopis z kolekcji
+        kancjonałów staniąteckich (Opactwo Mniszek Benedyktynek w Staniątkach); sam rękopis jest w domenie publicznej.
 Fotografia: Mkonik80 – praca własna, licencja CC BY-SA 4.0
-        https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360
+        https://commons.wikimedia.org/wiki/File:Staniatki-kanc-A-001.jpg
 Zmiany: wycięcie litery, oddzielenie tuszu od tła i ornamentów piórkiem, wektoryzacja kształtu,
         osadzenie na stylizowanej karcie pergaminu (generuj_ikone.py).
 

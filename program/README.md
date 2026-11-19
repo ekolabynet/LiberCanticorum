@@ -4,8 +4,11 @@
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
-*libre*, czyli „wolny”, jak wolne oprogramowanie. Ikona to czerwone inicjałowe **C** z rękopiśmiennego
-czeskiego kancjonału z 1586 roku (*Cantional písnek rozmaitých a nábožných*), postawione na karcie pergaminu.
+*libre*, czyli „wolny”, jak wolne oprogramowanie. Ikona to czerwone inicjałowe **C** z pierwszej
+strony **Kancjonału staniąteckiego A** z 1586 roku (*Cancional pyosnek rozmaitich a naboznych*), postawione na karcie
+pergaminu. [Kancjonały staniąteckie](https://pl.wikipedia.org/wiki/Kancjona%C5%82y_stani%C4%85teckie) (łac. *cantionale*, kantyczki) to kolekcja piętnastu rękopisów
+z opracowaniami pieśni religijnych (oznaczanych literami A–P), przechowywana w Opactwie Mniszek Benedyktynek
+w Staniątkach.
 
 Program do przygotowywania i wyświetlania slajdów z tekstami pieśni (rzutnik, ekran w kościele),
 z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To następca wersji „Śpiewnik – slajdy” 7.x.
@@ -268,7 +271,7 @@ python3 -m venv .venv
 | `generuj_tla.py` | generator teł; pozwala odtworzyć lub zmienić obrazy w `tla/` |
 | `tla/` | 16 teł (11 ciemnych, 5 jasnych) w wersjach 16:9 i 4:3, `tla.json` z zalecanymi kolorami i marginesami |
 | `liber_canticorum.db` | baza pieśni; tworzy się sama przy pierwszym uruchomieniu |
-| `generuj_ikone.py` | generator ikony programu (inicjał C z kancjonału z 1586 r.): SVG, PNG, ICO |
+| `generuj_ikone.py` | generator ikony programu (inicjał C z Kancjonału staniąteckiego A, 1586): SVG, PNG, ICO |
 
 ## Co potrafi
 
@@ -709,9 +712,9 @@ Ustawa o prawie autorskim i prawach pokrewnych (tekst jednolity Dz.U. 2025 poz. 
     Kolory są przypisane do rodzajów działań: pliki, eksport, pokaz, muzyka, sieć, usuwanie.
 
   Zmiana działa od razu, bez ponownego uruchamiania.
-- **Ikona programu** (`ikony/liber_canticorum*`, `ikony/zrodla/`): litera C z karty tytułowej kancjonału
-  z 1586 r. Fotografia: **Mkonik80**, praca własna, licencja **CC BY-SA 4.0**,
-  [Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360).
+- **Ikona programu** (`ikony/liber_canticorum*`, `ikony/zrodla/`): litera C z pierwszej strony Kancjonału
+  staniąteckiego A z 1586 r. (Opactwo Mniszek Benedyktynek w Staniątkach). Fotografia: **Mkonik80**, praca własna,
+  licencja **CC BY-SA 4.0**, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Staniatki-kanc-A-001.jpg).
   Litera została wycięta ze zdjęcia, oczyszczona z tła i zamieniona na wektor. Ikona jest utworem zależnym,
   więc też jest na licencji **CC BY-SA 4.0** (zgodnej w jedną stronę z GPL-3.0). Szczegóły w `ikony/LICENSE-ikona.txt`.
 - **Czcionki** (`czcionki/`): Leland i Edwin, © MuseScore Limited, licencja **SIL Open Font License 1.1**

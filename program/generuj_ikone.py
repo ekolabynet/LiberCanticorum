@@ -3,11 +3,11 @@
 # Copyright (C) 2026 Autorzy projektu Liber Canticorum
 # (kod: GPL-3.0-or-later; tworzone obrazy ikony: CC BY-SA 4.0 – patrz niżej i ikony/LICENSE-ikona.txt)
 #
-# Ikona programu Liber Canticorum: czerwone inicjałowe „C” z rękopiśmiennego kancjonału z 1586 r.
-# („Cantional písnek rozmaitých a nábožných…”), na karcie pergaminu.
+# Ikona programu Liber Canticorum: czerwone inicjałowe „C” z pierwszej strony Kancjonału staniąteckiego A
+# z 1586 r. („Cancional pyosnek rozmaitich a naboznych…”, Opactwo Benedyktynek w Staniątkach), na karcie pergaminu.
 #
 # Źródło litery: fotografia karty tytułowej, autor: Mkonik80 – praca własna, licencja CC BY-SA 4.0,
-# https://commons.wikimedia.org/wiki/Special:Redirect/page/56366360
+# https://commons.wikimedia.org/wiki/File:Staniatki-kanc-A-001.jpg
 # Litera została wycięta ze zdjęcia, oczyszczona z tła i ornamentów piórkiem, a jej kształt
 # zamieniony na wektor (ikony/zrodla/C_cantional_1586.svg). Ikona – utwór zależny – jest na licencji
 # CC BY-SA 4.0 (zgodnej w jedną stronę z GPL-3.0 programu).
@@ -176,7 +176,7 @@ def write_svg(path, S=512):
     gen.setSize(QSize(S, S))
     gen.setViewBox(QRectF(0, 0, S, S))
     gen.setTitle("Liber Canticorum")
-    gen.setDescription("Inicjał C z kancjonału z 1586 r. (fot. Mkonik80, CC BY-SA 4.0)")
+    gen.setDescription("Inicjał C z Kancjonału staniąteckiego A, 1586 (fot. Mkonik80, CC BY-SA 4.0)")
     p = QPainter(gen)
     p.setRenderHint(QPainter.Antialiasing)
     draw_tile(p, S, False)

@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.28.1
+# Liber Canticorum 0.28.2
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -12,8 +12,10 @@
 > languages are welcome to use the English one – and to help translate (`program/i18n/<code>.json`).
 
 *Liber canticorum* is Latin for “book of songs”. *Liber* means “book” and also echoes *libre* – free, as in free
-software. The icon is the red initial **C** from a handwritten Czech hymnal of 1586
-(*Cantional písnek rozmaitých a nábožných*), set on a sheet of parchment.
+software. The icon is the red initial **C** from the first page
+of **Staniątki Cantional A** of 1586 (*Cancional pyosnek rozmaitich a naboznych*), set on a sheet of parchment.
+The [Staniątki cantionals](https://pl.wikipedia.org/wiki/Kancjona%C5%82y_stani%C4%85teckie) are a collection of fifteen manuscripts (marked A–P) with settings of religious
+songs, kept at the Benedictine Nuns' Abbey in Staniątki, Poland.
 
 A program for preparing and projecting song lyrics (projector, church screen), with scores, a voice player,
 a melody editor, guitar chords, a phone remote and an offline songbook. It runs on Windows, macOS and Linux.
@@ -127,7 +129,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.28.1.zip` and run:
+Unpack `LiberCanticorum_0.28.2.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
