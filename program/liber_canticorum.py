@@ -7,7 +7,7 @@
 # Powszechnej Licencji Publicznej GNU (GNU GPL) w wersji 3 lub (według twojego wyboru) dowolnej
 # późniejszej. Program rozpowszechniany jest BEZ JAKIEJKOLWIEK GWARANCJI – szczegóły w pliku LICENSE.
 """
-Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.14.1 (Qt6 / PySide6)
+Liber Canticorum – wolny śpiewnik dla wspólnot, wersja 0.15.0 (Qt6 / PySide6)
 (łac. „księga pieśni”; liber – księga, a zarazem echo libre – wolny)
 
 Następca skryptu SLAJDY_Generator_Binder 6.1:
@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.14.1"
+VERSION = "0.15.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1107,7 +1107,7 @@ def best_lyrics_range(text):
 def fetch_url(url, timeout=20):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.14.1)'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (LiberCanticorum/0.15.0)'})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         cs = r.headers.get_content_charset()
@@ -1247,6 +1247,8 @@ class SongDB:
         self.con.execute("""CREATE TABLE IF NOT EXISTS wersje(
             id INTEGER PRIMARY KEY, song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
             nazwa TEXT, refren TEXT, zwrotki TEXT, uwagi TEXT, zrodlo TEXT, dodano TEXT)""")
+        # pary pieśni oznaczone „to nie duplikaty”
+        self.con.execute("CREATE TABLE IF NOT EXISTS nie_duplikaty(a INTEGER, b INTEGER, PRIMARY KEY(a, b))")
         # opis załącznika: wersja / aranżacja (np. „Melodia z akordami”, „Chór SATB”, „Śpiewnik oazowy 2026, s. 5”)
         if 'opis' not in {r['name'] for r in self.con.execute("PRAGMA table_info(attachments)")}:
             self.con.execute("ALTER TABLE attachments ADD COLUMN opis TEXT")
@@ -1575,6 +1577,90 @@ class SongDB:
                 out.append((r['id'], r['title'], round(score, 2), why))
         out.sort(key=lambda x: -x[2])
         return out[:limit]
+
+    def not_duplicates(self, ids):
+        ids = sorted(set(ids))
+        for i, a in enumerate(ids):
+            for b in ids[i + 1:]:
+                self.con.execute("INSERT OR IGNORE INTO nie_duplikaty(a, b) VALUES (?, ?)", (a, b))
+        self.con.commit()
+
+    def duplicate_groups(self, progress=None):
+        """Grupy prawdopodobnych duplikatów: [{'ids': [...], 'same': bool, 'why': str}].
+        Kandydaci: ten sam tytuł (bez nawiasów, interpunkcji, ogonków), ten sam początek tekstu,
+        tytuł jednej = pierwszy wiersz drugiej, bardzo podobny tytuł (literówki)."""
+        import difflib
+        rows = self.con.execute("SELECT id, title, refren, zwrotki FROM songs").fetchall()
+        info = {}
+        buckets = {}
+        for r in rows:
+            tk, fk = title_key(r['title']), first_line_key(r['refren'], r['zwrotki'])
+            info[r['id']] = (tk, fk, text_key(r['refren'], r['zwrotki']))
+            for key in (("t", tk), ("f", fk[:40]) if len(fk) >= 12 else None, ("x", tk) if len(tk) >= 10 else None,
+                        ("p", tk[:10]) if len(tk) >= 6 else None):
+                if key and key[1]:
+                    buckets.setdefault(key, []).append(r['id'])
+            if len(fk) >= 10:
+                buckets.setdefault(("x", fk[:len(tk)] if len(tk) >= 10 else fk[:20]), []).append(r['id'])
+        ignored = {(a, b) for a, b in self.con.execute("SELECT a, b FROM nie_duplikaty")}
+        parent = {}
+
+        def find(x):
+            while parent.get(x, x) != x:
+                x = parent[x]
+            return x
+
+        def union(a, b):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+        why = {}
+        seen = set()
+        blist = [v for v in buckets.values() if 1 < len(v) <= 60]
+        for k, ids in enumerate(blist):
+            if progress and k % 50 == 0:
+                progress(k, len(blist))
+            for i, a in enumerate(ids):
+                for b in ids[i + 1:]:
+                    pair = (min(a, b), max(a, b))
+                    if pair in seen or pair in ignored or a == b:
+                        continue
+                    seen.add(pair)
+                    (ta, fa, xa), (tb, fb, xb) = info[a], info[b]
+                    reason = ""
+                    if ta and ta == tb:
+                        reason = "ten sam tytuł"
+                    elif fa and len(fa) >= 12 and difflib.SequenceMatcher(None, fa, fb).ratio() >= 0.9:
+                        reason = "ten sam początek tekstu"
+                    elif len(ta) >= 10 and fb and difflib.SequenceMatcher(None, ta, fb[:len(ta) + 3]).ratio() >= 0.9 \
+                            or len(tb) >= 10 and fa and difflib.SequenceMatcher(None, tb, fa[:len(tb) + 3]).ratio() >= 0.9:
+                        reason = "tytuł = początek tekstu drugiej"
+                    elif len(ta) >= 6 and difflib.SequenceMatcher(None, ta, tb).ratio() >= 0.9:
+                        reason = "bardzo podobny tytuł"
+                    if reason:
+                        union(a, b)
+                        why.setdefault(pair, reason)
+        groups = {}
+        for a, b in why:
+            groups.setdefault(find(a), set()).update((a, b))
+        out = []
+        for ids in groups.values():
+            ids = sorted(ids)
+            clusters = []                              # pieśni z tym samym tekstem w grupie
+            for i in ids:
+                t = info[i][2]
+                for c in clusters:
+                    if t and text_similarity(info[c[0]][2], t) >= 0.97:
+                        c.append(i)
+                        break
+                else:
+                    clusters.append([i])
+            same_sets = [c for c in clusters if len(c) > 1]
+            reasons = sorted({w for (a, b), w in why.items() if a in ids})
+            out.append({'ids': ids, 'same': len(same_sets) == 1 and len(same_sets[0]) == len(ids),
+                        'same_sets': same_sets, 'why': ", ".join(reasons)})
+        out.sort(key=lambda g: (not g['same'], self.get(g['ids'][0])['title'].lower()))
+        return out
 
     def merge_songs(self, src_id, dst_id, version_name=""):
         """Pieśń src_id dołączana do dst_id: jej tekst (gdy inny) zostaje wersją, załączniki, nagrania, tagi
@@ -1911,6 +1997,198 @@ class MergeChoiceDialog(QDialog):
         return self.result_id if self.exec() else None
 
 
+class DuplicatesDialog(QDialog):
+    """Szukanie i łączenie duplikatów w bazie."""
+
+    def __init__(self, db, groups, parent=None):
+        super().__init__(parent)
+        self.db, self.groups, self.merged, self.parent_win = db, groups, 0, parent
+        self.setWindowTitle("Duplikaty w bazie")
+        self.resize(1150, 680)
+        lay = QVBoxLayout(self)
+        self.head = QLabel()
+        self.head.setWordWrap(True)
+        lay.addWidget(self.head)
+        sp = QSplitter()
+        self.glist = QListWidget()
+        self.glist.currentRowChanged.connect(self.show_group)
+        sp.addWidget(self.glist)
+        mid = QWidget()
+        ml = QVBoxLayout(mid)
+        ml.setContentsMargins(0, 0, 0, 0)
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Główna (zostaje):"))
+        self.main = QComboBox()
+        self.main.currentIndexChanged.connect(self._main_changed)
+        row.addWidget(self.main, 1)
+        ml.addLayout(row)
+        ml.addWidget(QLabel("Połącz z główną (zaznacz):"))
+        self.members = QListWidget()
+        self.members.currentItemChanged.connect(self._preview)
+        ml.addWidget(self.members, 1)
+        sp.addWidget(mid)
+        self.prev = QPlainTextEdit()
+        self.prev.setReadOnly(True)
+        sp.addWidget(self.prev)
+        sp.setSizes([300, 420, 430])
+        lay.addWidget(sp, 1)
+        bb = QHBoxLayout()
+        b = QPushButton("Połącz zaznaczone w główną")
+        b.clicked.connect(self.merge_current)
+        bb.addWidget(b)
+        b = QPushButton("To nie są duplikaty")
+        b.setToolTip("Program zapamięta, że te pieśni są różne, i nie będzie ich więcej proponował.")
+        b.clicked.connect(self.ignore_current)
+        bb.addWidget(b)
+        bb.addStretch(1)
+        self.b_auto = QPushButton()
+        self.b_auto.clicked.connect(self.merge_identical)
+        bb.addWidget(self.b_auto)
+        b = QPushButton("Zamknij")
+        b.clicked.connect(self.accept)
+        bb.addWidget(b)
+        lay.addLayout(bb)
+        self.fill()
+
+    def _score(self, sid):
+        s = self.db.get(sid)
+        return (len(self.db.attachments(sid)), len(self.db.versions(sid)), len((s['refren'] or '') + s['zwrotki_raw']),
+                -sid)
+
+    def fill(self):
+        self.glist.blockSignals(True)
+        self.glist.clear()
+        for g in self.groups:
+            first = self.db.get(g['ids'][0])
+            n_s = sum(len(c) for c in g.get('same_sets', []))
+            it = QListWidgetItem(f"{first['title'] if first else '?'}  —  {len(g['ids'])} pieśni" +
+                                 ("  (ten sam tekst)" if g['same'] else f"  ({n_s} z tym samym tekstem)" if n_s else ""))
+            it.setToolTip(g['why'])
+            self.glist.addItem(it)
+        self.glist.blockSignals(False)
+        n_same = sum(1 for g in self.groups if g.get('same_sets'))
+        self.head.setText(
+            f"Znaleziono <b>{len(self.groups)}</b> grup podobnych pieśni"
+            + (f", w tym {n_same} z tym samym tekstem" if n_same else "") + ". "
+            "Wybierz pieśń główną i zaznacz te, które mają się z nią połączyć: inny tekst zostanie zachowany jako "
+            "<i>wersja</i>, a nuty, nagrania, tagi i miejsca w zestawach przejdą do głównej. "
+            "Przed łączeniem robię kopię bazy (Plik → Cofnij ostatnie zmiany)." if self.groups else
+            "Nie znalazłem duplikatów. 🙂")
+        self.b_auto.setText(f"Połącz automatycznie pieśni z tym samym tekstem ({n_same} grup)")
+        self.b_auto.setEnabled(n_same > 0)
+        if self.groups:
+            self.glist.setCurrentRow(0)
+        else:
+            self.main.clear()
+            self.members.clear()
+            self.prev.clear()
+
+    def show_group(self, row):
+        if not (0 <= row < len(self.groups)):
+            return
+        ids = self.groups[row]['ids']
+        best = max(ids, key=self._score)
+        self.main.blockSignals(True)
+        self.main.clear()
+        for sid in ids:
+            s = self.db.get(sid)
+            if s:
+                na, nv = len(self.db.attachments(sid)), len(self.db.versions(sid))
+                self.main.addItem(f"{s['title']}" + (f"  [{s['kategoria']}]" if s.get('kategoria') else "") +
+                                  (f"  · nuty/pliki: {na}" if na else "") + (f"  · wersje: {nv}" if nv else ""), sid)
+        self.main.setCurrentIndex(max(0, self.main.findData(best)))
+        self.main.blockSignals(False)
+        self._main_changed()
+
+    def _main_changed(self, *_):
+        row = self.glist.currentRow()
+        if not (0 <= row < len(self.groups)):
+            return
+        main = self.main.currentData()
+        self.members.clear()
+        for sid in self.groups[row]['ids']:
+            if sid == main:
+                continue
+            s = self.db.get(sid)
+            if not s:
+                continue
+            first = (s['zwrotki_raw'] or s['refren'] or '').strip().splitlines()
+            it = QListWidgetItem(f"{s['title']}  —  {first[0][:50] if first else '(bez tekstu)'}")
+            it.setData(Qt.UserRole, sid)
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
+            it.setCheckState(Qt.Checked)
+            self.members.addItem(it)
+        self.members.setCurrentRow(0)
+        self._preview()
+
+    def _preview(self, *_):
+        main = self.db.get(self.main.currentData()) if self.main.currentData() else None
+        it = self.members.currentItem()
+        other = self.db.get(it.data(Qt.UserRole)) if it else None
+        t = ""
+        for head, s in (("GŁÓWNA", main), ("DO POŁĄCZENIA", other)):
+            if s:
+                t += f"── {head}: {s['title']} ──\n"
+                if s.get('refren'):
+                    t += "Ref.: " + s['refren'] + "\n\n"
+                t += (s.get('zwrotki_raw') or '') + "\n"
+                if s.get('uwagi'):
+                    t += f"[uwagi] {s['uwagi']}\n"
+                t += "\n"
+        self.prev.setPlainText(t)
+
+    def _merge(self, main, others):
+        for sid in others:
+            if self.db.get(sid) and self.db.get(main):
+                self.db.merge_songs(sid, main)
+                self.merged += 1
+
+    def merge_current(self):
+        row = self.glist.currentRow()
+        if not (0 <= row < len(self.groups)):
+            return
+        main = self.main.currentData()
+        others = [self.members.item(i).data(Qt.UserRole) for i in range(self.members.count())
+                  if self.members.item(i).checkState() == Qt.Checked]
+        if not others:
+            return
+        self.db.snapshot(f"Łączenie duplikatów: „{self.db.get(main)['title']}”")
+        self._merge(main, others)
+        rest = [sid for sid in self.groups[row]['ids'] if sid != main and sid not in others]
+        if rest:
+            self.db.not_duplicates([main] + rest)
+        self.groups.pop(row)
+        self.fill()
+        self.glist.setCurrentRow(min(row, len(self.groups) - 1))
+
+    def ignore_current(self):
+        row = self.glist.currentRow()
+        if 0 <= row < len(self.groups):
+            self.db.not_duplicates(self.groups[row]['ids'])
+            self.groups.pop(row)
+            self.fill()
+            self.glist.setCurrentRow(min(row, len(self.groups) - 1))
+
+    def merge_identical(self):
+        same = [g for g in self.groups if g.get('same_sets')]
+        if not same or QMessageBox.question(
+                self, APP_NAME, f"Połączyć pieśni z tym samym tekstem ({len(same)} grup)? W każdej zostaje "
+                "pieśń z największą liczbą nut i wersji; pieśni z innym tekstem zostają na liście do decyzji.") \
+                != QMessageBox.Yes:
+            return
+        self.db.snapshot(f"Łączenie duplikatów z tym samym tekstem ({len(same)} grup)")
+        rest = []
+        for g in self.groups:
+            for c in g.get('same_sets', []):
+                main = max(c, key=self._score)
+                self._merge(main, [x for x in c if x != main])
+            left = [i for i in g['ids'] if self.db.get(i)]
+            if len(left) > 1:
+                rest.append({'ids': left, 'same': False, 'same_sets': [], 'why': g['why']})
+        self.groups = rest
+        self.fill()
+
+
 class ImportDialog(QDialog):
     """Pokazuje pobrany tekst; użytkownik zaznacza fragment z pieśnią."""
 
@@ -2150,6 +2428,8 @@ class MainWindow(QMainWindow):
         self.results.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.results.itemActivated.connect(self._on_result)
         self.results.itemClicked.connect(self._on_result)
+        self.results.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.results.customContextMenuRequested.connect(self._results_menu)
         ll.addWidget(self.results, 2)
         self.count_lbl = QLabel()
         ll.addWidget(self.count_lbl)
@@ -2610,25 +2890,41 @@ class MainWindow(QMainWindow):
                         (self.v_scores, "Nuty"), (self.advanced, "Zaawansowane")):
             self.views.addTab(w, name)
         self.views.setCornerWidget(mw.Monogram(26), Qt.BottomRightCorner)
+        self.cur_sid, self._prev_view = None, None
+        for page in (self.v_texts, self.v_slides, self.v_scores):
+            page.picker.chosen.connect(self._set_cur)
         self.views.currentChanged.connect(self._view_changed)
         self.setCentralWidget(self.views)
         self.setWindowIcon(app_icon())
+
+    def _set_cur(self, sid):
+        self.cur_sid = sid
 
     def _view_changed(self, i):
         if hasattr(self, 'toolbar'):
             self.toolbar.setVisible(i == self.V_ADV)
         self.settings.setValue("view", i)
+        if self._prev_view == self.V_ADV and self.song and self.song.get('id'):
+            self.cur_sid = self.song['id']                # pieśń z edytora idzie do pozostałych zakładek
+        self._prev_view = i
         if i == self.V_START:
             self.home.set_info(f"Śpiewnik, slajdy i nuty dla scholi i chóru  ·  w bazie: {self.db.count()} pieśni")
         elif i in (self.V_TEXTS, self.V_SLIDES, self.V_SCORES):
             page = self.views.widget(i)
-            if self.song and self.song.get('id') and page.sid != self.song['id'] and page.sid is None:
-                page.sid = self.song['id']
+            sid = self.cur_sid if self.cur_sid and self.db.get(self.cur_sid) else page.sid
+            page.sid = sid
             page.refresh()
-            if page.sid:
-                page.picker.select(page.sid)
+            if sid:
+                if not page.picker.select(sid):           # odfiltrowana – pokaż ją mimo filtrów
+                    page.picker.reset_filters()
+                    page.picker.select(sid)
+                page.show_song(sid)
+        elif i == self.V_ADV and self.cur_sid and (not self.song or self.song.get('id') != self.cur_sid):
+            if self.db.get(self.cur_sid):
+                self.open_song(self.cur_sid)
 
     def _show_in(self, view, sid):
+        self.cur_sid = sid
         page = self.views.widget(view)
         page.sid = sid
         self.views.setCurrentIndex(view)
@@ -2641,6 +2937,7 @@ class MainWindow(QMainWindow):
         self._show_in(self.V_SLIDES, sid)
 
     def _go_edit(self, sid):
+        self.cur_sid = sid
         self.views.setCurrentIndex(self.V_ADV)
         self.open_song(sid)
         self.tabs.setCurrentIndex(0)
@@ -2756,6 +3053,8 @@ class MainWindow(QMainWindow):
         act(m_song, "🎸 Akordy – widok dla gitarzystów…", self.show_chords, "Ctrl+G")
         act(m_song, "🎸 Akordy całego zestawu…", self.show_set_chords)
         act(m_song, "Połącz z inną pieśnią (ta sama pieśń, inna wersja)…", self.merge_song_dialog)
+        act(m_song, "Kategoria dla zaznaczonych pieśni…", self.bulk_category)
+        act(m_song, "Tagi dla zaznaczonych pieśni (dodaj / usuń)…", self.bulk_tags)
         act(m_song, "Zapisz bieżący tekst jako wersję…", self.store_text_as_version)
         m_song.addSeparator()
         act(m_song, "Eksport do PDF…", lambda: self.export_current('pdf'), "Ctrl+E", True)
@@ -2772,6 +3071,7 @@ class MainWindow(QMainWindow):
         act(m_file, "Importuj z poprzedniej instalacji (baza, nuty, ustawienia)…", self.import_previous)
         m_file.addSeparator()
         act(m_file, "↶ Cofnij ostatnie zmiany w bazie (import, łączenie, usuwanie)…", self.undo_db_dialog, "Ctrl+Shift+Z")
+        act(m_file, "Znajdź i połącz duplikaty pieśni…", self.find_duplicates)
         m_file.addSeparator()
         act(m_file, "Eksport śpiewnika offline HTML (telefon, tablet)…", lambda: self.export_html(None), "Ctrl+H")
         m_file.addSeparator()
@@ -2937,6 +3237,17 @@ class MainWindow(QMainWindow):
         sid = item.data(0, Qt.UserRole)
         if sid:
             self.open_song(sid)
+
+    def _results_menu(self, pos):
+        from PySide6.QtWidgets import QMenu
+        m = QMenu(self)
+        n = len(self.selected_result_ids())
+        m.addAction(f"Kategoria dla zaznaczonych ({n})…", self.bulk_category)
+        m.addAction(f"Tagi dla zaznaczonych ({n})…", self.bulk_tags)
+        m.addAction("↓ Do zestawu", self.add_to_set)
+        m.addSeparator()
+        m.addAction("Znajdź i połącz duplikaty…", self.find_duplicates)
+        m.exec(self.results.viewport().mapToGlobal(pos))
 
     def selected_result_ids(self):
         return [it.data(0, Qt.UserRole) for it in self.results.selectedItems() if it.data(0, Qt.UserRole)]
@@ -3148,6 +3459,106 @@ class MainWindow(QMainWindow):
         self.pilot_invalidate()
         if res:
             self.statusBar().showMessage(f"Połączono w „{res['title']}”. Wersje tekstu i nuty – zakładka „Nuty i wersje”.", 8000)
+
+    def find_duplicates(self):
+        if self.dirty and not self.maybe_save():
+            return
+        from PySide6.QtWidgets import QProgressDialog
+        pd = QProgressDialog("Szukam duplikatów…", None, 0, 100, self)
+        pd.setWindowTitle(APP_NAME)
+        pd.setMinimumDuration(300)
+
+        def prog(i, n):
+            pd.setValue(int(100 * i / max(n, 1)))
+            QApplication.processEvents()
+        try:
+            groups = self.db.duplicate_groups(prog)
+        finally:
+            pd.close()
+        dlg = DuplicatesDialog(self.db, groups, self)
+        dlg.exec()
+        if dlg.merged:
+            sid = (self.song or {}).get('id')
+            self.dirty = False
+            if sid and self.db.get(sid):
+                self.load_into_editor(self.db.get(sid))
+            else:
+                self.new_song(ask=False)
+            self.refresh_filters()
+            self.refresh_list()
+            self.restore_set()
+            self.pilot_invalidate()
+            self.statusBar().showMessage(f"Połączono {dlg.merged} duplikatów. Można to cofnąć: Plik → Cofnij ostatnie zmiany.",
+                                         10000)
+
+    def _bulk_ids(self):
+        ids = self.selected_result_ids()
+        if not ids:
+            QMessageBox.information(self, APP_NAME, "Zaznacz pieśni na liście w zakładce „Zaawansowane” "
+                                    "(Ctrl+klik – pojedyncze, Shift+klik – zakres, Ctrl+A – wszystkie widoczne).")
+            self.views.setCurrentIndex(self.V_ADV)
+            self.results.setFocus()
+        return ids
+
+    def bulk_category(self):
+        ids = self._bulk_ids()
+        if not ids:
+            return
+        if self.dirty and not self.maybe_save():
+            return
+        cats = sorted({c for c, _ in self.db.categories() if c} | set(DEFAULT_CATEGORIES))
+        cat, ok = QInputDialog.getItem(self, APP_NAME, f"Kategoria dla {len(ids)} zaznaczonych pieśni\n"
+                                       "(wybierz albo wpisz nową; „(bez kategorii)” usuwa kategorię):",
+                                       ["(bez kategorii)"] + cats, 1 if cats else 0, True)
+        if not ok:
+            return
+        cat = "" if cat.strip() in ("", "(bez kategorii)") else cat.strip()
+        self.db.snapshot(f"Kategoria „{cat or 'brak'}” dla {len(ids)} pieśni")
+        for sid in ids:
+            s = self.db.get(sid)
+            if s and (s.get('kategoria') or '') != cat:
+                s['kategoria'] = cat
+                self.db.save(s)
+        self._after_bulk(f"Ustawiono kategorię „{cat or '(bez kategorii)'}” dla {len(ids)} pieśni.")
+
+    def bulk_tags(self):
+        ids = self._bulk_ids()
+        if not ids:
+            return
+        if self.dirty and not self.maybe_save():
+            return
+        txt, ok = QInputDialog.getText(self, APP_NAME, f"Tagi dla {len(ids)} zaznaczonych pieśni, po przecinku.\n"
+                                       "Minus przed tagiem usuwa go, np.: komunia, adwent, -kolęda")
+        if not ok or not txt.strip():
+            return
+        add = [t.strip() for t in txt.split(",") if t.strip() and not t.strip().startswith("-")]
+        rem = {fold(t.strip()[1:].strip()) for t in txt.split(",") if t.strip().startswith("-")}
+        self.db.snapshot(f"Tagi dla {len(ids)} pieśni: {txt.strip()}")
+        for sid in ids:
+            s = self.db.get(sid)
+            if not s:
+                continue
+            cur = [t.strip() for t in (s.get('tagi') or '').split(",") if t.strip() and fold(t.strip()) not in rem]
+            s['tagi'] = norm_tags(", ".join(cur + add))
+            self.db.save(s)
+        self._after_bulk(f"Zmieniono tagi {len(ids)} pieśni.")
+
+    def _after_bulk(self, msg):
+        sel = set(self.selected_result_ids())
+        sid = (self.song or {}).get('id')
+        if sid and sid in sel and self.db.get(sid):
+            self.dirty = False
+            self.load_into_editor(self.db.get(sid))
+        self.refresh_filters()
+        self.refresh_list()
+        from PySide6.QtWidgets import QTreeWidgetItemIterator
+        it = QTreeWidgetItemIterator(self.results)
+        while it.value():                                  # zaznaczenie zostaje – można od razu dodać tagi
+            if it.value().data(0, Qt.UserRole) in sel:
+                it.value().setSelected(True)
+            it += 1
+        self.pilot_invalidate()
+        self.statusBar().showMessage(msg + " Można cofnąć: Plik → Cofnij ostatnie zmiany.", 8000)
 
     def store_text_as_version(self):
         if not self.ensure_saved("Aby zapisać wersję"):

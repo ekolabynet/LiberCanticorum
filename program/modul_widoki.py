@@ -268,8 +268,22 @@ class SongPicker(QWidget):
     def select(self, sid):
         for i in range(self.list.count()):
             if self.list.item(i).data(Qt.UserRole) == sid:
+                self.list.blockSignals(True)
                 self.list.setCurrentRow(i)
-                return
+                self.list.blockSignals(False)
+                self.list.scrollToItem(self.list.item(i))
+                return True
+        return False
+
+    def reset_filters(self):
+        for w in (self.mode, self.cat):
+            w.blockSignals(True)
+            w.setCurrentIndex(0)
+            w.blockSignals(False)
+        self.q.blockSignals(True)
+        self.q.clear()
+        self.q.blockSignals(False)
+        self.refresh()
 
     def _pick(self, it, _prev=None):
         if it:
@@ -413,8 +427,6 @@ class SlidesPage(QWidget):
         self.picker.refresh()
         if self.sid is None and self.picker.list.count():
             self.picker.list.setCurrentRow(0)
-        elif self.sid is not None:
-            self.show_song(self.sid)
 
     def show_song(self, sid):
         self.sid = sid
@@ -504,17 +516,20 @@ class ScoresPage(QWidget):
         self.picker.refresh()
         if self.sid is None and self.picker.list.count():
             self.picker.list.setCurrentRow(0)
-        elif self.sid is not None:
-            self.show_song(self.sid)
 
     def aid(self):
         return self.files.currentData()
 
     def show_song(self, sid):
-        self.sid = sid
         from liber_canticorum import SCORE_EXT
         atts = [a for a in self.db.attachments(sid)
                 if a['name'].lower().endswith(('.pdf', '.png', '.jpg', '.jpeg', '.mid', '.midi', '.kar') + SCORE_EXT)]
+        key = (sid, tuple(a['id'] for a in atts))
+        if key == getattr(self, '_shown', None):
+            self.sid = sid
+            return                                         # ta sama pieśń i te same nuty – bez przeliczania
+        self._shown = key
+        self.sid = sid
         self.files.blockSignals(True)
         self.files.clear()
         for a in atts:

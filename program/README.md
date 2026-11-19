@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.14.1
+# Liber Canticorum 0.15.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.14.x, 0.15.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.15.x, 0.16.0 itd.
 
 ## Widoki (zakładki u dołu okna)
 
@@ -23,6 +23,9 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 - **Nuty** – nuty pieśni do przewijania i powiększania, odsłuch, „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”.
 - **Zaawansowane** – pełny edytor jak dotąd: wygląd slajdów, załączniki, wersje, akordy, zestaw, eksport.
 
+Wybrana pieśń zostaje ta sama we wszystkich zakładkach (Teksty, Slajdy, Nuty i edytor w „Zaawansowanych”) –
+nawet gdy w innej zakładce jest ustawiony filtr, który by ją ukrywał.
+
 We wszystkich prostych widokach lista pieśni może pokazywać wszystkie pieśni albo tylko pieśni z bieżącego zestawu.
 Wygląd: jasny pergamin bez ozdobników, w rogu inicjał „C” z kancjonału (logo programu) (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 Program pamięta ostatnio otwartą zakładkę.
@@ -32,7 +35,7 @@ Program pamięta ostatnio otwartą zakładkę.
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.14.1/
+LiberCanticorum_0.15.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -148,6 +151,14 @@ Inną bazę otworzysz w menu Plik.
   osobno, łączy Pieśń → Połącz z inną pieśnią – zestawy na Mszę wskazują potem na pieśń wynikową.
 - **Wygląd slajdów dla wszystkich pieśni:** w zakładce „Wygląd slajdów” przycisk „Zastosuj do wszystkich pieśni
   w bazie…” (numerowanie zwrotek każda pieśń zachowuje swoje); „Ustaw jako domyślne” zapisuje się od razu.
+- **Duplikaty** (Plik → „Znajdź i połącz duplikaty pieśni”): program szuka pieśni o tym samym lub bardzo podobnym
+  tytule (bez nawiasów, interpunkcji i ogonków), z tym samym początkiem tekstu albo takich, w których tytuł jednej jest
+  pierwszym wierszem drugiej. Dla każdej grupy wybierasz pieśń główną i zaznaczasz, które się z nią połączą (inny
+  tekst zostaje wersją, nuty, nagrania, tagi i zestawy przechodzą do głównej), albo „To nie są duplikaty” – program to
+  zapamięta. Jednym przyciskiem łączy się wszystkie pieśni z identycznym tekstem.
+- **Kategoria i tagi dla wielu pieśni naraz:** zaznacz pieśni na liście w „Zaawansowanych” (Ctrl+klik, Shift+klik,
+  Ctrl+A) i wybierz Pieśń → „Kategoria dla zaznaczonych pieśni” albo „Tagi dla zaznaczonych pieśni” (także prawym
+  przyciskiem myszy na liście). Tagi: „komunia, adwent” dodaje, „-kolęda” usuwa.
 - **Cofnij ostatnie zmiany w bazie** (Plik, Ctrl+Shift+Z): przed każdym importem, łączeniem, zamianą tekstu
   i usunięciem pieśni program robi kopię bazy (ostatnie 8, w ukrytym folderze obok bazy). Z listy wybiera się
   zmianę – baza wraca do stanu sprzed niej; bieżący stan też zostaje zachowany, więc cofnięcie można cofnąć.

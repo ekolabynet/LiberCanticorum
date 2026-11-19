@@ -37,9 +37,9 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog,
                                QMessageBox, QPushButton, QScrollArea, QTabWidget, QSlider, QSpinBox, QVBoxLayout, QWidget,
                                QApplication)
 
-USER_AGENT = "LiberCanticorum/0.14.1 (program parafialny; GPL)"
+USER_AGENT = "LiberCanticorum/0.15.0 (program parafialny; GPL)"
 BROWSER_HEADERS = {
-    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.14.1",
+    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 LiberCanticorum/0.15.0",
     'Accept': "application/json,text/html;q=0.9,*/*;q=0.8", 'Accept-Language': "pl,en;q=0.8",
 }
 VOICE_COLORS = ['#e05656', '#e0a030', '#4caf50', '#3f7fd9', '#a05ad9', '#30b0b0', '#c0c040', '#d070a0']
