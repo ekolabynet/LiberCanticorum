@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.2"
+VERSION = "0.20.3"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -74,7 +74,7 @@ SUPPORT = [
       'zrodlo': "laski.edu.pl/kontakt"}),
     ("⛪", "Wesprzyj Parafię M.B. Królowej Meksyku",
      "Parafia Matki Bożej Królowej Meksyku (z Guadalupe) w Laskach, ul. 3 Maja 40/42.",
-     "https://parafiawlaskach.pl/kontakt",
+     "https://parafiawlaskach.pl/",
      {'odbiorca': "Parafia Matki Bożej Królowej Meksyku, ul. 3 Maja 40/42, 05-080 Laski",
       'konta': [("PKO BP", "18 1020 1026 0000 1102 0016 9920")],
       'tytul': "Ofiara na rzecz parafii",

@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.20.2
+# Liber Canticorum 0.20.3
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -34,7 +34,7 @@ Program jest darmowy. Jeśli Ci się przydaje, wesprzyj – kafle u dołu ekranu
 | Na co | Konto do wpłat | Strona |
 |---|---|---|
 | **Ośrodek dla Niewidomych w Laskach** – Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin | mBank S.A. **02 1140 1010 0000 4399 5800 1002**; BLIK na telefon 572 896 588; 1,5% podatku: KRS 0000054086 | [laski.edu.pl](https://laski.edu.pl/) (darowizny: [wpłać darowiznę](https://laski.edu.pl/wplac-darowizne/)) |
-| **Parafia M.B. Królowej Meksyku** (z Guadalupe), ul. 3 Maja 40/42, 05-080 Laski | PKO BP **18 1020 1026 0000 1102 0016 9920** | [parafiawlaskach.pl](https://parafiawlaskach.pl/kontakt) |
+| **Parafia M.B. Królowej Meksyku** (z Guadalupe), ul. 3 Maja 40/42, 05-080 Laski | PKO BP **18 1020 1026 0000 1102 0016 9920** | [parafiawlaskach.pl](https://parafiawlaskach.pl/) (konto: [kontakt](https://parafiawlaskach.pl/kontakt)) |
 | **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-) | – | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
 | **Guadalupe500.org** – nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu) | – | guadalupe500.org |
 
@@ -163,7 +163,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.20.2/
+LiberCanticorum_0.20.3/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
