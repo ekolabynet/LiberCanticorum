@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.21.4"
+VERSION = "0.22.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -174,10 +174,30 @@ DEFAULT_TAGS = ["wejście", "przygotowanie darów", "komunia", "dziękczynienie"
 MASS_PARTS = [("Przed mszą", True), ("Wejście", True), ("Kyrie", False), ("Gloria", False), ("Psalm", False),
               ("Alleluja", False), ("Ofiarowanie", True), ("Sanctus", False), ("Agnus Dei", False),
               ("Komunia", True), ("Uwielbienie", True), ("Wyjście", True), ("Po mszy", True)]
+DEFAULT_MASS_PARTS = list(MASS_PARTS)
 MASS_MULTI = dict(MASS_PARTS)
 FREE_PART = "Utwory"                         # zestaw bez okazji (koncert, próba, nabożeństwo): jedna lista
 MASS_MULTI[FREE_PART] = True
-ORDINARY = ("Kyrie", "Gloria", "Sanctus", "Agnus Dei")          # części stałe – razem z jednej mszy („jeden motyw”)
+ORDINARY = ("Kyrie", "Gloria", "Sanctus", "Agnus Dei")
+
+
+def apply_mass_parts(parts):
+    """Własne części Mszy (kolejność, nazwy, „kilka pieśni”) – zmienia listę dla całego programu."""
+    parts = [(str(n).strip(), bool(m)) for n, m in parts if str(n).strip()] or list(DEFAULT_MASS_PARTS)
+    MASS_PARTS[:] = parts
+    MASS_MULTI.clear()
+    MASS_MULTI.update(dict(DEFAULT_MASS_PARTS))
+    MASS_MULTI.update(dict(parts))
+    MASS_MULTI[FREE_PART] = True
+
+
+def load_mass_parts():
+    try:
+        raw = QSettings("LiberCanticorum", "LiberCanticorum").value("mass_parts", "")
+        if raw:
+            apply_mass_parts(json.loads(raw))
+    except (ValueError, TypeError):
+        pass          # części stałe – razem z jednej mszy („jeden motyw”)
 # po czym rozpoznać część: (początki tytułu, tagi / kategorie) – wszystko po fold()
 PART_HINTS = {
     "Kyrie": (("kyrie", "panie zmiluj sie"), ("kyrie",)),
@@ -2591,7 +2611,7 @@ class MassPage(QWidget):
         sc.setWidgetResizable(True)
         self.inner = QWidget()
         self.grid = QGridLayout(self.inner)
-        self.grid.setColumnStretch(1, 1)
+        self.grid.setColumnStretch(2, 1)
         self.grid.setVerticalSpacing(10)
         self.grid.setHorizontalSpacing(18)
         sc.setWidget(self.inner)
@@ -2603,6 +2623,7 @@ class MassPage(QWidget):
                              ("📦 Materiały…", lambda: self.mw.export_package(), "Teksty, slajdy, nuty i nagrania do jednego folderu"),
                              ("💾 Zapisz zestaw", lambda: self.mw.store_set(), "Zapisuje zestaw w bazie"),
                              ("✚ Nowy zestaw", lambda: (self.mw.new_set(), self.refresh()), "Pusty zestaw"),
+                             ("✎ Części Mszy…", self.edit_parts, "Dodaj, usuń, przemianuj części; własne części; kolejność"),
                              ("⚙ Zaawansowany", lambda: self.mw._go_set_adv(), "Pełny zestaw: rodzaj, godzina, miejsce, "
                               "części stałe z jednej mszy, przeciąganie, zapisane zestawy")):
             b = QPushButton(txt)
@@ -2638,27 +2659,151 @@ class MassPage(QWidget):
                 w.hide()
                 w.deleteLater()
         tree = mw.setlist
-        for r, (part, multi) in enumerate(tree.part_list()):
+        names = [n for n, _ in tree.part_list()] + [n for n in tree.parts if n not in [x for x, _ in tree.part_list()]]
+        for r, part in enumerate(names):
             it = tree.parts[part]
+            multi = MASS_MULTI.get(part, True)
             lab = QLabel(part)
             lab.setObjectName("massPart")
             if part in ORDINARY:
                 lab.setStyleSheet("color: #aa2828;")
             self.grid.addWidget(lab, r, 0, Qt.AlignTop)
-            titles = [it.child(j).text(0) for j in range(it.childCount())]
-            songs = QLabel("<br>".join(H.escape(t) for t in titles) if titles else "<span style='color:#a99'>—</span>")
-            songs.setWordWrap(True)
-            self.grid.addWidget(songs, r, 1, Qt.AlignTop)
-            add = QPushButton("＋ Dodaj" if multi or not titles else "↺ Zmień")
-            add.setToolTip("Wybierz pieśń do tej części (wyszukiwanie po tytule i słowach)")
-            add.clicked.connect(lambda _=False, p=part: self.choose(p))
-            self.grid.addWidget(add, r, 2, Qt.AlignTop)
-            rm = QPushButton("✕")
-            rm.setFixedWidth(32)
-            rm.setToolTip("Usuń pieśni z tej części")
-            rm.setEnabled(bool(titles))
-            rm.clicked.connect(lambda _=False, p=part: self.clear_part(p))
-            self.grid.addWidget(rm, r, 3, Qt.AlignTop)
+            box = QWidget()
+            bl = QVBoxLayout(box)
+            bl.setContentsMargins(0, 0, 0, 0)
+            bl.setSpacing(2)
+            for j in range(it.childCount()):
+                row = QHBoxLayout()
+                t = QLabel(it.child(j).text(0))
+                row.addWidget(t)
+                ch = QPushButton("↺")
+                ch.setFixedWidth(40)
+                ch.setToolTip("Zmień tę pieśń na inną")
+                ch.clicked.connect(lambda _=False, p=part, j=j: self.choose(p, replace=j))
+                row.addWidget(ch)
+                rm = QPushButton("✕")
+                rm.setFixedWidth(40)
+                rm.setToolTip("Usuń tę pieśń z zestawu")
+                rm.clicked.connect(lambda _=False, p=part, j=j: self.remove(p, j))
+                row.addWidget(rm)
+                if j == it.childCount() - 1 and multi:
+                    add = QPushButton("＋ Dodaj")
+                    add.setToolTip("Dodaj kolejną pieśń do tej części")
+                    add.clicked.connect(lambda _=False, p=part: self.choose(p))
+                    row.addSpacing(12)
+                    row.addWidget(add)
+                row.addStretch(1)
+                bl.addLayout(row)
+            if it.childCount() == 0:
+                row = QHBoxLayout()
+                add = QPushButton("＋ Dodaj")
+                add.setToolTip("Wybierz pieśń do tej części (wyszukiwanie po tytule i słowach)")
+                add.clicked.connect(lambda _=False, p=part: self.choose(p))
+                row.addWidget(add)
+                row.addStretch(1)
+                bl.addLayout(row)
+            self.grid.addWidget(box, r, 1, Qt.AlignTop)
+
+    def remove(self, part, j):
+        it = self.mw.setlist.parts[part]
+        if 0 <= j < it.childCount():
+            it.removeChild(it.child(j))
+        self.mw.setlist._update_labels()
+        self.mw.save_set()
+        self.refresh()
+
+    def edit_parts(self):
+        """Własne części Mszy: dodawanie, usuwanie, zmiana nazwy i kolejności, „kilka pieśni”."""
+        mw = self.mw
+        d = QDialog(self)
+        d.setWindowTitle("Części Mszy")
+        lay = QVBoxLayout(d)
+        lay.addWidget(QLabel("Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\n"
+                             "Zaznaczone pole = w tej części może być kilka pieśni."))
+        lst = QListWidget()
+        f = lst.font()
+        f.setPointSizeF(f.pointSizeF() * 1.4)
+        lst.setFont(f)
+        for n, m in MASS_PARTS:
+            li = QListWidgetItem(n)
+            li.setData(Qt.UserRole, n)
+            li.setFlags(li.flags() | Qt.ItemIsEditable | Qt.ItemIsUserCheckable)
+            li.setCheckState(Qt.Checked if m else Qt.Unchecked)
+            lst.addItem(li)
+        lay.addWidget(lst, 1)
+        row = QHBoxLayout()
+
+        def add():
+            name, ok = QInputDialog.getText(d, "Nowa część", "Nazwa części (np. „Do Maryi”, „Na zakończenie”):")
+            if ok and name.strip():
+                li = QListWidgetItem(name.strip())
+                li.setFlags(li.flags() | Qt.ItemIsEditable | Qt.ItemIsUserCheckable)
+                li.setCheckState(Qt.Checked)
+                k = lst.currentRow() + 1 if lst.currentRow() >= 0 else lst.count()
+                lst.insertItem(k, li)
+                lst.setCurrentRow(k)
+
+        def move(dd):
+            k = lst.currentRow()
+            if k < 0 or not 0 <= k + dd < lst.count():
+                return
+            li = lst.takeItem(k)
+            lst.insertItem(k + dd, li)
+            lst.setCurrentRow(k + dd)
+
+        def remove():
+            k = lst.currentRow()
+            if k >= 0:
+                lst.takeItem(k)
+
+        def defaults():
+            lst.clear()
+            for n, m in DEFAULT_MASS_PARTS:
+                li = QListWidgetItem(n)
+                li.setData(Qt.UserRole, n)
+                li.setFlags(li.flags() | Qt.ItemIsEditable | Qt.ItemIsUserCheckable)
+                li.setCheckState(Qt.Checked if m else Qt.Unchecked)
+                lst.addItem(li)
+        for txt, fn, tip in (("✚ Dodaj część…", add, "Nowa część po zaznaczonej"),
+                             ("✎ Zmień nazwę", lambda: lst.currentItem() and lst.editItem(lst.currentItem()), "Też: dwuklik"),
+                             ("↑", lambda: move(-1), "Wyżej"), ("↓", lambda: move(1), "Niżej"),
+                             ("🗑 Usuń", remove, "Pieśni z usuniętej części przejdą do pierwszej części"),
+                             ("Przywróć domyślne", defaults, "Standardowe części Mszy")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            b.clicked.connect(fn)
+            row.addWidget(b)
+        lay.addLayout(row)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lay.addWidget(bb)
+        d.resize(620, 560)
+        if not d.exec():
+            return
+        parts, renamed = [], {}
+        for k in range(lst.count()):
+            n = lst.item(k).text().strip()
+            if n and n not in [p for p, _ in parts]:
+                parts.append((n, lst.item(k).checkState() == Qt.Checked))
+                was = lst.item(k).data(Qt.UserRole)
+                if was and was != n:
+                    renamed[was] = n
+        if not parts:
+            return
+        tree = mw.setlist
+        if renamed and tree.kind == 'msza':                # pieśni idą za przemianowaną częścią
+            for was, n in renamed.items():
+                if was in tree.parts:
+                    it = tree.parts.pop(was)
+                    it.setData(0, Qt.UserRole + 1, n)
+                    tree.parts[n] = it
+        mw.settings.setValue("mass_parts", json.dumps(parts, ensure_ascii=False))
+        apply_mass_parts(parts)
+        if mw.set_kind() == 'msza':
+            mw.setlist.rebuild_parts()
+        mw.save_set()
+        self.refresh()
 
     def clear_part(self, part):
         it = self.mw.setlist.parts[part]
@@ -2667,7 +2812,7 @@ class MassPage(QWidget):
         self.mw.save_set()
         self.refresh()
 
-    def choose(self, part):
+    def choose(self, part, replace=None):
         mw = self.mw
         d = QDialog(self)
         d.setWindowTitle(f"Pieśń – {part}")
@@ -2704,7 +2849,14 @@ class MassPage(QWidget):
             sid = lst.currentItem().data(Qt.UserRole)
             song = mw.db.get(sid)
             if song:
-                mw.setlist.add_song(part, sid, song['title'])
+                it = mw.setlist.parts[part]
+                if replace is not None and 0 <= replace < it.childCount():
+                    ch = it.child(replace)
+                    ch.setText(0, song['title'])
+                    ch.setData(0, Qt.UserRole, sid)
+                    mw.setlist._update_labels()
+                else:
+                    mw.setlist.add_song(part, sid, song['title'])
                 mw.save_set()
                 self.refresh()
 
@@ -2777,6 +2929,16 @@ class MassSetTree(QTreeWidget):
         self._update_labels()
         self.expandAll()
 
+    def rebuild_parts(self):
+        """Po zmianie listy części: ten sam zestaw w nowym układzie (pieśni z usuniętych części – do pierwszej)."""
+        old = [(p, sid, self._title(p, j)) for p, it in self.parts.items() for j, sid in
+               enumerate(it.child(k).data(0, Qt.UserRole) for k in range(it.childCount()))]
+        self.clear()
+        self._build()
+        names = [n for n, _ in self.part_list()]
+        for part, sid, title in old:
+            self.add_song(part if part in names else names[0], sid, title)
+
     def reset_parts(self):
         for it in self.parts.values():
             it.takeChildren()
@@ -2789,6 +2951,16 @@ class MassSetTree(QTreeWidget):
         return (it.parent() or it).data(0, Qt.UserRole + 1)
 
     def add_song(self, part, sid, title):
+        if part not in self.parts:                         # część spoza bieżącej listy (np. ze starego zestawu)
+            MASS_MULTI.setdefault(part, True)
+            it = QTreeWidgetItem([part])
+            it.setData(0, Qt.UserRole + 1, part)
+            it.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDropEnabled)
+            f = it.font(0)
+            f.setBold(True)
+            it.setFont(0, f)
+            self.addTopLevelItem(it)
+            self.parts[part] = it
         p = self.parts[part]
         if not MASS_MULTI[part]:
             p.takeChildren()
@@ -6874,6 +7046,7 @@ def main():
     except Exception:
         pass
     migrate_settings()
+    load_mass_parts()
     try:                                                   # język interfejsu (pliki i18n/*.json)
         import modul_i18n
         lang = QSettings("LiberCanticorum", "LiberCanticorum").value("language", "") or modul_i18n.system_language()

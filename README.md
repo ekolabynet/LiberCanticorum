@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.21.4
+# Liber Canticorum 0.22.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -71,8 +71,9 @@ Okno ma u dołu sześć zakładek. Pierwsze pięć jest prostych, dla każdego, 
   także „Pokaż całego zestawu”.
 - **Nuty** – nuty pieśni do przewijania i powiększania (− / +), „Posłuchaj”, „Otwórz w MuseScore”,
   **„Edytor melodii”**; gdy nut brak: „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”, „Wpisz melodię”.
-- **Msza** – prosty zestaw na Mszę dużym pismem: dzień, części Mszy z pieśniami, „＋ Dodaj” (z wyszukiwaniem
-  i podpowiedziami ★ dla danej części), „✕”, „📖 Liturgia dnia i propozycje”, „▶ Pokaż cały zestaw”, „📦 Materiały”,
+- **Msza** – prosty zestaw na Mszę dużym pismem: dzień, części Mszy z pieśniami; przy każdej pieśni „↺” (zmień
+  na inną) i „✕” (usuń), zaraz za nimi „＋ Dodaj” (z wyszukiwaniem i podpowiedziami ★ dla danej części);
+  „✎ Części Mszy…” – własne części i ich kolejność, „📖 Liturgia dnia i propozycje”, „▶ Pokaż cały zestaw”, „📦 Materiały”,
   „💾 Zapisz zestaw”; „⚙ Zaawansowany” – pełny zestaw (rodzaj, godzina, miejsce, części stałe, przeciąganie).
 - **Zaawansowane** – pełny edytor: menu i pasek narzędzi, lista pieśni, wygląd slajdów, akordy,
   załączniki („Nuty, wersje i nagrania”), wersje tekstu, zestaw na Mszę, eksport, ustawienia.
@@ -84,6 +85,16 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Własne części Mszy (nowość w 0.22).** Zakładka **Msza** → „✎ Części Mszy…”:
+1. **✚ Dodaj część…** – np. „Do Maryi”, „Na zakończenie”, „Hymn patronalny” (wstawiana po zaznaczonej).
+2. **✎ Zmień nazwę** (albo dwuklik) – pieśni przechodzą razem z przemianowaną częścią.
+3. **↑ / ↓** – kolejność; **🗑 Usuń** – pieśni z usuniętej części trafiają do pierwszej części.
+4. Pole wyboru przy nazwie = w tej części może być **kilka pieśni** (bez zaznaczenia – jedna, jak Psalm czy Kyrie).
+5. **Przywróć domyślne** – standardowy układ. Układ jest zapamiętywany i obowiązuje też w „Zaawansowanym” zestawie.
+
+Przy każdej pieśni w zestawie są przyciski **↺** (wybierz inną pieśń na to miejsce) i **✕** (usuń), a **＋ Dodaj**
+stoi tuż za ostatnią pieśnią danej części.
 
 **Wpisać melodię (edytor melodii, nowość w 0.16).** Kafel **„🎵 Edytor melodii”** na ekranie Start (dla wybranej
 pieśni albo nowej – wystarczy podać tytuł), zakładka Nuty → „🎼 Edytor melodii” (albo „Wpisz melodię”),
@@ -184,7 +195,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.21.4/
+LiberCanticorum_0.22.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

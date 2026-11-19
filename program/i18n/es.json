@@ -597,6 +597,20 @@
   "Najbliższa niedziela": "",
   "Szeroko – więcej propozycji (także pojedyncze wspólne słowa).\nFrazy / ściśle – tylko pieśni, w których powtarzają się całe zwroty z czytań, psalmu, antyfon.": "",
   "Tylko pieśni z kategorii okresu": "",
-  "Dopasowanie:": ""
+  "Dopasowanie:": "",
+  "✎ Części Mszy…": "✎ Partes de la misa…",
+  "Części Mszy": "Partes de la misa",
+  "✚ Dodaj część…": "✚ Añadir parte…",
+  "✎ Zmień nazwę": "✎ Renombrar",
+  "🗑 Usuń": "🗑 Eliminar",
+  "Przywróć domyślne": "Restaurar predeterminados",
+  "Nowa część": "Nueva parte",
+  "Zmień tę pieśń na inną": "Cambiar este canto",
+  "Usuń tę pieśń z zestawu": "Quitar este canto del conjunto",
+  "Dodaj kolejną pieśń do tej części": "Añadir otro canto a esta parte",
+  "Na wejście": "Entrada",
+  "Do Maryi": "A María",
+  "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Partes del conjunto para la misa – orden, nombres y partes propias (p. ej. «A María», «Final»).\nMarcado = esta parte admite varios cantos.",
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nombre de la parte (p. ej. «A María», «Final»):"
  }
 }

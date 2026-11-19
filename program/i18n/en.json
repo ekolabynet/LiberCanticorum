@@ -597,6 +597,20 @@
   "Najbliższa niedziela": "",
   "Szeroko – więcej propozycji (także pojedyncze wspólne słowa).\nFrazy / ściśle – tylko pieśni, w których powtarzają się całe zwroty z czytań, psalmu, antyfon.": "",
   "Tylko pieśni z kategorii okresu": "",
-  "Dopasowanie:": ""
+  "Dopasowanie:": "",
+  "✎ Części Mszy…": "✎ Mass parts…",
+  "Części Mszy": "Mass parts",
+  "✚ Dodaj część…": "✚ Add part…",
+  "✎ Zmień nazwę": "✎ Rename",
+  "🗑 Usuń": "🗑 Remove",
+  "Przywróć domyślne": "Restore defaults",
+  "Nowa część": "New part",
+  "Zmień tę pieśń na inną": "Replace this song",
+  "Usuń tę pieśń z zestawu": "Remove this song from the set",
+  "Dodaj kolejną pieśń do tej części": "Add another song to this part",
+  "Na wejście": "Entrance",
+  "Do Maryi": "To Mary",
+  "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Parts of the Mass set – order, names and your own parts (e.g. “To Mary”, “Closing”).\nChecked = this part may hold several songs.",
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Part name (e.g. “To Mary”, “Closing”):"
  }
 }

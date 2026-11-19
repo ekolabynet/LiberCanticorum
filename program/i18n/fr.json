@@ -597,6 +597,20 @@
   "Najbliższa niedziela": "",
   "Szeroko – więcej propozycji (także pojedyncze wspólne słowa).\nFrazy / ściśle – tylko pieśni, w których powtarzają się całe zwroty z czytań, psalmu, antyfon.": "",
   "Tylko pieśni z kategorii okresu": "",
-  "Dopasowanie:": ""
+  "Dopasowanie:": "",
+  "✎ Części Mszy…": "✎ Parties de la messe…",
+  "Części Mszy": "Parties de la messe",
+  "✚ Dodaj część…": "✚ Ajouter une partie…",
+  "✎ Zmień nazwę": "✎ Renommer",
+  "🗑 Usuń": "🗑 Supprimer",
+  "Przywróć domyślne": "Rétablir par défaut",
+  "Nowa część": "Nouvelle partie",
+  "Zmień tę pieśń na inną": "Remplacer ce chant",
+  "Usuń tę pieśń z zestawu": "Retirer ce chant de l’ensemble",
+  "Dodaj kolejną pieśń do tej części": "Ajouter un autre chant à cette partie",
+  "Na wejście": "Entrée",
+  "Do Maryi": "À Marie",
+  "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Parties de l’ensemble pour la messe – ordre, noms et parties personnalisées (p. ex. « À Marie », « Envoi »).\nCoché = plusieurs chants possibles dans cette partie.",
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nom de la partie (p. ex. « À Marie », « Envoi ») :"
  }
 }
