@@ -1,7 +1,9 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.23.0
+# Liber Canticorum 0.24.0
 *wolny śpiewnik dla wspólnot*
+
+🌐 **Polski** · [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md)
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
 *libre*, czyli „wolny”, jak wolne oprogramowanie. Ikona to czerwone inicjałowe **C** z rękopiśmiennego
@@ -30,17 +32,30 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 
 ## Języki / Languages / Langues / Idiomas
 
-Interfejs jest po polsku, angielsku, francusku i hiszpańsku – przycisk **🌐 PL** w prawym górnym rogu ekranu Start albo **Ustawienia → 🌐 Język / Language**
-(zmiana po ponownym uruchomieniu; domyślnie język systemu). Teksty i nuty pieśni się nie zmieniają.
+Opis po angielsku, francusku i hiszpańsku: [English](README.en.md) · [Français](README.fr.md) · [Español](README.es.md).
 
-**Jak dodać albo poprawić tłumaczenie** (bez programowania): pliki `i18n/en.json`, `fr.json`, `es.json` zawierają
-pary „tekst polski” → „tłumaczenie”; puste `""` = jeszcze nieprzetłumaczone (program pokaże wtedy tekst polski).
+Interfejs jest w **21 językach**: polskim, angielskim, francuskim, hiszpańskim, niemieckim, ukraińskim, czeskim,
+włoskim, portugalskim, suahili, japońskim, chińskim, wietnamskim, norweskim, szwedzkim, islandzkim, chorwackim,
+arabskim (od prawej do lewej), litewskim i filipińskim (tagalskim). Przycisk **🌐** w prawym górnym rogu ekranu
+Start albo **Ustawienia → 🌐 Język / Language** (zmiana po ponownym uruchomieniu; domyślnie język systemu).
+Teksty i nuty pieśni się nie zmieniają.
+
+| Japoński | Arabski (od prawej do lewej) |
+|---|---|
+| ![Ekran Start po japońsku](program/zrzuty/jezyk_ja.png) | ![Ekran Start po arabsku](program/zrzuty/jezyk_ar.png) |
+
+Angielski, francuski i hiszpański obejmują najważniejsze części programu; pozostałe języki – części najbardziej
+widoczne (zakładki, menu, Start, widoki proste, Msza, odtwarzacz, edytor melodii, akordy). **Czego brak w danym
+języku, program pokazuje po angielsku.** Tłumaczenia na nowe języki są robocze – nazwy części Mszy i okresów
+liturgicznych warto dać do sprawdzenia osobie, która mówi tym językiem i zna jej liturgię.
+
+**Jak dodać albo poprawić tłumaczenie** (bez programowania): pliki `i18n/<kod>.json` zawierają
+pary „tekst polski” → „tłumaczenie”; puste `""` = jeszcze nieprzetłumaczone.
 Wzorce mają miejsca na wartości, np. `"Zaznaczone pieśni: {n}": "Selected songs: {n}"` (`{n}` – liczba).
-- nowy język: `python3 i18n/wyciagnij_teksty.py de` – powstanie `i18n/de.json` ze wszystkimi tekstami do przetłumaczenia,
+- nowy język: `python3 i18n/wyciagnij_teksty.py xx` – powstanie `i18n/xx.json` ze wszystkimi tekstami do przetłumaczenia,
   a język pojawi się w menu,
 - po zmianach w programie: `python3 i18n/wyciagnij_teksty.py` – dopisze nowe teksty do wszystkich plików.
-Na razie przetłumaczone są najważniejsze elementy (zakładki, menu, Start, widoki proste, Msza, odtwarzacz, edytor
-melodii, akordy) – reszta czeka na tłumaczy. *Translations welcome – just fill in the empty strings in `i18n/*.json`.*
+*Translations welcome – just fill in the empty strings in `i18n/*.json`.*
 
 ## Wesprzyj
 
@@ -211,7 +226,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.23.0/
+LiberCanticorum_0.24.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

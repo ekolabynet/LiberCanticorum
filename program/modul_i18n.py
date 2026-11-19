@@ -18,7 +18,11 @@ import re
 
 DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "i18n")
 NAMES = {'pl': "Polski", 'en': "English", 'fr': "Français", 'es': "Español", 'de': "Deutsch", 'it': "Italiano",
-         'cs': "Čeština", 'sk': "Slovenčina", 'uk': "Українська", 'pt': "Português"}
+         'cs': "Čeština", 'sk': "Slovenčina", 'uk': "Українська", 'pt': "Português", 'sw': "Kiswahili",
+         'ja': "日本語", 'zh': "中文", 'vi': "Tiếng Việt", 'nb': "Norsk", 'sv': "Svenska", 'is': "Íslenska",
+         'hr': "Hrvatski", 'ar': "العربية", 'lt': "Lietuvių", 'tl': "Filipino (Tagalog)"}
+RTL = {'ar', 'he', 'fa', 'ur'}                       # języki pisane od prawej do lewej
+ALIASES = {'no': 'nb', 'nn': 'nb', 'fil': 'tl'}       # kody systemowe → pliki tłumaczeń
 
 LANG = 'pl'
 _EXACT = {}
@@ -51,7 +55,7 @@ def _pattern(key):
 def load(lang):
     """Wczytuje katalog języka (pl = bez tłumaczenia)."""
     global LANG, _EXACT, _PATTERNS
-    LANG, _EXACT, _PATTERNS = lang or 'pl', {}, []
+    LANG, _EXACT, _PATTERNS = ALIASES.get(lang, lang) or 'pl', {}, []
     if LANG == 'pl':
         return
     try:
@@ -60,13 +64,27 @@ def load(lang):
     except (OSError, ValueError):
         LANG = 'pl'
         return
-    for k, v in (data.get("teksty") or data).items():
-        if not v or k.startswith("_"):
+    merged = {}
+    if LANG != 'en':                 # czego brak w tym języku – po angielsku (a nie po polsku)
+        try:
+            with open(os.path.join(DIR, "en.json"), encoding="utf-8") as f:
+                merged.update({k: v for k, v in (json.load(f).get("teksty") or {}).items() if v})
+        except (OSError, ValueError):
+            pass
+    merged.update({k: v for k, v in (data.get("teksty") or data).items() if v})
+    pats = {}
+    for k, v in merged.items():
+        if k.startswith("_"):
             continue
         if re.search(r"\{[a-z]\w*\}", k):
-            _PATTERNS.append((_pattern(k), v))
+            pats[k] = v
         else:
             _EXACT[k] = v
+    _PATTERNS.extend((_pattern(k), v) for k, v in pats.items())
+
+
+def is_rtl():
+    return LANG in RTL
 
 
 def tr(s):
@@ -102,6 +120,7 @@ def system_language():
         code = QLocale.system().name().split("_")[0]
     except Exception:
         code = "pl"
+    code = ALIASES.get(code, code)
     return code if code in dict(available()) else ('en' if code != 'pl' and 'en' in dict(available()) else 'pl')
 
 
@@ -191,7 +210,9 @@ def install(app):
     """Włącza tłumaczenie okien: przy pokazaniu i co 0,8 s dla okna aktywnego (teksty zmieniane w trakcie)."""
     if LANG == 'pl':
         return None
-    from PySide6.QtCore import QObject, QEvent, QTimer
+    from PySide6.QtCore import QObject, QEvent, QTimer, Qt
+    if is_rtl():
+        app.setLayoutDirection(Qt.RightToLeft)
 
     class _Filter(QObject):
         def eventFilter(self, obj, ev):

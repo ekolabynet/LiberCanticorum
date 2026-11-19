@@ -632,6 +632,18 @@
   "Źródło pieśni – śpiewnik, zbiór": "Fuente del canto – cancionero, colección",
   "Tylko pieśni z wybranego śpiewnika / zbioru": "Solo cantos del cancionero elegido",
   "Źródło": "Fuente",
-  "Zaznacz pieśń w zestawie.": "Seleccione un canto del conjunto."
+  "Zaznacz pieśń w zestawie.": "Seleccione un canto del conjunto.",
+  "Nowa nazwa części „{a}”:": "",
+  "Uwagi – {a}": "",
+  "np. schola, organista, kantor, solistka…": "",
+  "np. G-dur, o ton niżej, kapodaster 2": "",
+  "np. zwrotki 1, 3, 5; wejście po dzwonkach; organy solo przed": "",
+  "np. nie przyspieszać w refrenie; wydłużona fermata; uważać na „Amen”": "",
+  "śpiewnik / zbiór, np. Siedlecki, Niepojęta Trójco – wybierz lub wpisz": "",
+  "Źródło tekstu (śpiewnik, zbiór, wydawca) – do filtrowania listy i propozycji z liturgii": "",
+  "Źródło dla zaznaczonych ({a})…": "",
+  "Źródło (śpiewnik, zbiór) dla {a} zaznaczonych pieśni\n(wybierz albo wpisz; „(bez źródła)” usuwa):": "",
+  "Część „{a}” już jest w zestawie.": "",
+  "Źródło (śpiewnik)": ""
  }
 }
