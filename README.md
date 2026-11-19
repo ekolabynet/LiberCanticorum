@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.18.2
+# Liber Canticorum 0.18.3
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -97,7 +97,16 @@ w kolejności, w jakiej się pojawiają, i zmieniają się razem z transpozycją
 a pozostałe jako barre w kształcie E albo A (z numerem progu). Kropki to palce, × – struna nie gra, ○ – struna pusta. Akordy wpisuje się w zakładce „Akordy” w ChordPro: `[a]Chwalcie [E]Pana`.
 
 **Znaleźć nuty.** Nuty → „Szukaj nut w MuseScore” (Ctrl+M) – szuka tytułu pieśni na musescore.com; pobrany plik
-sam trafia do pieśni. Nuty tylko na papierze: zeskanuj i „Rozpoznaj nuty ze skanu” (Audiveris) – albo wpisz
+sam trafia do pieśni. Okno zapisuje nuty zawsze do pieśni, dla której je otwarto (jej tytuł jest na pasku okna) –
+nawet jeśli w międzyczasie otworzysz inną; kilka pobranych plików to kilka aranżacji tej pieśni, a ten sam plik
+pobrany drugi raz nie dubluje się.
+
+**Aranżacje jednej pieśni.** Pieśń może mieć dowolnie wiele plików nut: melodię, chór SATB, organy, wersję z innego
+śpiewnika… W „Zaawansowanych” → „Nuty, wersje i nagrania” zaznacz plik i kliknij „Wersja / aranżacja (opis)…”, żeby
+nazwać go np. „Chór SATB” albo „Organy – Siedlecki”. W zakładce Nuty wybierasz aranżację z listy „Nuty:”. Różne
+teksty tej samej pieśni to *wersje tekstu* (tamże), a łączenie duplikatów przenosi wszystko do jednej pieśni:
+tekst drugiej zostaje wersją, nuty i nagrania przechodzą (identyczne pliki tylko raz), tagi i uwagi się sumują,
+zestawy na Mszę wskazują na pieśń wynikową. Nuty tylko na papierze: zeskanuj i „Rozpoznaj nuty ze skanu” (Audiveris) – albo wpisz
 melodię w edytorze melodii.
 
 **Posłuchać i ćwiczyć głos.** Nuty → „Posłuchaj”: pasek odtwarzania nad nutami (⏮ ⏪ Odtwórz ⏹ ⏩, suwak,
@@ -123,7 +132,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.18.2/
+LiberCanticorum_0.18.3/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

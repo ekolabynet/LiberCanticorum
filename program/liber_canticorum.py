@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.18.2"
+VERSION = "0.18.3"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -1686,6 +1686,7 @@ class SongDB:
         self.con.execute("UPDATE attachments SET song_id=?, opis=COALESCE(NULLIF(opis, ''), ?) WHERE song_id=?",
                          (dst_id, a['title'] if fold(a['title']) != fold(b['title']) else "", src_id))
         self.con.execute("UPDATE wersje SET song_id=? WHERE song_id=?", (dst_id, src_id))
+        self.dedupe_attachments(dst_id)
         for r in self.con.execute("SELECT id, dane FROM zestawy").fetchall():
             d = json.loads(r['dane'] or '{}')
             ch = False
@@ -1699,6 +1700,21 @@ class SongDB:
         self.con.execute("DELETE FROM songs WHERE id=?", (src_id,))
         self.con.commit()
         return b
+
+    def dedupe_attachments(self, sid):
+        """Usuwa powtórzone pliki (identyczna zawartość) przy pieśni – zostaje pierwszy, z opisem z dowolnej kopii."""
+        seen = {}
+        for r in self.con.execute("SELECT id, data, COALESCE(opis, '') AS opis FROM attachments WHERE song_id=? ORDER BY id",
+                                  (sid,)).fetchall():
+            key = bytes(r['data'] or b"")
+            if key in seen:
+                keep = seen[key]
+                if r['opis']:
+                    self.con.execute("UPDATE attachments SET opis=COALESCE(NULLIF(opis, ''), ?) WHERE id=?", (r['opis'], keep))
+                self.con.execute("DELETE FROM derived WHERE att_id=?", (r['id'],))
+                self.con.execute("DELETE FROM attachments WHERE id=?", (r['id'],))
+            else:
+                seen[key] = r['id']
 
     def merge_import(self, dst_id, new, version_name=""):
         """Pieśń z importu dołączana do istniejącej: uzupełnia puste pola, łączy tagi, uwagi i nagrania,
@@ -5045,6 +5061,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, APP_NAME, f"Brak modułu nut:\n{e}")
             return
         if getattr(self, 'score_dlg', None) and self.score_dlg.isVisible():
+            self._score_target()
             self.score_dlg.q.setText(re.sub(r"\s+[–—-]\s+", " ", self.editor_song()['title']))
             self.score_dlg.search_musescore()
             self.score_dlg.raise_()
@@ -5052,7 +5069,18 @@ class MainWindow(QMainWindow):
             return
         self.score_dlg = modul_nuty.ScoreSearchDialog(self.editor_song()['title'], self.settings, self)
         self.score_dlg.files_downloaded.connect(self._attach_downloaded)
+        self._score_target()
         self.score_dlg.show()                      # niemodalne – program dalej działa
+
+    def _score_target(self):
+        """Okno szukania nut zapisuje do pieśni, dla której je otwarto (nawet gdy w międzyczasie otworzysz inną)."""
+        dlg = self.score_dlg
+        sid = self.song.get('id') if self.song else None
+        title = self.song.get('title', '') if self.song else ''
+        dlg.target_sid, dlg.target_title = sid, title
+        dlg.setWindowTitle(f"Szukaj i dołącz nuty – do pieśni „{title}”" if sid else "Szukaj i dołącz nuty")
+        if hasattr(dlg, 'b_save'):
+            dlg.b_save.setToolTip(f"Zapisuje zaznaczone pliki jako nuty pieśni „{title}”" if sid else "")
 
     # --- przeciągnij i upuść na okno programu
     def dragEnterEvent(self, e):
@@ -5106,15 +5134,34 @@ class MainWindow(QMainWindow):
             self.import_paths(lyrics)
 
     def _attach_downloaded(self, files):
-        """files: [(nazwa, bajty)] pobrane z CPDL."""
-        if self.ensure_saved("Aby dołączyć pobrane nuty"):
-            for name, data in files:
-                aid = self.db.add_attachment_bytes(self.song['id'], name, data)
-                self.convert_in_background(aid)
-            self.statusBar().showMessage(f"Dołączono do „{self.song['title']}”: {', '.join(n for n, _ in files)}", 6000)
-            self.pilot_invalidate()
-            self.refresh_media()
-            self.refresh_list()
+        """files: [(nazwa, bajty)] pobrane w oknie szukania nut – do pieśni, dla której otwarto okno."""
+        dlg = getattr(self, 'score_dlg', None)
+        sid = getattr(dlg, 'target_sid', None) if dlg else None
+        if not sid or not self.db.get(sid):
+            if not self.ensure_saved("Aby dołączyć pobrane nuty"):
+                return
+            sid = self.song['id']
+            if dlg:
+                self._score_target()
+        title = self.db.get(sid)['title']
+        have = {bytes(self.db.attachment(a['id'])['data']) for a in self.db.attachments(sid)}
+        added, same = [], []
+        for name, data in files:
+            if bytes(data) in have:                       # ten sam plik już jest przy pieśni
+                same.append(name)
+                continue
+            aid = self.db.add_attachment_bytes(sid, name, data)
+            have.add(bytes(data))
+            added.append(name)
+            self.convert_in_background(aid)
+        msg = (f"Dołączono do „{title}”: {', '.join(added)}" if added else "") + \
+              (f"  (już były: {', '.join(same)})" if same else "")
+        self.statusBar().showMessage(msg, 8000)
+        if dlg:
+            dlg.status.setText(msg)
+        self.pilot_invalidate()
+        self.refresh_media()
+        self.refresh_list()
 
     # --- YouTube ---
     def _yt_lines(self):
