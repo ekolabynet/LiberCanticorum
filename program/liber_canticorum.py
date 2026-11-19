@@ -27,6 +27,7 @@ sounddevice (poszczególne funkcje); PySide6-Addons (opcjonalnie: odtwarzacz You
 
 import datetime
 import html as H
+
 import json
 import math
 import os
@@ -57,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.0"
+VERSION = "0.20.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -65,16 +66,26 @@ BG_DIR = os.path.join(APP_DIR, "tla")
 SUPPORT = [
     ("🤍", "Wesprzyj Ośrodek dla Niewidomych w Laskach",
      "Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
-     "https://www.laski.edu.pl/"),
+     "https://laski.edu.pl/wplac-darowizne/",
+     {'odbiorca': "Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin",
+      'konta': [("mBank S.A. – konto do darowizn", "02 1140 1010 0000 4399 5800 1002")],
+      'tytul': "Darowizna na cele statutowe",
+      'inne': "BLIK na telefon: 572 896 588 · 1,5% podatku: KRS 0000054086",
+      'zrodlo': "laski.edu.pl/kontakt"}),
     ("⛪", "Wesprzyj Parafię M.B. Królowej Meksyku",
-     "Parafia Matki Bożej z Guadalupe, Królowej Meksyku – Laski.", ""),
+     "Parafia Matki Bożej Królowej Meksyku (z Guadalupe) w Laskach, ul. 3 Maja 40/42.",
+     "https://parafiawlaskach.pl/kontakt",
+     {'odbiorca': "Parafia Matki Bożej Królowej Meksyku, ul. 3 Maja 40/42, 05-080 Laski",
+      'konta': [("PKO BP", "18 1020 1026 0000 1102 0016 9920")],
+      'tytul': "Ofiara na rzecz parafii",
+      'zrodlo': "parafiawlaskach.pl/kontakt"}),
     ("🎶", "Wesprzyj Scholę adHoc",
      "Zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin "
      "(uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
-     "https://dowiaryprzezliturgie.pl/adhoc/"),
-    ("🌹", "Wesprzyj projekt Guadeloupe500.org",
+     "https://dowiaryprzezliturgie.pl/adhoc/", None),
+    ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
-     "https://guadeloupe500.org/"),
+     "https://guadalupe500.org/", None),
 ]
 
 
@@ -3110,8 +3121,8 @@ class MainWindow(QMainWindow):
             ("⚙", "Zaawansowane", "Pełny edytor: wygląd slajdów, załączniki, wersje, eksport, ustawienia.",
              lambda: self.views.setCurrentIndex(self.V_ADV)),
         ]
-        self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t: self._open_support(t, u)))
-                                                for ic, t, d, u in SUPPORT])
+        self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t, d=d, a=a: self._open_support(t, u, d, a)))
+                                                for ic, t, d, u, a in SUPPORT])
         self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
         self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
                                       lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
@@ -3838,12 +3849,49 @@ class MainWindow(QMainWindow):
             self.category_manager()
         self._refresh_pickers()
 
-    def _open_support(self, title, url):
+    def _open_support(self, title, url, desc="", acc=None):
+        """Kafel „Wesprzyj”: okno z opisem, numerem konta (do skopiowania) i stroną WWW."""
         url = support_url(title, url)
+        d = QDialog(self)
+        d.setWindowTitle(title)
+        lay = QVBoxLayout(d)
+        h = QLabel(f"<h2>{H.escape(title)}</h2><p>{H.escape(desc)}</p>")
+        h.setWordWrap(True)
+        lay.addWidget(h)
+        if acc:
+            lay.addWidget(QLabel(f"<b>Odbiorca:</b> {H.escape(acc['odbiorca'])}", wordWrap=True))
+            for bank, nr in acc['konta']:
+                row = QHBoxLayout()
+                lab = QLabel(f"<b>{H.escape(bank)}:</b><br><span style='font-size:15pt; font-family:monospace'>{nr}</span>")
+                lab.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                row.addWidget(lab, 1)
+                b = QPushButton("📋 Kopiuj numer")
+                b.clicked.connect(lambda _=False, nr=nr: (QGuiApplication.clipboard().setText(nr.replace(" ", "")),
+                                                           self.statusBar().showMessage("Skopiowano numer konta.", 4000)))
+                row.addWidget(b)
+                lay.addLayout(row)
+            if acc.get('tytul'):
+                lay.addWidget(QLabel(f"<b>Tytuł przelewu (propozycja):</b> {H.escape(acc['tytul'])}", wordWrap=True))
+            if acc.get('inne'):
+                lay.addWidget(QLabel(H.escape(acc['inne']), wordWrap=True))
+            src = QLabel(f"<span style='color:gray'>Dane ze strony {H.escape(acc.get('zrodlo', ''))} – przed przelewem "
+                         "sprawdź je na stronie odbiorcy.</span>", wordWrap=True)
+            lay.addWidget(src)
+        row = QHBoxLayout()
         if url:
-            QDesktopServices.openUrl(QUrl(url))
+            b = QPushButton("🌐 Otwórz stronę")
+            b.setObjectName("big")
+            b.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
+            row.addWidget(b)
         else:
-            QMessageBox.information(self, title, "Strona jest w przygotowaniu – zajrzyj wkrótce.")
+            row.addWidget(QLabel("Strona jest w przygotowaniu – zajrzyj wkrótce."))
+        row.addStretch(1)
+        c = QPushButton("Zamknij")
+        c.clicked.connect(d.accept)
+        row.addWidget(c)
+        lay.addLayout(row)
+        d.setMinimumWidth(560)
+        d.exec()
 
     def tidy_dialog(self):
         """Kafel „Porządki w bazie”: duże przyciski do najczęstszych porządków."""
