@@ -618,6 +618,20 @@
   "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "Nueva parte al final, p. ej. «A María», «Final»",
   "Zmień nazwę części „{x}”": "Renombrar la parte «{x}»",
   "Usuń część „{x}” z zestawu": "Quitar la parte «{x}»",
-  "Wstaw nową część po „{x}”": "Insertar una parte después de «{x}»"
+  "Wstaw nową część po „{x}”": "Insertar una parte después de «{x}»",
+  "Wszystkie źródła": "Todas las fuentes",
+  "(bez źródła)": "(sin fuente)",
+  "📚 Źródło…": "📚 Fuente…",
+  "Źródło dla zaznaczonych ({n})…": "Fuente para los seleccionados ({n})…",
+  "📝 Uwagi…": "📝 Notas…",
+  "📋 Plan dla muzyków": "📋 Plan para músicos",
+  "Wykonawca:": "Intérprete:",
+  "Uwagi:": "Notas:",
+  "Na co zwrócić uwagę:": "Atención a:",
+  "Uwagi: wykonawca, tonacja, uwagi, na co zwrócić uwagę": "Notas: intérprete, tonalidad, observaciones, puntos de atención",
+  "Źródło pieśni – śpiewnik, zbiór": "Fuente del canto – cancionero, colección",
+  "Tylko pieśni z wybranego śpiewnika / zbioru": "Solo cantos del cancionero elegido",
+  "Źródło": "Fuente",
+  "Zaznacz pieśń w zestawie.": "Seleccione un canto del conjunto."
  }
 }

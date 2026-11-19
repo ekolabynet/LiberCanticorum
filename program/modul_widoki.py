@@ -261,6 +261,11 @@ class SongPicker(QWidget):
         b_cat.clicked.connect(lambda: self.bulk.emit('categories', []))
         crow.addWidget(b_cat)
         lay.addLayout(crow)
+        self.src = QComboBox()
+        self.src.setToolTip("Źródło pieśni – śpiewnik, zbiór")
+        self.src.setProperty("i18n_no", True)
+        self.src.currentIndexChanged.connect(self.refresh)
+        lay.addWidget(self.src)
         self.q = QLineEdit()
         self.q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
         self.q.setClearButtonEnabled(True)
@@ -285,7 +290,8 @@ class SongPicker(QWidget):
         row = QHBoxLayout()
         for txt, act, tip in (("🔗 Połącz", 'merge', "To ta sama pieśń – połącz w jedną (teksty jako wersje, nuty, nagrania, zestawy)"),
                               ("🏷 Kategoria…", 'category', "Ta sama kategoria dla wszystkich zaznaczonych"),
-                              ("Tagi…", 'tags', "Dodaj albo usuń tagi zaznaczonym pieśniom")):
+                              ("Tagi…", 'tags', "Dodaj albo usuń tagi zaznaczonym pieśniom"),
+                              ("📚 Źródło…", 'source', "To samo źródło (śpiewnik) dla wszystkich zaznaczonych")):
             b = QPushButton(txt)
             b.setToolTip(tip)
             b.clicked.connect(lambda _=False, a=act: self.bulk.emit(a, self.selected_ids()))
@@ -307,11 +313,22 @@ class SongPicker(QWidget):
         k = self.cat.findData(keep)
         self.cat.setCurrentIndex(k if k >= 0 else 0)
         self.cat.blockSignals(False)
+        keep = self.src.currentData()
+        self.src.blockSignals(True)
+        self.src.clear()
+        self.src.addItem("Wszystkie źródła", None)
+        for name, n in (self.db.sources() if hasattr(self.db, 'sources') else []):
+            self.src.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+        k = self.src.findData(keep) if keep is not None else 0
+        self.src.setCurrentIndex(k if k >= 0 else 0)
+        self.src.setVisible(self.src.count() > 2)
+        self.src.blockSignals(False)
 
     def refresh(self, *_):
         if self.cat.count() == 0 or not _:
             self.fill_categories()
         cat = self.cat.currentData()
+        src = self.src.currentData()
         cur = self.current()
         self.list.blockSignals(True)
         self.list.clear()
@@ -320,10 +337,12 @@ class SongPicker(QWidget):
             for label, sid in self.set_ids():
                 s = self.db.get(sid)
                 if s and (not self.q.text().strip() or self.q.text().lower() in (s['title'] + s['zwrotki_raw']).lower()) \
-                        and (cat is None or (s.get('kategoria') or '') == cat):
+                        and (cat is None or (s.get('kategoria') or '') == cat) \
+                        and (src is None or (s.get('spiewnik') or '') == src):
                     rows.append((sid, f"{label}: {s['title']}" if label else s['title']))
         else:
-            rows = [(r['id'], r['title']) for r in self.db.search(self.q.text(), category=cat)]
+            rows = [(r['id'], r['title'] + (f"  · {r['spiewnik']}" if 'spiewnik' in r.keys() and r['spiewnik'] else ""))
+                    for r in self.db.search(self.q.text(), category=cat, source=src)]
         for sid, title in rows:
             it = QListWidgetItem(title)
             it.setData(Qt.UserRole, sid)

@@ -618,6 +618,20 @@
   "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "New part at the end, e.g. “To Mary”, “Closing”",
   "Zmień nazwę części „{x}”": "Rename part “{x}”",
   "Usuń część „{x}” z zestawu": "Remove part “{x}” from the set",
-  "Wstaw nową część po „{x}”": "Insert a new part after “{x}”"
+  "Wstaw nową część po „{x}”": "Insert a new part after “{x}”",
+  "Wszystkie źródła": "All sources",
+  "(bez źródła)": "(no source)",
+  "📚 Źródło…": "📚 Source…",
+  "Źródło dla zaznaczonych ({n})…": "Source for selected ({n})…",
+  "📝 Uwagi…": "📝 Notes…",
+  "📋 Plan dla muzyków": "📋 Plan for musicians",
+  "Wykonawca:": "Performer:",
+  "Uwagi:": "Notes:",
+  "Na co zwrócić uwagę:": "Watch out for:",
+  "Uwagi: wykonawca, tonacja, uwagi, na co zwrócić uwagę": "Notes: performer, key, remarks, what to watch out for",
+  "Źródło pieśni – śpiewnik, zbiór": "Song source – songbook, collection",
+  "Tylko pieśni z wybranego śpiewnika / zbioru": "Only songs from the chosen songbook",
+  "Źródło": "Source",
+  "Zaznacz pieśń w zestawie.": "Select a song in the set."
  }
 }

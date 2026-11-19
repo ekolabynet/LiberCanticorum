@@ -618,6 +618,20 @@
   "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "Nouvelle partie à la fin, p. ex. « À Marie », « Envoi »",
   "Zmień nazwę części „{x}”": "Renommer la partie « {x} »",
   "Usuń część „{x}” z zestawu": "Retirer la partie « {x} »",
-  "Wstaw nową część po „{x}”": "Insérer une partie après « {x} »"
+  "Wstaw nową część po „{x}”": "Insérer une partie après « {x} »",
+  "Wszystkie źródła": "Toutes les sources",
+  "(bez źródła)": "(sans source)",
+  "📚 Źródło…": "📚 Source…",
+  "Źródło dla zaznaczonych ({n})…": "Source pour la sélection ({n})…",
+  "📝 Uwagi…": "📝 Remarques…",
+  "📋 Plan dla muzyków": "📋 Plan pour les musiciens",
+  "Wykonawca:": "Interprète :",
+  "Uwagi:": "Remarques :",
+  "Na co zwrócić uwagę:": "Points d’attention :",
+  "Uwagi: wykonawca, tonacja, uwagi, na co zwrócić uwagę": "Remarques : interprète, tonalité, notes, points d’attention",
+  "Źródło pieśni – śpiewnik, zbiór": "Source du chant – recueil, collection",
+  "Tylko pieśni z wybranego śpiewnika / zbioru": "Seulement les chants du recueil choisi",
+  "Źródło": "Source",
+  "Zaznacz pieśń w zestawie.": "Sélectionnez un chant dans l’ensemble."
  }
 }

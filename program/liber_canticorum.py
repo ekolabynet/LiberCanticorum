@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.22.1"
+VERSION = "0.23.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -179,6 +179,43 @@ MASS_MULTI = dict(MASS_PARTS)
 FREE_PART = "Utwory"                         # zestaw bez okazji (koncert, próba, nabożeństwo): jedna lista
 MASS_MULTI[FREE_PART] = True
 ORDINARY = ("Kyrie", "Gloria", "Sanctus", "Agnus Dei")
+NOTE_FIELDS = (("wykonawca", "Wykonawca"), ("tonacja", "Tonacja"), ("uwagi", "Uwagi"),
+               ("zwroc", "Na co zwrócić uwagę"))
+
+
+SPIEWNIKI_ADRESY = (("siedlecki", "Siedlecki"), ("niezbednik", "Niezbędnik Katolika"),
+                    ("niepojeta", "Niepojęta Trójco"), ("spiewnik-oazowy", "Śpiewnik oazowy"),
+                    ("oaza", "Śpiewnik oazowy"), ("spiewnikreligijny", "Śpiewnik religijny"),
+                    ("liturgia.pl", "Liturgia.pl"), ("adonai", "Adonai.pl"), ("wywrota", "Wywrota"))
+
+
+def guess_spiewnik(zrodlo):
+    """Nazwa źródła (śpiewnika) z adresu strony albo nazwy pliku importu – albo ""."""
+    z = fold(zrodlo or "")
+    if not z:
+        return ""
+    for key, name in SPIEWNIKI_ADRESY:
+        if key in z:
+            return name
+    m = re.match(r"https?://(?:www\.)?([^/]+)", (zrodlo or "").strip(), re.I)
+    return m.group(1) if m else ""
+
+
+def source_combo(db, keep=None, all_label="Wszystkie źródła"):
+    """Lista wyboru źródła (śpiewnika) – data: None = wszystkie, '' = bez źródła."""
+    c = QComboBox()
+    c.setProperty("i18n_no", True)
+    c.setToolTip("Źródło pieśni – śpiewnik, zbiór")
+    c.addItem(all_label, None)
+    for name, n in db.sources():
+        c.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+    k = c.findData(keep) if keep is not None else 0
+    c.setCurrentIndex(max(0, k))
+    return c
+
+
+def notes_text(notes, sep="\n"):
+    return sep.join(f"{lab}: {notes[k]}" for k, lab in NOTE_FIELDS if (notes or {}).get(k))
 
 
 def apply_mass_parts(parts):
@@ -1330,6 +1367,8 @@ def merge_song_fields(dst, src):
     dst['youtube'] = "\n".join(yt)
     if not (dst.get('akordy') or '').strip() and (src.get('akordy') or '').strip():
         dst['akordy'] = src['akordy']
+    if src.get('spiewnik') and src['spiewnik'] not in (dst.get('spiewnik') or ''):
+        dst['spiewnik'] = "; ".join(x for x in (dst.get('spiewnik') or '', src['spiewnik']) if x)
     src_z = src.get('zrodlo') or ''
     if src_z and src_z not in (dst.get('zrodlo') or ''):
         dst['zrodlo'] = "; ".join(x for x in (dst.get('zrodlo') or '', src_z) if x)
@@ -1337,7 +1376,7 @@ def merge_song_fields(dst, src):
 
 
 class SongDB:
-    COLUMNS = {'kategoria': 'TEXT', 'youtube': 'TEXT', 'akordy': 'TEXT'}
+    COLUMNS = {'kategoria': 'TEXT', 'youtube': 'TEXT', 'akordy': 'TEXT', 'spiewnik': 'TEXT'}
 
     def __init__(self, path):
         self.path = path
@@ -1351,6 +1390,11 @@ class SongDB:
         for col, typ in self.COLUMNS.items():          # migracja starszych baz
             if col not in have:
                 self.con.execute(f"ALTER TABLE songs ADD COLUMN {col} {typ}")
+        if 'spiewnik' not in have:                      # źródło (śpiewnik) – odgadnij z adresu / pliku importu
+            for r in self.con.execute("SELECT id, zrodlo FROM songs WHERE COALESCE(zrodlo, '') <> ''").fetchall():
+                g = guess_spiewnik(r['zrodlo'])
+                if g:
+                    self.con.execute("UPDATE songs SET spiewnik=? WHERE id=?", (g, r['id']))
         self.con.execute("""CREATE TABLE IF NOT EXISTS attachments(
             id INTEGER PRIMARY KEY, song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
             name TEXT, kind TEXT, data BLOB, added TEXT)""")
@@ -1414,6 +1458,7 @@ class SongDB:
                 'uwagi': r['uwagi'] or '', 'tagi': r['tagi'] or '', 'zrodlo': r['zrodlo'] or '',
                 'kategoria': r['kategoria'] or '', 'youtube': r['youtube'] or '',
                 'akordy': (r['akordy'] if 'akordy' in r.keys() else '') or '',
+                'spiewnik': (r['spiewnik'] if 'spiewnik' in r.keys() else '') or '',
                 'config': json.loads(r['config'] or '{}')}
 
     def get(self, sid):
@@ -1427,19 +1472,23 @@ class SongDB:
         if song.get('id'):                               # wersje tekstu też są przeszukiwane
             extra = " ".join(f"{v['nazwa']} {v['refren']} {v['zwrotki']}" for v in self.versions(song['id']))
         search = fold(" ".join([song.get('title', ''), song.get('refren', ''), song.get('zwrotki_raw', ''),
-                                song.get('tagi', ''), song.get('uwagi', ''), song.get('kategoria', ''), extra]))
+                                song.get('tagi', ''), song.get('uwagi', ''), song.get('kategoria', ''),
+                                song.get('spiewnik', ''), extra]))
         vals = (song.get('title') or 'Bez tytułu', song.get('refren', ''), song.get('zwrotki_raw', ''),
                 song.get('uwagi', ''), song.get('tagi', ''), song.get('zrodlo', ''),
                 json.dumps(song.get('config', {}), ensure_ascii=False), now, search, fold(song.get('title', '')),
-                song.get('kategoria', ''), song.get('youtube', ''), song.get('akordy', ''))
+                song.get('kategoria', ''), song.get('youtube', ''), song.get('akordy', ''),
+                (song.get('spiewnik') or guess_spiewnik(song.get('zrodlo', '')) if not song.get('id') else
+                 song.get('spiewnik', '')).strip())
         if song.get('id'):
             self.con.execute("""UPDATE songs SET title=?, refren=?, zwrotki=?, uwagi=?, tagi=?, zrodlo=?, config=?,
-                                modified=?, search=?, search_title=?, kategoria=?, youtube=?, akordy=? WHERE id=?""",
-                             vals + (song['id'],))
+                                modified=?, search=?, search_title=?, kategoria=?, youtube=?, akordy=?, spiewnik=?
+                                WHERE id=?""", vals + (song['id'],))
         else:
             cur = self.con.execute("""INSERT INTO songs(title, refren, zwrotki, uwagi, tagi, zrodlo, config, modified,
-                                      search, search_title, kategoria, youtube, akordy, created)
-                                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", vals + (now,))
+                                      search, search_title, kategoria, youtube, akordy, spiewnik, created)
+                                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", vals + (now,))
+            song['spiewnik'] = vals[13]
             song['id'] = cur.lastrowid
         self.con.commit()
         return song['id']
@@ -1454,10 +1503,13 @@ class SongDB:
         self.con.execute("DELETE FROM songs WHERE id=?", (sid,))
         self.con.commit()
 
-    def search(self, query="", category=None, tag=None):
+    def search(self, query="", category=None, tag=None, source=None):
         words = fold(query).split()
-        sql = "SELECT id, title, tagi, kategoria, refren, zwrotki FROM songs"
+        sql = "SELECT id, title, tagi, kategoria, refren, zwrotki, spiewnik FROM songs"
         cond, args = [], []
+        if source is not None:
+            cond.append("COALESCE(spiewnik, '') = ?")
+            args.append(source)
         for w in words:
             cond.append("search LIKE ?")
             args.append(f"%{w}%")
@@ -1476,6 +1528,11 @@ class SongDB:
             return (0 if ft and st.startswith(ft) else 1 if ft and all(w in st for w in words) else 2, st)
 
         return sorted(rows, key=rank)
+
+    def sources(self):
+        """[(źródło – śpiewnik, liczba)] – używane w bazie."""
+        return [(r[0] or '', r[1]) for r in self.con.execute(
+            "SELECT COALESCE(spiewnik, ''), COUNT(*) FROM songs GROUP BY COALESCE(spiewnik, '') ORDER BY 1")]
 
     def categories(self):
         """[(kategoria, liczba)] – używane w bazie."""
@@ -2623,6 +2680,8 @@ class MassPage(QWidget):
                              ("📦 Materiały…", lambda: self.mw.export_package(), "Teksty, slajdy, nuty i nagrania do jednego folderu"),
                              ("💾 Zapisz zestaw", lambda: self.mw.store_set(), "Zapisuje zestaw w bazie"),
                              ("✚ Nowy zestaw", lambda: (self.mw.new_set(), self.refresh()), "Pusty zestaw"),
+                             ("📋 Plan dla muzyków", lambda: self.mw.open_plan(),
+                              "Tabela: część, pieśń, tonacja, wykonawca, uwagi, na co zwrócić uwagę – do druku"),
                              ("✎ Części Mszy…", self.edit_parts, "Dodaj, usuń, przemianuj części; własne części; kolejność"),
                              ("⚙ Zaawansowany", lambda: self.mw._go_set_adv(), "Pełny zestaw: rodzaj, godzina, miejsce, "
                               "części stałe z jednej mszy, przeciąganie, zapisane zestawy")):
@@ -2692,8 +2751,21 @@ class MassPage(QWidget):
             bl.setSpacing(2)
             for j in range(it.childCount()):
                 row = QHBoxLayout()
+                notes = tree.notes(part, j)
                 t = QLabel(it.child(j).text(0))
                 row.addWidget(t)
+                sg = mw.db.get(it.child(j).data(0, Qt.UserRole)) or {}
+                if sg.get('spiewnik'):
+                    sl = QLabel(f"· {sg['spiewnik']}")
+                    sl.setStyleSheet("color: #8a7a65; font-size: 11pt;")
+                    sl.setToolTip("Źródło (śpiewnik)")
+                    row.addWidget(sl)
+                nb = QPushButton("📝")
+                nb.setFixedWidth(40)
+                nb.setStyleSheet("font-size: 14pt;")
+                nb.setToolTip("Uwagi: wykonawca, tonacja, uwagi, na co zwrócić uwagę")
+                nb.clicked.connect(lambda _=False, p=part, j=j: self.edit_notes(p, j))
+                row.addWidget(nb)
                 ch = QPushButton("↺")
                 ch.setFixedWidth(40)
                 ch.setToolTip("Zmień tę pieśń na inną")
@@ -2712,6 +2784,14 @@ class MassPage(QWidget):
                     row.addWidget(add)
                 row.addStretch(1)
                 bl.addLayout(row)
+                if notes:
+                    nl = QLabel(notes_text(notes, "   •   "))
+                    nl.setObjectName("massNotes")
+                    nl.setWordWrap(True)
+                    nl.setMinimumWidth(640)
+                    nl.setStyleSheet("color: #7a5a2a; font-size: 11pt; margin-left: 14px;")
+                    nl.setToolTip(notes_text(notes))
+                    bl.addWidget(nl)
             if it.childCount() == 0:
                 row = QHBoxLayout()
                 add = QPushButton("＋ Dodaj")
@@ -2783,6 +2863,58 @@ class MassPage(QWidget):
         apply_mass_parts(parts)
         if mw.set_kind() == 'msza':
             tree.rebuild_parts()
+        mw.save_set()
+        self.refresh()
+
+    def edit_notes(self, part, j):
+        mw = self.mw
+        tree = mw.setlist
+        it = tree.parts[part].child(j)
+        notes = tree.notes(part, j)
+        d = QDialog(self)
+        d.setWindowTitle(f"Uwagi – {it.text(0)}")
+        form = QFormLayout(d)
+        form.addRow(QLabel(f"<b>{H.escape(part)}</b>: {H.escape(it.text(0))}"))
+        used = []
+        try:
+            used = json.loads(mw.settings.value("wykonawcy", "[]") or "[]")
+        except Exception:
+            pass
+        perf = QComboBox()
+        perf.setEditable(True)
+        perf.setProperty("i18n_no", True)
+        perf.addItems([""] + [u for u in used if u])
+        perf.setCurrentText(notes.get('wykonawca', ''))
+        perf.lineEdit().setPlaceholderText("np. schola, organista, kantor, solistka…")
+        key = QComboBox()
+        key.setEditable(True)
+        key.setProperty("i18n_no", True)
+        key.addItems([""] + [f"{n}-dur" for n in ("C", "G", "D", "A", "E", "F", "B", "Es", "As")] +
+                     [f"{n}-moll" for n in ("a", "e", "h", "d", "g", "c", "f", "fis")])
+        key.setCurrentText(notes.get('tonacja', ''))
+        key.lineEdit().setPlaceholderText("np. G-dur, o ton niżej, kapodaster 2")
+        rem = QPlainTextEdit(notes.get('uwagi', ''))
+        rem.setPlaceholderText("np. zwrotki 1, 3, 5; wejście po dzwonkach; organy solo przed")
+        rem.setFixedHeight(80)
+        att = QPlainTextEdit(notes.get('zwroc', ''))
+        att.setPlaceholderText("np. nie przyspieszać w refrenie; wydłużona fermata; uważać na „Amen”")
+        att.setFixedHeight(80)
+        form.addRow("Wykonawca:", perf)
+        form.addRow("Tonacja:", key)
+        form.addRow("Uwagi:", rem)
+        form.addRow("Na co zwrócić uwagę:", att)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        form.addRow(bb)
+        d.resize(620, 420)
+        if not d.exec():
+            return
+        new = {'wykonawca': perf.currentText().strip(), 'tonacja': key.currentText().strip(),
+               'uwagi': rem.toPlainText().strip(), 'zwroc': att.toPlainText().strip()}
+        tree.set_notes(part, j, new)
+        if new['wykonawca'] and new['wykonawca'] not in used:
+            mw.settings.setValue("wykonawcy", json.dumps(([new['wykonawca']] + used)[:30], ensure_ascii=False))
         mw.save_set()
         self.refresh()
 
@@ -2889,7 +3021,11 @@ class MassPage(QWidget):
         lay = QVBoxLayout(d)
         q = QLineEdit()
         q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
-        lay.addWidget(q)
+        qrow = QHBoxLayout()
+        qrow.addWidget(q, 1)
+        src = source_combo(mw.db, mw.settings.value("mass_src_filter", None))
+        qrow.addWidget(src)
+        lay.addLayout(qrow)
         lst = QListWidget()
         lay.addWidget(lst, 1)
         hint = QLabel()
@@ -2898,16 +3034,19 @@ class MassPage(QWidget):
 
         def fill():
             lst.clear()
-            rows = mw.db.search(q.text())
+            mw.settings.setValue("mass_src_filter", src.currentData())
+            rows = mw.db.search(q.text(), source=src.currentData())
             # najpierw pieśni pasujące do tej części (tagi / tytuł), potem reszta
             guess = getattr(mw.setlist, 'guess', None)
             good = [r for r in rows if guess and guess(r['id']) == part] if not q.text().strip() else []
             for r in good + [r for r in rows if r not in good]:
-                li = QListWidgetItem(("★ " if r in good else "") + r['title'])
+                li = QListWidgetItem(("★ " if r in good else "") + r['title'] +
+                                     (f"   · {r['spiewnik']}" if r['spiewnik'] else ""))
                 li.setData(Qt.UserRole, r['id'])
                 lst.addItem(li)
             hint.setText("★ – pasuje do tej części (tagi, tytuł). Dwuklik – wybierz." if good else "Dwuklik – wybierz.")
         q.textChanged.connect(fill)
+        src.currentIndexChanged.connect(fill)
         fill()
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(d.accept)
@@ -2963,14 +3102,33 @@ class MassSetTree(QTreeWidget):
         """'msza' – części Mszy; 'inny' – zwykła lista utworów. Pieśni przechodzą do nowego układu."""
         if kind == self.kind:
             return
-        old = [(p, sid, self._title(p, j)) for p, it in self.parts.items() for j, sid in
-               enumerate(it.child(k).data(0, Qt.UserRole) for k in range(it.childCount()))]
+        old = self._dump()
         self.kind = kind
         self.clear()
         self._build()
-        for part, sid, title in old:
+        for part, sid, title, notes in old:
             target = FREE_PART if kind != 'msza' else (getattr(self, 'guess', lambda s: None)(sid) or "Przed mszą")
-            self.add_song(target, sid, title)
+            self.add_song(target, sid, title, notes)
+
+    def _dump(self):
+        return [(p, it.child(k).data(0, Qt.UserRole), it.child(k).text(0), it.child(k).data(0, Qt.UserRole + 2))
+                for p, it in self.parts.items() for k in range(it.childCount())]
+
+    def notes(self, part, j):
+        """Uwagi do pieśni w zestawie: wykonawca, tonacja, uwagi, na co zwrócić uwagę."""
+        it = self.parts[part].child(j)
+        return dict(it.data(0, Qt.UserRole + 2) or {})
+
+    def set_notes(self, part, j, notes):
+        it = self.parts[part].child(j)
+        notes = {k: v for k, v in (notes or {}).items() if v}
+        it.setData(0, Qt.UserRole + 2, notes or None)
+        it.setToolTip(0, notes_text(notes))
+
+    def all_notes(self):
+        """{część: [uwagi…]} – równolegle do listy pieśni części."""
+        return {name: [dict(it.child(j).data(0, Qt.UserRole + 2) or {}) for j in range(it.childCount())]
+                for name, it in self.parts.items() if it.childCount()}
 
     def _title(self, part, j):
         return self.parts[part].child(j).text(0)
@@ -3001,13 +3159,12 @@ class MassSetTree(QTreeWidget):
 
     def rebuild_parts(self):
         """Po zmianie listy części: ten sam zestaw w nowym układzie (pieśni z usuniętych części – do pierwszej)."""
-        old = [(p, sid, self._title(p, j)) for p, it in self.parts.items() for j, sid in
-               enumerate(it.child(k).data(0, Qt.UserRole) for k in range(it.childCount()))]
+        old = self._dump()
         self.clear()
         self._build()
         names = [n for n, _ in self.part_list()]
-        for part, sid, title in old:
-            self.add_song(part if part in names else names[0], sid, title)
+        for part, sid, title, notes in old:
+            self.add_song(part if part in names else names[0], sid, title, notes)
 
     def reset_parts(self):
         for it in self.parts.values():
@@ -3020,7 +3177,7 @@ class MassSetTree(QTreeWidget):
             return None
         return (it.parent() or it).data(0, Qt.UserRole + 1)
 
-    def add_song(self, part, sid, title):
+    def add_song(self, part, sid, title, notes=None):
         if part not in self.parts:                         # część spoza bieżącej listy (np. ze starego zestawu)
             MASS_MULTI.setdefault(part, True)
             it = QTreeWidgetItem([part])
@@ -3038,6 +3195,8 @@ class MassSetTree(QTreeWidget):
         ch.setData(0, Qt.UserRole, sid)
         ch.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
         p.addChild(ch)
+        if notes:
+            self.set_notes(part, p.childCount() - 1, notes)
         p.setExpanded(True)
         self._update_labels()
         return ch
@@ -3126,8 +3285,9 @@ class MainWindow(QMainWindow):
         self.search.textChanged.connect(self.refresh_list)
         ll.addWidget(self.search)
         fl = QGridLayout()
-        self.f_cat, self.f_tag = QComboBox(), QComboBox()
-        for w in (self.f_cat, self.f_tag):
+        self.f_cat, self.f_tag, self.f_src = QComboBox(), QComboBox(), QComboBox()
+        self.f_src.setProperty("i18n_no", True)
+        for w in (self.f_cat, self.f_tag, self.f_src):
             w.currentIndexChanged.connect(self.refresh_list)
             w.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
             w.setMinimumContentsLength(10)
@@ -3135,6 +3295,8 @@ class MainWindow(QMainWindow):
         fl.addWidget(self.f_cat, 0, 1)
         fl.addWidget(QLabel("Tag:"), 1, 0)
         fl.addWidget(self.f_tag, 1, 1)
+        fl.addWidget(QLabel("Źródło:"), 2, 0)
+        fl.addWidget(self.f_src, 2, 1)
         ll.addLayout(fl)
         self.results = QTreeWidget()
         self.results.setHeaderHidden(True)
@@ -3241,7 +3403,8 @@ class MainWindow(QMainWindow):
         buttons = [("Usuń", self.remove_from_set), ("Wyczyść", self.clear_set), ("▶ Pokaz", self.present_setlist),
                    ("PDF", lambda: self.export_set('pdf')), ("PPTX", lambda: self.export_set('pptx')),
                    ("DOCX", lambda: self.export_set('docx')), ("HTML (telefon)", lambda: self.export_html('set')),
-                   ("📦 Materiały…", self.export_package), ("♿ Dla niewidomych…", self.export_blind)]
+                   ("📦 Materiały…", self.export_package), ("♿ Dla niewidomych…", self.export_blind),
+                   ("📝 Uwagi…", self._notes_selected), ("📋 Plan dla muzyków", self.open_plan)]
         for i, (txt, fn) in enumerate(buttons):
             b = QPushButton(txt)
             b.clicked.connect(fn)
@@ -3326,9 +3489,16 @@ class MainWindow(QMainWindow):
         comp.setCaseSensitivity(Qt.CaseInsensitive)
         comp.setFilterMode(Qt.MatchContains)
         self.e_tags.setCompleter(comp)
-        self.e_notes = QLineEdit(placeholderText="autor, źródło, uwagi (nie trafia na slajdy)")
+        self.e_notes = QLineEdit(placeholderText="autor, uwagi (nie trafia na slajdy)")
+        self.e_src = QComboBox()
+        self.e_src.setEditable(True)
+        self.e_src.setInsertPolicy(QComboBox.NoInsert)
+        self.e_src.setProperty("i18n_no", True)
+        self.e_src.lineEdit().setPlaceholderText("śpiewnik / zbiór, np. Siedlecki, Niepojęta Trójco – wybierz lub wpisz")
+        self.e_src.setToolTip("Źródło tekstu (śpiewnik, zbiór, wydawca) – do filtrowania listy i propozycji z liturgii")
         form.addRow("Tytuł:", self.e_title)
         form.addRow("Kategoria:", self.e_cat)
+        form.addRow("Źródło:", self.e_src)
         form.addRow("Tagi:", self.e_tags)
         form.addRow("Uwagi:", self.e_notes)
         ml.addLayout(form)
@@ -3342,6 +3512,7 @@ class MainWindow(QMainWindow):
         for x in (self.e_title, self.e_tags, self.e_notes):
             x.textChanged.connect(self.on_edit)
         self.e_cat.currentTextChanged.connect(self.on_edit)
+        self.e_src.currentTextChanged.connect(self.on_edit)
         for x in (self.e_ref, self.e_verses):
             x.textChanged.connect(self.on_edit)
         return w
@@ -4021,14 +4192,14 @@ class MainWindow(QMainWindow):
     def refresh_filters(self):
         if hasattr(self, 'mass_combo'):
             self.refresh_mass_combo()
-        cur_c, cur_t = self.f_cat.currentText(), self.f_tag.currentText()
-        cats, tags = self.db.categories(), self.db.tags()
-        for combo, items, cur in ((self.f_cat, cats, cur_c), (self.f_tag, tags, cur_t)):
+        cur_c, cur_t, cur_s = self.f_cat.currentText(), self.f_tag.currentText(), self.f_src.currentText()
+        cats, tags, srcs = self.db.categories(), self.db.tags(), self.db.sources()
+        for combo, items, cur in ((self.f_cat, cats, cur_c), (self.f_tag, tags, cur_t), (self.f_src, srcs, cur_s)):
             combo.blockSignals(True)
             combo.clear()
             combo.addItem(self.ALL, None)
             for name, n in items:
-                combo.addItem(f"{name or self.NONE_CAT} ({n})", name)
+                combo.addItem(f"{name or ('(bez źródła)' if combo is self.f_src else self.NONE_CAT)} ({n})", name)
             idx = combo.findText(cur, Qt.MatchStartsWith) if cur and cur != self.ALL else 0
             combo.setCurrentIndex(max(0, idx))
             combo.blockSignals(False)
@@ -4045,13 +4216,19 @@ class MainWindow(QMainWindow):
         self.e_cat.setCurrentText(cur)
         self.e_cat.blockSignals(False)
         self.tag_model.setStringList(sorted(set(DEFAULT_TAGS) | {t for t, _ in tags}))
+        cur = self.e_src.currentText()
+        self.e_src.blockSignals(True)
+        self.e_src.clear()
+        self.e_src.addItems([""] + sorted({x for x, _ in srcs if x} | {n for _, n in SPIEWNIKI_ADRESY}))
+        self.e_src.setCurrentText(cur)
+        self.e_src.blockSignals(False)
 
     def refresh_list(self):
         self.results.clear()
         q = self.search.text()
         cat = self.f_cat.currentData()
         tag = self.f_tag.currentData()
-        rows = self.db.search(q, cat, tag)
+        rows = self.db.search(q, cat, tag, self.f_src.currentData())
         att = self.db.attachment_counts()
         words = fold(q).split()
         groups = {}
@@ -4073,9 +4250,12 @@ class MainWindow(QMainWindow):
                         if words[0] in fold(line):
                             text += f"  —  …{line.strip()[:45]}…"
                             break
+                if r['spiewnik']:
+                    text += f"  · {r['spiewnik']}"
                 it = QTreeWidgetItem([text])
                 it.setData(0, Qt.UserRole, r['id'])
-                it.setToolTip(0, (f"Tagi: {r['tagi']}\n\n" if r['tagi'] else "") + body.strip()[:400])
+                it.setToolTip(0, (f"Źródło: {r['spiewnik']}\n" if r['spiewnik'] else "") +
+                              (f"Tagi: {r['tagi']}\n\n" if r['tagi'] else "") + body.strip()[:400])
                 top.addChild(it)
             top.setExpanded(True)
         self.count_lbl.setText(f"{len(rows)} z {self.db.count()} pieśni")
@@ -4091,6 +4271,7 @@ class MainWindow(QMainWindow):
         n = len(self.selected_result_ids())
         m.addAction(f"Kategoria dla zaznaczonych ({n})…", self.bulk_category)
         m.addAction(f"Tagi dla zaznaczonych ({n})…", self.bulk_tags)
+        m.addAction(f"Źródło dla zaznaczonych ({n})…", self.bulk_source)
         m.addAction("↓ Do zestawu", self.add_to_set)
         m.addSeparator()
         m.addAction("Znajdź i połącz duplikaty…", self.find_duplicates)
@@ -4124,6 +4305,7 @@ class MainWindow(QMainWindow):
         self.song = song
         self.e_title.setText(song.get('title', ''))
         self.e_cat.setCurrentText(song.get('kategoria', ''))
+        self.e_src.setCurrentText(song.get('spiewnik', ''))
         self.e_tags.setText(song.get('tagi', ''))
         self.e_notes.setText(song.get('uwagi', ''))
         self.e_ref.setPlainText(song.get('refren', ''))
@@ -4156,6 +4338,7 @@ class MainWindow(QMainWindow):
         s = dict(self.song or {})
         s.update({'title': self.e_title.text().strip() or "Bez tytułu", 'tagi': norm_tags(self.e_tags.text()),
                   'kategoria': self.e_cat.currentText().strip(), 'uwagi': self.e_notes.text().strip(),
+                  'spiewnik': self.e_src.currentText().strip(),
                   'refren': self.e_ref.toPlainText().strip(), 'zwrotki_raw': self.e_verses.toPlainText().strip(),
                   'akordy': self.e_chords.toPlainText().rstrip(),
                   'config': self.cfg_from_widgets()})
@@ -4355,6 +4538,8 @@ class MainWindow(QMainWindow):
             self.bulk_category(ids)
         elif action == 'tags':
             self.bulk_tags(ids)
+        elif action == 'source':
+            self.bulk_source(ids)
         elif action == 'duplicates':
             self.find_duplicates()
         elif action == 'categories':
@@ -4584,6 +4769,26 @@ class MainWindow(QMainWindow):
                 s['kategoria'] = cat
                 self.db.save(s)
         self._after_bulk(f"Ustawiono kategorię „{cat or '(bez kategorii)'}” dla {len(ids)} pieśni.")
+
+    def bulk_source(self, ids=None):
+        ids = ids if isinstance(ids, list) and ids else self._bulk_ids()
+        if not ids:
+            return
+        if self.dirty and not self.maybe_save():
+            return
+        srcs = sorted({x for x, _ in self.db.sources() if x} | {n for _, n in SPIEWNIKI_ADRESY})
+        src, ok = QInputDialog.getItem(self, APP_NAME, f"Źródło (śpiewnik, zbiór) dla {len(ids)} zaznaczonych pieśni\n"
+                                       "(wybierz albo wpisz; „(bez źródła)” usuwa):", ["(bez źródła)"] + srcs, 0, True)
+        if not ok:
+            return
+        src = "" if src.strip() in ("", "(bez źródła)") else src.strip()
+        self.db.snapshot(f"Źródło „{src or 'brak'}” dla {len(ids)} pieśni")
+        for sid in ids:
+            s_ = self.db.get(sid)
+            if s_ and (s_.get('spiewnik') or '') != src:
+                s_['spiewnik'] = src
+                self.db.save(s_)
+        self._after_bulk(f"Ustawiono źródło „{src or '(bez źródła)'}” dla {len(ids)} pieśni.")
 
     def bulk_tags(self, ids=None):
         ids = ids if isinstance(ids, list) and ids else self._bulk_ids()
@@ -4927,6 +5132,7 @@ class MainWindow(QMainWindow):
         if getattr(self, '_loading_set', False):
             return
         self.settings.setValue("setlist_msza", json.dumps(self._set_parts(), ensure_ascii=False))
+        self.settings.setValue("setlist_uwagi", json.dumps(self.setlist.all_notes(), ensure_ascii=False))
         self.settings.setValue("setlist", json.dumps(self.set_ids()))
         self.settings.setValue("setlist_msza_motyw", self.mass_combo.currentData() or "")
         self.settings.setValue("setlist_meta", json.dumps(dict(self.mass_meta(), zid=getattr(self, 'current_set_id', None)),
@@ -4991,7 +5197,8 @@ class MainWindow(QMainWindow):
         if meta['rodzaj'] != 'msza':
             name = "♪ " + name
         zid = getattr(self, 'current_set_id', None)
-        self.current_set_id = self.db.save_set(zid, name, meta['data'], {'meta': meta, 'czesci': self._set_parts()})
+        self.current_set_id = self.db.save_set(zid, name, meta['data'], {'meta': meta, 'czesci': self._set_parts(),
+                                                                         'uwagi': self.setlist.all_notes()})
         self.refresh_set_combo()
         self.save_set()
         self.statusBar().showMessage(f"Zapisano zestaw: {name}", 5000)
@@ -5014,7 +5221,8 @@ class MainWindow(QMainWindow):
         if not z:
             return
         self.current_set_id = zid
-        self._fill_set(z['dane'].get('czesci', {}), z['dane'].get('meta', {}).get('rodzaj', 'msza'))
+        self._fill_set(z['dane'].get('czesci', {}), z['dane'].get('meta', {}).get('rodzaj', 'msza'),
+                       z['dane'].get('uwagi') or {})
         self._apply_meta(z['dane'].get('meta', {}))
         motyw = z['dane'].get('meta', {}).get('motyw', '')
         self.settings.setValue("setlist_msza_motyw", motyw)
@@ -5031,16 +5239,19 @@ class MainWindow(QMainWindow):
         self.refresh_set_combo()
         self.save_set()
 
-    def _fill_set(self, data, kind=None):
+    def _fill_set(self, data, kind=None, notes=None):
         if kind:
             self.setlist.kind = None                  # wymuś przebudowę
             self.setlist.set_kind(kind)
         self.setlist.reset_parts()
-        for part, _ in self.setlist.part_list():
-            for sid in data.get(part, []):
+        notes = notes or {}
+        names = [n for n, _ in self.setlist.part_list()]
+        for part in names + [p for p in data if p not in names]:
+            nl = notes.get(part) or []
+            for j, sid in enumerate(data.get(part, [])):
                 song = self.db.get(sid)
                 if song:
-                    self.setlist.add_song(part, sid, song['title'])
+                    self.setlist.add_song(part, sid, song['title'], nl[j] if j < len(nl) else None)
 
     def restore_set(self):
         self.setlist.reset_parts()
@@ -5062,7 +5273,11 @@ class MainWindow(QMainWindow):
             meta = json.loads(self.settings.value("setlist_meta", "") or "{}")
         except Exception:
             meta = {}
-        self._fill_set(data, meta.get('rodzaj', 'msza'))
+        try:
+            notes = json.loads(self.settings.value("setlist_uwagi", "") or "{}")
+        except Exception:
+            notes = {}
+        self._fill_set(data, meta.get('rodzaj', 'msza'), notes if isinstance(notes, dict) else {})
         self.refresh_mass_combo()
         self.current_set_id = meta.get('zid')
         if self.current_set_id and not self.db.get_set(self.current_set_id):
@@ -5439,6 +5654,14 @@ class MainWindow(QMainWindow):
             k += 1
         os.makedirs(out)
         errors, written = [], []
+        if not single and any(s_.get('_uwagi') for _, s_ in entries):
+            try:
+                pth = os.path.join(out, "00 Plan dla muzyków.html")
+                with open(pth, "w", encoding="utf-8") as f:
+                    f.write(self.plan_html([s_ for _, s_ in entries]))
+                written.append(pth)
+            except Exception as e:
+                errors.append(f"plan: {e}")
         labels = [f"{n + 1:02d} " + (f"{part} – " if part and part != FREE_PART else "") + song.get('title', '')
                   for n, (part, song) in enumerate(entries)] if len(entries) > 1 else [entries[0][1].get('title', '')]
         from PySide6.QtWidgets import QProgressDialog
@@ -5549,13 +5772,54 @@ class MainWindow(QMainWindow):
         if self.dirty and self.song and self.song.get('id') in self.set_ids():
             self.save_song()
         out = []
+        idx = {}
         for part, sid in self.set_entries():
+            j = idx[part] = idx.get(part, -1) + 1
             song = self.db.get(sid)
             if song:
                 song = dict(song)
                 song['_czesc'] = part
+                song['_uwagi'] = self.setlist.notes(part, j)
                 out.append(song)
         return out
+
+    def _notes_selected(self):
+        it = self.setlist.currentItem()
+        if it is None or it.parent() is None:
+            QMessageBox.information(self, APP_NAME, "Zaznacz pieśń w zestawie.")
+            return
+        part = it.parent().data(0, Qt.UserRole + 1)
+        self.v_mass.edit_notes(part, it.parent().indexOfChild(it))
+
+    def plan_html(self, songs=None):
+        """Plan zestawu dla muzyków: część, pieśń, tonacja, wykonawca, uwagi, na co zwrócić uwagę."""
+        songs = self.set_songs() if songs is None else songs
+        rows = []
+        for n, s_ in enumerate(songs, 1):
+            u = s_.get('_uwagi') or {}
+            part = s_.get('_czesc') if s_.get('_czesc') != FREE_PART else ''
+            rows.append("<tr>" + "".join(f"<td>{H.escape(str(x))}</td>" for x in (
+                n, part or '', s_.get('title', '') + (f" ({s_['spiewnik']})" if s_.get('spiewnik') else ''),
+                u.get('tonacja', ''), u.get('wykonawca', ''),
+                u.get('uwagi', ''), u.get('zwroc', ''))) + "</tr>")
+        title = H.escape(self.mass_title())
+        return f"""<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"><title>{title}</title>
+<style>body{{font-family:sans-serif;margin:2em}}table{{border-collapse:collapse;width:100%}}
+td,th{{border:1px solid #999;padding:.4em .6em;vertical-align:top;text-align:left}}th{{background:#eee}}
+td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}}</style></head><body>
+<h1>{title}</h1><p>Plan dla muzyków</p><table><tr><th>#</th><th>Część</th><th>Pieśń</th><th>Tonacja</th><th>Wykonawca</th>
+<th>Uwagi</th><th>Na co zwrócić uwagę</th></tr>{''.join(rows)}</table></body></html>"""
+
+    def open_plan(self):
+        songs = self.set_songs()
+        if not songs:
+            QMessageBox.information(self, APP_NAME, "Zestaw jest pusty.")
+            return
+        import tempfile
+        path = os.path.join(tempfile.gettempdir(), sanitize_name("Plan " + self.mass_title()) + ".html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(self.plan_html(songs))
+        QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
     def present_setlist(self):
         songs = self.set_songs()

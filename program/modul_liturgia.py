@@ -550,8 +550,26 @@ class LiturgyDialog(QDialog):
         frow.addWidget(self.okres_only)
         frow.addStretch(1)
         rl.addLayout(frow)
+        srow = QHBoxLayout()
+        srow.addWidget(QLabel("Źródło:"))
+        self.src = QComboBox()
+        self.src.setProperty("i18n_no", True)
+        self.src.setToolTip("Tylko pieśni z wybranego śpiewnika / zbioru")
+        self.src.addItem("Wszystkie źródła", None)
+        try:
+            for name, n in db.sources():
+                self.src.addItem(f"{name or '(bez źródła)'}  ({n})", name)
+        except Exception:
+            pass
+        keep = self.qs.value("lit_source", None)
+        k = self.src.findData(keep) if keep is not None else 0
+        self.src.setCurrentIndex(max(0, k))
+        self.src.currentIndexChanged.connect(lambda _: (self.qs.setValue("lit_source", self.src.currentData()),
+                                                        self.suggest()))
+        srow.addWidget(self.src, 1)
+        rl.addLayout(srow)
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Pieśń", "Pasuje do", "Nawiązania (słowa i frazy z liturgii)"])
+        self.tree.setHeaderLabels(["Pieśń", "Pasuje do", "Nawiązania (słowa i frazy z liturgii)", "Źródło"])
         self.tree.setRootIsDecorated(False)
         self.tree.setColumnWidth(0, 230)
         self.tree.setColumnWidth(1, 120)
@@ -645,14 +663,18 @@ class LiturgyDialog(QDialog):
         self.tree.clear()
         if not self.lit:
             return
-        res = suggest(self.lit, self.songs_fn(), self.okres, limit=80 if self.only.isChecked() else 30,
+        src = self.src.currentData()
+        songs = [s for s in self.songs_fn() if s and (src is None or (s.get('spiewnik') or '') == src)]
+        srcmap = {s.get('id'): s.get('spiewnik', '') for s in songs}
+        res = suggest(self.lit, songs, self.okres, limit=80 if self.only.isChecked() else 30,
                       mode=self.mode.currentIndex(), okres_only=self.okres_only.isChecked())
         if not self.only.isChecked() and res:
             top = res[0]['score']
             res = [r for r in res if r['score'] >= top * 0.15]
         for r in res:
             fr = "; ".join(f"„{f}” ({SECTION_NAMES.get(k, k).lower()})" for k, f in r['frazy'])
-            it = QTreeWidgetItem([("★ " if r['okres'] else "") + r['title'], ", ".join(r['parts']), fr or "—"])
+            it = QTreeWidgetItem([("★ " if r['okres'] else "") + r['title'], ", ".join(r['parts']), fr or "—",
+                                  srcmap.get(r['id']) or ""])
             it.setData(0, Qt.UserRole, r['id'])
             it.setData(1, Qt.UserRole, r['parts'])
             it.setToolTip(2, fr)

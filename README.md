@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.22.1
+# Liber Canticorum 0.23.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -85,6 +85,20 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Uwagi do pieśni w zestawie (nowość w 0.23).** W zakładce **Msza** przy każdej pieśni jest **📝** – wykonawca
+(np. schola, organista, kantor; program pamięta wpisanych), tonacja, uwagi (np. „zwrotki 1, 3, 5”) i **na co zwrócić
+uwagę**. Uwagi widać pod tytułem pieśni, zapisują się z zestawem. „📋 Plan dla muzyków” otwiera tabelę do druku
+(część, pieśń, źródło, tonacja, wykonawca, uwagi); plan trafia też do folderu „📦 Materiały”. W „Zaawansowanych” –
+przyciski „📝 Uwagi…” (dla zaznaczonej pieśni) i „📋 Plan dla muzyków”.
+
+**Źródło pieśni (nowość w 0.23).** Każda pieśń ma pole **Źródło** – śpiewnik albo zbiór (np. Siedlecki, Niezbędnik
+Katolika, Niepojęta Trójco). Przy imporcie ze strony program wpisuje je sam (z adresu), istniejące pieśni z importu
+dostają je przy pierwszym uruchomieniu. Źródło można:
+- wpisać lub wybrać w „Zaawansowanych” (pole pod kategorią) albo nadać wielu zaznaczonym pieśniom naraz
+  („📚 Źródło…” w prostych widokach, menu kontekstowe listy w „Zaawansowanych”);
+- filtrować: lista pieśni (Teksty, Slajdy, Nuty, Zaawansowane), wybór pieśni w zakładce Msza i **propozycje
+  w „Liturgii z dnia”** (lista „Źródło”, kolumna „Źródło” w wynikach); źródło widać obok tytułu.
 
 **Własne części Mszy (nowość w 0.22).** Wprost w wykazie zakładki **Msza** przy nazwie każdej części są ikony
 **✎** (zmień nazwę), **🗑** (usuń część z zestawu) i **✚** (wstaw nową część poniżej), a pod wykazem –
@@ -197,7 +211,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.22.1/
+LiberCanticorum_0.23.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
