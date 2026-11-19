@@ -400,6 +400,141 @@ def set_staves_visibility(name, data, visible):
     return buf.getvalue()
 
 
+def _norm_key(f):
+    """Tonacja w zakresie −6…5 (Ges-dur zamiast Fis-dur, bez 7 znaków)."""
+    return (f + 6) % 12 - 6
+
+
+def transpose_score(name, data, k, visible=None):
+    """Kopia pliku nut (MuseScore .mscz/.mscx albo MusicXML .musicxml/.xml/.mxl) przetransponowana o k półtonów:
+    nuty, tonacja i symbole akordów. visible – opcjonalnie widoczność partii (MuseScore). None, gdy się nie da."""
+    low = name.lower()
+    if low.endswith(('.mscz', '.mscx')):
+        if visible is not None:
+            data = set_staves_visibility(name, data, visible) or data
+        if not k:
+            return data
+        xml, inner = _mscx_of(name, data)
+        if not xml:
+            return None
+        new = _transpose_mscx(xml, k)
+        if inner is None:
+            return new.encode('utf-8')
+        buf = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(data)) as zin, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for it in zin.infolist():
+                if it.filename == inner:
+                    zout.writestr(it, new.encode('utf-8'))
+                elif not it.filename.lower().startswith('thumbnails/'):
+                    zout.writestr(it, zin.read(it.filename))
+        return buf.getvalue()
+    if low.endswith(('.musicxml', '.xml')):
+        return _transpose_musicxml(data.decode('utf-8', 'replace'), k).encode('utf-8') if k else data
+    if low.endswith('.mxl'):
+        if not k:
+            return data
+        buf = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(data)) as zin, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for it in zin.infolist():
+                raw = zin.read(it.filename)
+                if it.filename.lower().endswith(('.xml', '.musicxml')) and not it.filename.upper().startswith('META-INF'):
+                    raw = _transpose_musicxml(raw.decode('utf-8', 'replace'), k).encode('utf-8')
+                zout.writestr(it, raw)
+        return buf.getvalue()
+    return None
+
+
+def _first_key(xml, pattern):
+    m = re.search(pattern, xml, re.S)
+    return int(m.group(1)) if m else 0
+
+
+def _transpose_mscx(xml, k):
+    old = _first_key(xml, r"<KeySig>.*?<(?:concertKey|accidental)>(-?\d+)</")
+    new = _norm_key(old + 7 * k)
+    d = new - old                                        # przesunięcie na kole kwintowym (TPC)
+
+    def tpc(v):
+        v += d
+        while v > 33:
+            v -= 12
+        while v < -1:
+            v += 12
+        return v
+
+    def keyfix(m):
+        def one(mm):
+            v = int(mm.group(2)) + d
+            while v > 7:
+                v -= 12
+            while v < -7:
+                v += 12
+            return f"<{mm.group(1)}>{v}</{mm.group(1)}>"
+        return re.sub(r"<(accidental|concertKey|actualKey|key)>(-?\d+)</\1>", one, m.group(0))
+    xml = re.sub(r"<KeySig>.*?</KeySig>", keyfix, xml, flags=re.S)
+    xml = re.sub(r"<pitch>(\d+)</pitch>", lambda m: f"<pitch>{int(m.group(1)) + k}</pitch>", xml)
+    xml = re.sub(r"<(tpc2?)>(-?\d+)</\1>", lambda m: f"<{m.group(1)}>{tpc(int(m.group(2)))}</{m.group(1)}>", xml)
+
+    def harm(m):
+        return re.sub(r"<(root|base)>(-?\d+)</\1>", lambda mm: f"<{mm.group(1)}>{tpc(int(mm.group(2)))}</{mm.group(1)}>",
+                      m.group(0))
+    return re.sub(r"<Harmony\b.*?</Harmony>", harm, xml, flags=re.S)
+
+
+_STEPS = "CDEFGAB"
+_SEMI = [0, 2, 4, 5, 7, 9, 11]
+
+
+def _spell_pc(pc, fifths):
+    """Klasa wysokości → (krok, znak) zgodnie z tonacją (♯ w tonacjach krzyżykowych, ♭ w bemolowych)."""
+    order = [3, 0, 4, 1, 5, 2, 6] if fifths >= 0 else [6, 2, 5, 1, 4, 0, 3]
+    key_alt = {st: (1 if fifths > 0 else -1) for st in order[:abs(fifths)]}
+    best = None
+    for st in range(7):
+        for alt in (-1, 0, 1):
+            if (_SEMI[st] + alt) % 12 == pc % 12:
+                score = 0 if alt == key_alt.get(st, 0) else (1 if alt == 0 else (2 if (alt > 0) == (fifths >= 0) else 3))
+                if best is None or score < best[0]:
+                    best = (score, st, alt)
+    return best[1], best[2]
+
+
+def _transpose_musicxml(xml, k):
+    old = _first_key(xml, r"<key>.*?<fifths>(-?\d+)</fifths>")
+    new = _norm_key(old + 7 * k)
+    xml = re.sub(r"(<key>.*?<fifths>)(-?\d+)(</fifths>)",
+                 lambda m: m.group(1) + str(_norm_key(int(m.group(2)) + new - old)) + m.group(3), xml, flags=re.S)
+
+    def pitch(m):
+        block = m.group(0)
+        st = re.search(r"<step>([A-G])</step>", block).group(1)
+        alt = re.search(r"<alter>(-?[\d.]+)</alter>", block)
+        alt = int(float(alt.group(1))) if alt else 0
+        octv = int(re.search(r"<octave>(-?\d+)</octave>", block).group(1))
+        p = 12 * (octv + 1) + _SEMI[_STEPS.index(st)] + alt + k
+        s2, a2 = _spell_pc(p % 12, new)
+        o2 = (p - _SEMI[s2] - a2) // 12 - 1
+        return (f"<pitch><step>{_STEPS[s2]}</step>" + (f"<alter>{a2}</alter>" if a2 else "") +
+                f"<octave>{o2}</octave></pitch>")
+    xml = re.sub(r"<pitch>.*?</pitch>", pitch, xml, flags=re.S)
+    xml = re.sub(r"\s*<accidental\b[^>]*>[^<]*</accidental>", "", xml)   # znaki ustawi program z nut
+
+    def root(m, tag):
+        block = m.group(0)
+        st = re.search(rf"<{tag}-step>([A-G])</{tag}-step>", block)
+        if not st:
+            return block
+        alt = re.search(rf"<{tag}-alter>(-?[\d.]+)</{tag}-alter>", block)
+        pc = _SEMI[_STEPS.index(st.group(1))] + (int(float(alt.group(1))) if alt else 0) + k
+        s2, a2 = _spell_pc(pc % 12, new)
+        return f"<{tag}><{tag}-step>{_STEPS[s2]}</{tag}-step>" + (f"<{tag}-alter>{a2}</{tag}-alter>" if a2 else "") + f"</{tag}>"
+    xml = re.sub(r"<root>.*?</root>", lambda m: root(m, 'root'), xml, flags=re.S)
+    xml = re.sub(r"<bass>.*?</bass>", lambda m: root(m, 'bass'), xml, flags=re.S)
+    # symbol z tekstem (kind text="D7") – tekst pomijamy, program zapisze nazwę z prymy
+    xml = re.sub(r'(<kind\b[^>]*?)\s+text="[^"]*"', r"\1", xml)
+    return xml
+
+
 def _icons(widget):
     try:
         import ikony
@@ -1826,11 +1961,14 @@ class ScoreFollow(QScrollArea):
 # =====================================================================
 
 class MidiPlayerDialog(QDialog):
-    def __init__(self, data, title="MIDI", parent=None, score=None, staves=None):
+    def __init__(self, data, title="MIDI", parent=None, score=None, staves=None, transposer=None):
         """score – (pdf, spos) z MuseScore: nuty ze słowami z kursorem podczas odtwarzania.
         staves – ([(nazwa, widoczna)], funkcja(lista_bool) → (pdf, spos)): odkrywanie ukrytych pięciolinii."""
         super().__init__(parent)
         self.staves, self.data_bytes = staves, data
+        self.transposer = transposer                  # (półtony, widoczność partii) → (pdf, spos): nuty po transpozycji
+        self.cur_want = [v for _, v in staves[0]] if staves else None
+        self._score_cache = {(0, tuple(self.cur_want) if self.cur_want else None): score} if score else {}
         _need('mido')
         _need('numpy')
         self.setWindowTitle(f"MIDI – odtwarzanie głosów – {title}")
@@ -1965,12 +2103,17 @@ class MidiPlayerDialog(QDialog):
             b.clicked.connect(lambda _=False, d=d: self.set_lyrics_size(self.lyr_size + d))
             views.addWidget(b)
             self.lyr_buttons.append(b)
+        b_fs = QPushButton("⛶ Pełny ekran")
+        b_fs.setToolTip("Nuty na cały ekran – zostają tylko pasek odtwarzania i klawiatura (F11, Esc – wyjście)")
+        b_fs.clicked.connect(self.toggle_fullscreen)
+        views.addWidget(b_fs)
+        self.b_fs = b_fs
+        self._views_lay = views
         lay.addLayout(views)
         from PySide6.QtWidgets import QSplitter
         lay.addLayout(self._build_transport())        # pasek odtwarzania – nad nutami, zawsze widoczny
         from modul_instrumenty import Keyboard
         self.kbd = Keyboard()
-        lay.addWidget(self.kbd)
         self.kbd.setVisible(self._qs.value("show_keyboard", "false") == "true")
         self.show_kbd.setChecked(self.kbd.isVisible())
         self.show_kbd.toggled.connect(lambda on: (self.kbd.setVisible(on), self._qs.setValue("show_keyboard", on),
@@ -1981,6 +2124,14 @@ class MidiPlayerDialog(QDialog):
             split.addWidget(self.follow)
         split.addWidget(self.scroll)
         lay.addWidget(split, 1)
+        lay.addWidget(self.kbd)                        # klawiatura pod nutami
+        if self.transposer and self.follow:
+            self._tr_timer = QTimer(self)
+            self._tr_timer.setSingleShot(True)
+            self._tr_timer.setInterval(700)
+            self._tr_timer.timeout.connect(lambda: self._rerender())
+            self.transpose.valueChanged.connect(lambda _: self._tr_timer.start())
+            self.transpose.setToolTip("Transpozycja dźwięku i nut (nuty przelicza MuseScore – chwilę to trwa)")
         self.show_score.toggled.connect(lambda on: self.follow and self.follow.setVisible(on))
         self.show_roll.toggled.connect(self.scroll.setVisible)
         self.scroll.setVisible(self.show_roll.isChecked())
@@ -2174,8 +2325,39 @@ class MidiPlayerDialog(QDialog):
             return len(self.buf) / self.sr
         return self.length / max(0.01, self.tempo.value() / 100)
 
+    def toggle_fullscreen(self):
+        """Pełny ekran: chowa ustawienia głosów i brzmienia, zostają nuty, pasek odtwarzania, słowa i klawiatura."""
+        full = not self.isFullScreen()
+        lay = self.layout()
+        stop = lay.indexOf(self._views_lay) if hasattr(self, '_views_lay') else -1
+
+        def walk(item, on):
+            w = item.widget()
+            if w is not None:
+                if on:
+                    w.setVisible(getattr(w, '_lc_was', True))
+                else:
+                    w._lc_was = w.isVisible()
+                    w.hide()
+            elif item.layout() is not None:
+                for j in range(item.layout().count()):
+                    walk(item.layout().itemAt(j), on)
+        for i in range(max(0, stop)):
+            walk(lay.itemAt(i), not full)
+        self.b_fs.setText("✕ Zamknij pełny ekran" if full else "⛶ Pełny ekran")
+        if full:
+            self._was_max = self.isMaximized()
+            self.showFullScreen()
+        else:
+            self.showMaximized() if getattr(self, '_was_max', False) else self.showNormal()
+        if self.follow:
+            QTimer.singleShot(150, lambda: self.follow and self.follow.set_zoom(self.follow.zoom))
+
     def keyPressEvent(self, e):
         k = e.key()
+        if k == Qt.Key_F11 or (k == Qt.Key_Escape and self.isFullScreen()):
+            self.toggle_fullscreen()
+            return
         if k == Qt.Key_Space:
             self.toggle()
         elif k == Qt.Key_Home:
@@ -2286,6 +2468,49 @@ class MidiPlayerDialog(QDialog):
                     out.setdefault(p + k, col)
         return out
 
+    def _rerender(self, want=None):
+        """Nuty od nowa: inna widoczność pięciolinii (want) i/lub bieżąca transpozycja."""
+        if want is not None:
+            self.cur_want = want
+        want = self.cur_want
+        k = self.transpose.value()
+        key = (k, tuple(want) if want else None)
+        res = self._score_cache.get(key)
+        if res is None:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.pos_lbl.setText("MuseScore przelicza nuty…")
+            QApplication.processEvents()
+            try:
+                if k == 0 and want is not None and self.staves:
+                    res = self.staves[1](want)              # zapamiętuje widoczność na stałe
+                elif self.transposer:
+                    res = self.transposer(k, want)
+            except Exception as e:
+                res = None
+                print("Przeliczanie nut:", e)
+            finally:
+                QApplication.restoreOverrideCursor()
+                self.pos_lbl.setText("")
+            if res and res[0] and res[1]:
+                self._score_cache[key] = res
+        if not res or not res[0] or not res[1]:
+            QMessageBox.warning(self, "Nuty", "MuseScore nie przeliczył nut.")
+            return
+        try:
+            new = ScoreFollow(res[0], res[1], midi_timing(self.data_bytes))
+        except Exception as e:
+            QMessageBox.warning(self, "Nuty", f"Nie udało się pokazać nut: {e}")
+            return
+        new.seek.connect(lambda ms: self.seek_to(ms / 1000 / (self.tempo.value() / 100)))
+        new.zoom_changed.connect(lambda z: (self.zoom_lbl.setText(f"{int(z * 100)}%"), self._qs.setValue("score_zoom", z)))
+        new.zoom = self.follow.zoom
+        old = self.follow
+        self.vsplit.replaceWidget(self.vsplit.indexOf(old), new)
+        old.deleteLater()
+        self.follow = new
+        new.setVisible(self.show_score.isChecked())
+        new.set_time(self.current_pos() * (self.tempo.value() / 100) * 1000)
+
     def choose_staves(self):
         """Okno z listą partii: zaznaczone są widoczne w nutach."""
         from PySide6.QtWidgets import QDialogButtonBox
@@ -2316,27 +2541,7 @@ class MidiPlayerDialog(QDialog):
         want = [b.isChecked() for b in boxes]
         if not any(want) or want == [v for _, v in parts]:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            res = render(want)
-        finally:
-            QApplication.restoreOverrideCursor()
-        if not res or not res[0] or not res[1]:
-            QMessageBox.warning(self, "Pięciolinie", "MuseScore nie przeliczył nut z nowym układem pięciolinii.")
-            return
-        try:
-            new = ScoreFollow(res[0], res[1], midi_timing(self.data_bytes))
-        except Exception as e:
-            QMessageBox.warning(self, "Pięciolinie", f"Nie udało się pokazać nut: {e}")
-            return
-        new.seek.connect(lambda ms: self.seek_to(ms / 1000 / (self.tempo.value() / 100)))
-        new.zoom_changed.connect(lambda z: (self.zoom_lbl.setText(f"{int(z * 100)}%"), self._qs.setValue("score_zoom", z)))
-        new.zoom = self.follow.zoom
-        old = self.follow
-        self.vsplit.replaceWidget(self.vsplit.indexOf(old), new)
-        old.deleteLater()
-        self.follow = new
-        new.setVisible(self.show_score.isChecked())
+        self._rerender(want)
         self.staves = ([(nm, w) for (nm, _), w in zip(parts, want)], render)
         n_hid = sum(1 for w in want if not w)
         self.b_staves.setText("👁 Pięciolinie" + (f" ({n_hid} ukr.)" if n_hid else ""))

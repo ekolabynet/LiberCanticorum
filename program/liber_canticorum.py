@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.17.0"
+VERSION = "0.17.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -5014,10 +5014,21 @@ class MainWindow(QMainWindow):
                 self.musescore_failed("MIDI – odtwarzanie głosów")
                 return
         staves = self._staves_for(a) if score else None
+        transposer = None
+        if score and self.musescore():
+            name, raw, exe = a['name'], a['data'], self.musescore()
+
+            def transposer(k, want):
+                import modul_nuty as mn
+                new = mn.transpose_score(name, raw, k, want)
+                if not new:
+                    return None
+                res = mn.convert_score(exe, name, new, outs=('pdf', 'spos'))
+                return res.get('pdf'), res.get('spos')
         try:
             import modul_nuty
             dlg = modul_nuty.MidiPlayerDialog(data, f"{self.song['title']} – {a['name']}", self, score=score,
-                                              staves=staves)
+                                              staves=staves, transposer=transposer)
         except Exception as e:
             QMessageBox.critical(self, APP_NAME, f"Nie można uruchomić odtwarzacza MIDI:\n{e}")
             return

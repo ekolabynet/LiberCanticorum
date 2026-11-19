@@ -1,6 +1,6 @@
 <p align="center"><img src="ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.17.0
+# Liber Canticorum 0.17.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -103,15 +103,19 @@ melodię w edytorze melodii.
 **Posłuchać i ćwiczyć głos.** Nuty → „Posłuchaj”: pasek odtwarzania nad nutami (⏮ ⏪ Odtwórz ⏹ ⏩, suwak,
 spacja i strzałki), głosy S A T B osobno, „Ćwicz głos”, tempo, transpozycja, **👁 Pięciolinie** – pokaż ukryte
 w pliku MuseScore pięciolinie (np. akompaniament).
-Pole **„Klawiatura”** pokazuje nad nutami klawiaturę fortepianu, na której podświetlają się grane właśnie dźwięki
+Pole **„Klawiatura”** pokazuje pod nutami klawiaturę fortepianu, na której podświetlają się grane właśnie dźwięki
 w kolorach głosów – dobre do nauki partii i do szukania dźwięków na organach.
+**Transpozycja** zmienia dźwięk i **nuty**: po chwili MuseScore przelicza nuty w nowej tonacji – z kluczem,
+znakami i symbolami akordów (G → A, D7 → E7); powrót do 0 pokazuje oryginał od razu. Działa dla plików MuseScore
+i MusicXML (także z edytora melodii).
+**⛶ Pełny ekran** (F11, Esc – wyjście): zostają tylko nuty, pasek odtwarzania, słowa i klawiatura.
 
 ## Instalacja i uruchomienie
 
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.17.0/
+LiberCanticorum_0.17.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
