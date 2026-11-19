@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.20.5
+# Liber Canticorum 0.21.0
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.20.x, 0.21.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.21.x, 0.22.0 itd.
 
 ## Jak wygląda
 
@@ -21,10 +21,26 @@ Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagra
 | ![Start – kafle najważniejszych funkcji](program/zrzuty/widok_start.png) | ![Teksty – przeglądanie słów pieśni](program/zrzuty/widok_teksty.png) |
 | **Slajdy** | **Nuty** |
 | ![Slajdy – podgląd i pokaz na rzutniku](program/zrzuty/widok_slajdy.png) | ![Nuty – podgląd, odsłuch, edytor melodii](program/zrzuty/widok_nuty.png) |
-| **Zaawansowane** | **Edytor melodii** |
-| ![Zaawansowane – pełny edytor](program/zrzuty/widok_zaawansowane.png) | ![Edytor melodii z czcionką nutową Leland](program/zrzuty/edytor_melodii.png) |
+| **Msza** | **Zaawansowane** |
+| ![Msza – prosty zestaw na Mszę](program/zrzuty/widok_msza.png) | ![Zaawansowane – pełny edytor](program/zrzuty/widok_zaawansowane.png) |
+| **Edytor melodii** | |
+| ![Edytor melodii z czcionką nutową Leland](program/zrzuty/edytor_melodii.png) | |
 
 *Na zrzutach są pieśni z domeny publicznej wpisane do pustej bazy. Program nie zawiera żadnych tekstów ani nut.*
+
+## Języki / Languages / Langues / Idiomas
+
+Interfejs jest po polsku, angielsku, francusku i hiszpańsku – **Ustawienia → 🌐 Język / Language**
+(zmiana po ponownym uruchomieniu; domyślnie język systemu). Teksty i nuty pieśni się nie zmieniają.
+
+**Jak dodać albo poprawić tłumaczenie** (bez programowania): pliki `i18n/en.json`, `fr.json`, `es.json` zawierają
+pary „tekst polski” → „tłumaczenie”; puste `""` = jeszcze nieprzetłumaczone (program pokaże wtedy tekst polski).
+Wzorce mają miejsca na wartości, np. `"Zaznaczone pieśni: {n}": "Selected songs: {n}"` (`{n}` – liczba).
+- nowy język: `python3 i18n/wyciagnij_teksty.py de` – powstanie `i18n/de.json` ze wszystkimi tekstami do przetłumaczenia,
+  a język pojawi się w menu,
+- po zmianach w programie: `python3 i18n/wyciagnij_teksty.py` – dopisze nowe teksty do wszystkich plików.
+Na razie przetłumaczone są najważniejsze elementy (zakładki, menu, Start, widoki proste, Msza, odtwarzacz, edytor
+melodii, akordy) – reszta czeka na tłumaczy. *Translations welcome – just fill in the empty strings in `i18n/*.json`.*
 
 ## Wesprzyj
 
@@ -37,7 +53,7 @@ Program jest darmowy. Jeśli Ci się przydaje, wesprzyj – kafle u dołu ekranu
 |---|---|---|
 | **Ośrodek dla Niewidomych w Laskach** – Towarzystwo Opieki nad Ociemniałymi Stowarzyszenie, ul. Brzozowa 75, Laski, 05-080 Izabelin | mBank S.A. **02 1140 1010 0000 4399 5800 1002**; BLIK na telefon 572 896 588; 1,5% podatku: KRS 0000054086 | [laski.edu.pl](https://laski.edu.pl/) (darowizny: [wpłać darowiznę](https://laski.edu.pl/wplac-darowizne/)) |
 | **Parafia M.B. Królowej Meksyku** (z Guadalupe), ul. 3 Maja 40/42, 05-080 Laski | PKO BP **18 1020 1026 0000 1102 0016 9920** | [parafiawlaskach.pl](https://parafiawlaskach.pl/) (konto: [kontakt](https://parafiawlaskach.pl/kontakt)) |
-| **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-) | bez konta – **przyjdź i śpiewaj z nami** (kościół M.B. Królowej Meksyku w Laskach, ul. 3 Maja 40/42) | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
+| **Schola adHoc** – zaśpiewaj z nami w I niedzielę miesiąca w samo południe na Mszach o bogactwo łaski dla rodzin (uwaga – to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-) | bez konta – **przyjdź i śpiewaj z nami** (kościół M.B. Królowej Meksyku w Laskach, ul. 3 Maja 40/42); próby we wtorki o 19:00 w domu parafialnym | [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/) |
 | **Guadalupe500.org** – nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu) | bez konta – **włącz się**: komponujesz, śpiewasz, grasz, piszesz teksty, tłumaczysz? | guadalupe500.org |
 
 Numery kont pochodzą ze stron odbiorców (stan: listopad 2026) – przed przelewem sprawdź je u źródła.
@@ -45,9 +61,9 @@ Adresy stron kafli są w pliku `wsparcie.json` (obok programu) i można je tam z
 
 ## Układ okna: zakładki u dołu
 
-Okno ma u dołu pięć zakładek. Pierwsze cztery są proste, dla każdego, piąta to pełny edytor.
+Okno ma u dołu sześć zakładek. Pierwsze pięć jest prostych, dla każdego, szósta to pełny edytor.
 
-- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, **Edytor melodii**, Nowa pieśń, **Porządki w bazie** (duplikaty, menedżer kategorii, cofanie zmian),
+- **Start** – kafle najważniejszych funkcji: Teksty pieśni, Slajdy i pokaz, Nuty, Zestaw na Mszę, **Edytor melodii**, **Liturgia z dnia** (czytania i propozycje pieśni na dziś), **Porządki w bazie** (duplikaty, menedżer kategorii, cofanie zmian),
   Importuj śpiewnik lub plik, Akordy, Pilot w telefonie, Zaawansowane. Na górze liczba pieśni w bazie.
 - **Teksty** – przeglądanie słów: kategoria, wyszukiwanie po tytule i słowach, duże litery (A− / A+),
   akordy jednym przyciskiem, „Slajdy tej pieśni”, „Edytuj”.
@@ -55,6 +71,9 @@ Okno ma u dołu pięć zakładek. Pierwsze cztery są proste, dla każdego, pią
   także „Pokaż całego zestawu”.
 - **Nuty** – nuty pieśni do przewijania i powiększania (− / +), „Posłuchaj”, „Otwórz w MuseScore”,
   **„Edytor melodii”**; gdy nut brak: „Szukaj nut w MuseScore”, „Rozpoznaj nuty ze skanu”, „Wpisz melodię”.
+- **Msza** – prosty zestaw na Mszę dużym pismem: dzień, części Mszy z pieśniami, „＋ Dodaj” (z wyszukiwaniem
+  i podpowiedziami ★ dla danej części), „✕”, „📖 Liturgia dnia i propozycje”, „▶ Pokaż cały zestaw”, „📦 Materiały”,
+  „💾 Zapisz zestaw”; „⚙ Zaawansowany” – pełny zestaw (rodzaj, godzina, miejsce, części stałe, przeciąganie).
 - **Zaawansowane** – pełny edytor: menu i pasek narzędzi, lista pieśni, wygląd slajdów, akordy,
   załączniki („Nuty, wersje i nagrania”), wersje tekstu, zestaw na Mszę, eksport, ustawienia.
 
@@ -165,7 +184,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.20.5/
+LiberCanticorum_0.21.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
@@ -234,6 +253,7 @@ python3 -m venv .venv
 | `modul_pdf_tekst.py` | śpiewniki tekstowe PDF (tytuły po kroju pisma, akordy) |
 | `modul_pdf_obrazy.py` | śpiewniki PDF z nutami jako obrazkami (msze, części stałe) |
 | `modul_omr.py` | rozpoznawanie nut ze skanu programem Audiveris (MusicXML) |
+| `modul_i18n.py`, `i18n/` | tłumaczenia interfejsu (en, fr, es) i narzędzie do zbierania tekstów |
 | `wsparcie.json` | adresy stron kafli „Wesprzyj” na ekranie Start |
 | `modul_instrumenty.py` | klawiatura w odtwarzaczu, chwyty gitarowe na gryfie |
 | `modul_edytor.py` | edytor melodii: nuty, słowa, akordy; zapis MusicXML (Sopran – chór, Organy) i MIDI |
@@ -609,6 +629,65 @@ na nuty i inicjały. Te ustawienia można potem zmienić.
 
 Wszystkie tła są narysowane od zera przez `generuj_tla.py`. Nie są kopiami istniejących rękopisów.
 Własny obraz tła wybierzesz opcją „Inny plik…”, a własny motyw dodasz, wrzucając plik JPG lub PNG do folderu `tla/`.
+
+## Prawa autorskie do pieśni i dobre źródła
+
+To samo jest w programie: Pomoc → „Prawa autorskie do pieśni…” i link w stopce okna.
+
+### Krótko i życzliwie
+
+Program jest wolny, ale **teksty, melodie i nuty, które do niego wpisujesz, mają swoich autorów**.
+Prawa do pieśni bywają złożone – jedna pieśń to często kilka utworów naraz:
+
+- **tekst** (autor słów, a w pieśniach tłumaczonych – także tłumacz),
+- **melodia** (kompozytor),
+- **opracowanie** – harmonizacja, aranżacja na chór lub organy, akompaniament,
+- **wydanie** – redakcja tekstu, skład nut, opracowanie śpiewnika.
+
+Majątkowe prawa autorskie wygasają co do zasady **70 lat od śmierci twórcy** (a w pieśni napisanej razem przez
+autora słów i kompozytora – od śmierci tego z nich, który zmarł później; art. 36 ustawy o prawie autorskim).
+Dawna pieśń może więc być wolna, a jej **współczesne wydanie, nowy przekład czy harmonizacja – nie**.
+Pieśni „ludowe” i „tradycyjne” też mają często nowsze, chronione wersje tekstu.
+Ustawa pozwala **korzystać z utworów podczas ceremonii religijnych**, jeżeli nie łączy się z tym osiąganie
+pośrednio lub bezpośrednio korzyści majątkowej (art. 31 ust. 1). Co innego jednak koncerty, nagrania udostępniane
+w internecie, transmisje, kopiowanie i rozpowszechnianie śpiewników czy nut – tu zwykle potrzebna jest zgoda
+autorów lub wydawców (np. przez ZAiKS albo bezpośrednio). Teksty liturgiczne (czytania, psalmy, modlitwy) należą
+do wydawców ksiąg liturgicznych.
+**Prosimy:** szanuj pracę autorów i wydawców – podawaj źródło (w uwagach pieśni), nie publikuj w sieci cudzych
+nut i nagrań bez zgody, a śpiewniki z programu (PDF, HTML) traktuj jako pomoc dla własnej wspólnoty.
+To nie jest porada prawna – w razie wątpliwości zapytaj wydawcę, ZAiKS albo prawnika.
+
+### Dobre źródła tekstów i nut
+
+Najlepiej korzystać ze **sprawdzonych, starannie opracowanych wydań** – mają poprawne teksty, zatwierdzone
+do liturgii, i opisane źródła:
+
+- **Śpiewnik kościelny ks. Jana Siedleckiego** – [spiewniksiedleckiego.pl](https://spiewniksiedleckiego.pl/)
+(teksty z nagraniami melodii),
+- **Śpiewnik Liturgiczny** (Lublin, KUL) – wydanie zatwierdzone do liturgii,
+- **Mszał, Lekcjonarz, Graduał** – teksty liturgiczne (śpiewy międzylekcyjne, antyfony),
+- nuty w domenie publicznej: [CPDL](https://www.cpdl.org/) (chóralne),
+[IMSLP](https://imslp.org/); na [MuseScore](https://musescore.com/) sprawdzaj licencję opracowania.
+
+Wszystkie śpiewy przeznaczone do liturgii powinny mieć aprobatę Konferencji Episkopatu Polski albo władzy
+diecezjalnej (Instrukcja Episkopatu Polski z 1979 r., n. 10).
+
+### Dokumenty Kościoła o muzyce
+
+- Sobór Watykański II, konstytucja *Sacrosanctum Concilium* (1963), rozdz. VI „Muzyka sakralna” – podstawa,
+- Instrukcja *Musicam sacram* (1967) – [tekst](https://musicamsacram.pl/dokumenty/pobierz/ins),
+- Instrukcja Episkopatu Polski o muzyce liturgicznej po Soborze Watykańskim II (1979) –
+[tekst](https://musicamsacram.pl/dokumenty/pobierz/instr79),
+- św. Jan Paweł II, *List do artystów* (1999),
+- św. Jan Paweł II, *Chirograf na stulecie motu proprio „Tra le sollecitudini” o muzyce sakralnej* (22.11.2003)
+– w serwisie [vatican.va](https://www.vatican.va/),
+- Benedykt XVI, adhortacja *Sacramentum caritatis* (2007), n. 42 – o śpiewie liturgicznym,
+- **Instrukcja Konferencji Episkopatu Polski o muzyce kościelnej** (14.10.2017) – obowiązująca w Polsce –
+[tekst](https://musicamsacram.pl/dokumenty/pobierz/instr2017),
+- Franciszek, list apostolski *Desiderio desideravi* o formacji liturgicznej (2022).
+
+Ustawa o prawie autorskim i prawach pokrewnych (tekst jednolity Dz.U. 2025 poz. 24):
+[PDF](https://api.sejm.gov.pl/eli/acts/DU/2025/24/text.pdf).
 
 ## Licencja
 

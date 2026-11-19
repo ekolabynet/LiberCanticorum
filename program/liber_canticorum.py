@@ -58,11 +58,67 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.20.5"
+VERSION = "0.21.0"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
 # kafle „Wesprzyj” na ekranie Start: (ikona, tytuł, opis, adres). Adresy można zmienić w pliku wsparcie.json obok programu.
+COPYRIGHT_HTML = """
+<h2>Prawa autorskie do pieśni – krótko i życzliwie</h2>
+<p>Program jest wolny, ale <b>teksty, melodie i nuty, które do niego wpisujesz, mają swoich autorów</b>.
+Prawa do pieśni bywają złożone – jedna pieśń to często kilka utworów naraz:</p>
+<ul>
+<li><b>tekst</b> (autor słów, a w pieśniach tłumaczonych – także tłumacz),</li>
+<li><b>melodia</b> (kompozytor),</li>
+<li><b>opracowanie</b> – harmonizacja, aranżacja na chór lub organy, akompaniament,</li>
+<li><b>wydanie</b> – redakcja tekstu, skład nut, opracowanie śpiewnika.</li>
+</ul>
+<p>Majątkowe prawa autorskie wygasają co do zasady <b>70 lat od śmierci twórcy</b> (a w pieśni napisanej razem przez
+autora słów i kompozytora – od śmierci tego z nich, który zmarł później; art. 36 ustawy o prawie autorskim).
+Dawna pieśń może więc być wolna, a jej <b>współczesne wydanie, nowy przekład czy harmonizacja – nie</b>.
+Pieśni „ludowe” i „tradycyjne” też mają często nowsze, chronione wersje tekstu.</p>
+<p>Ustawa pozwala <b>korzystać z utworów podczas ceremonii religijnych</b>, jeżeli nie łączy się z tym osiąganie
+pośrednio lub bezpośrednio korzyści majątkowej (art. 31 ust. 1). Co innego jednak koncerty, nagrania udostępniane
+w internecie, transmisje, kopiowanie i rozpowszechnianie śpiewników czy nut – tu zwykle potrzebna jest zgoda
+autorów lub wydawców (np. przez ZAiKS albo bezpośrednio). Teksty liturgiczne (czytania, psalmy, modlitwy) należą
+do wydawców ksiąg liturgicznych.</p>
+<p><b>Prosimy:</b> szanuj pracę autorów i wydawców – podawaj źródło (w uwagach pieśni), nie publikuj w sieci cudzych
+nut i nagrań bez zgody, a śpiewniki z programu (PDF, HTML) traktuj jako pomoc dla własnej wspólnoty.
+To nie jest porada prawna – w razie wątpliwości zapytaj wydawcę, ZAiKS albo prawnika.</p>
+
+<h2>Dobre źródła tekstów i nut</h2>
+<p>Najlepiej korzystać ze <b>sprawdzonych, starannie opracowanych wydań</b> – mają poprawne teksty, zatwierdzone
+do liturgii, i opisane źródła:</p>
+<ul>
+<li><b>Śpiewnik kościelny ks. Jana Siedleckiego</b> – <a href="https://spiewniksiedleckiego.pl/">spiewniksiedleckiego.pl</a>
+(teksty z nagraniami melodii),</li>
+<li><b>Śpiewnik Liturgiczny</b> (Lublin, KUL) – wydanie zatwierdzone do liturgii,</li>
+<li><b>Mszał, Lekcjonarz, Graduał</b> – teksty liturgiczne (śpiewy międzylekcyjne, antyfony),</li>
+<li>nuty w domenie publicznej: <a href="https://www.cpdl.org/">CPDL</a> (chóralne),
+<a href="https://imslp.org/">IMSLP</a>; na <a href="https://musescore.com/">MuseScore</a> sprawdzaj licencję opracowania.</li>
+</ul>
+<p>Wszystkie śpiewy przeznaczone do liturgii powinny mieć aprobatę Konferencji Episkopatu Polski albo władzy
+diecezjalnej (Instrukcja Episkopatu Polski z 1979 r., n. 10).</p>
+
+<h2>Dokumenty Kościoła o muzyce</h2>
+<ul>
+<li>Sobór Watykański II, konstytucja <i>Sacrosanctum Concilium</i> (1963), rozdz. VI „Muzyka sakralna” – podstawa,</li>
+<li>Instrukcja <i>Musicam sacram</i> (1967) – <a href="https://musicamsacram.pl/dokumenty/pobierz/ins">tekst</a>,</li>
+<li>Instrukcja Episkopatu Polski o muzyce liturgicznej po Soborze Watykańskim II (1979) –
+<a href="https://musicamsacram.pl/dokumenty/pobierz/instr79">tekst</a>,</li>
+<li>św. Jan Paweł II, <i>List do artystów</i> (1999),</li>
+<li>św. Jan Paweł II, <i>Chirograf na stulecie motu proprio „Tra le sollecitudini” o muzyce sakralnej</i> (22.11.2003)
+– w serwisie <a href="https://www.vatican.va/">vatican.va</a>,</li>
+<li>Benedykt XVI, adhortacja <i>Sacramentum caritatis</i> (2007), n. 42 – o śpiewie liturgicznym,</li>
+<li><b>Instrukcja Konferencji Episkopatu Polski o muzyce kościelnej</b> (14.10.2017) – obowiązująca w Polsce –
+<a href="https://musicamsacram.pl/dokumenty/pobierz/instr2017">tekst</a>,</li>
+<li>Franciszek, list apostolski <i>Desiderio desideravi</i> o formacji liturgicznej (2022).</li>
+</ul>
+<p>Ustawa o prawie autorskim i prawach pokrewnych (tekst jednolity Dz.U. 2025 poz. 24):
+<a href="https://api.sejm.gov.pl/eli/acts/DU/2025/24/text.pdf">PDF</a>.</p>
+"""
+
+
 SUPPORT = [
     ("🤍", "Wesprzyj Ośrodek dla Niewidomych w Laskach",
      "Towarzystwo Opieki nad Ociemniałymi – szkoła i dom dla niewidomych dzieci. 1,5% podatku: KRS 0000054086.",
@@ -85,7 +141,7 @@ SUPPORT = [
      "https://dowiaryprzezliturgie.pl/adhoc/",
      {'zaangazuj': "Najlepiej wesprzesz nas, przychodząc i śpiewając razem z nami: w I niedzielę miesiąca, "
                    "w samo południe, w kościele Matki Bożej Królowej Meksyku w Laskach (ul. 3 Maja 40/42). "
-                   "Zaproś też znajomych i rodzinę!",
+                   "Próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę!",
       'baner': "ikony/adhoc_baner.png"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
@@ -2491,6 +2547,177 @@ class ColorButton(QPushButton):
             self.changed.emit()
 
 
+class MassPage(QWidget):
+    """Prosty widok zestawu na Mszę: data, części Mszy z pieśniami, dodawanie / usuwanie, liturgia dnia, pokaz."""
+
+    def __init__(self, mw):
+        super().__init__()
+        from PySide6.QtWidgets import QDateEdit, QScrollArea
+        from PySide6.QtCore import QLocale
+        self.QDateEdit, self.QScrollArea = QDateEdit, QScrollArea
+        self.mw = mw
+        self.setObjectName("massPage")
+        # większe pismo – widok czytany z odległości (np. przy pulpicie, na tablecie)
+        self.setStyleSheet("#massPage QLabel { font-size: 15pt; } #massPage QLabel#massPart { font-size: 16pt; font-weight: bold; }"
+                           " #massPage QPushButton { font-size: 13pt; padding: 6px 12px; }"
+                           " #massPage QDateEdit { font-size: 14pt; padding: 4px; }")
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 12, 16, 8)
+        top = QHBoxLayout()
+        self.head = QLabel()
+        f = self.head.font()
+        f.setPointSize(f.pointSize() + 6)
+        f.setBold(True)
+        self.head.setFont(f)
+        self.head.setStyleSheet("font-size: 22pt; font-weight: bold;")
+        top.addWidget(self.head, 1)
+        top.addWidget(QLabel("Dzień:"))
+        self.date = self.QDateEdit()
+        self.date.setCalendarPopup(True)
+        self.date.setDisplayFormat("dddd, d MMMM yyyy")
+        try:
+            import modul_i18n
+            self.date.setLocale(QLocale(modul_i18n.LANG) if modul_i18n.LANG != 'pl' else QLocale(QLocale.Polish, QLocale.Poland))
+        except Exception:
+            self.date.setLocale(QLocale(QLocale.Polish, QLocale.Poland))
+        self.date.dateChanged.connect(self._date_changed)
+        top.addWidget(self.date)
+        lay.addLayout(top)
+        self.day = QLabel()
+        self.day.setWordWrap(True)
+        self.day.setStyleSheet("color: #7a6a55;")
+        lay.addWidget(self.day)
+        sc = self.QScrollArea()
+        sc.setWidgetResizable(True)
+        self.inner = QWidget()
+        self.grid = QGridLayout(self.inner)
+        self.grid.setColumnStretch(1, 1)
+        self.grid.setVerticalSpacing(10)
+        self.grid.setHorizontalSpacing(18)
+        sc.setWidget(self.inner)
+        lay.addWidget(sc, 1)
+        bar = QHBoxLayout()
+        for txt, fn, tip in (("📖 Liturgia dnia i propozycje", self._liturgy,
+                              "Czytania i modlitwy z dnia Mszy oraz pasujące pieśni – jednym kliknięciem do zestawu"),
+                             ("▶ Pokaż cały zestaw", lambda: self.mw.present_setlist(), "Pokaz slajdów wszystkich pieśni"),
+                             ("📦 Materiały…", lambda: self.mw.export_package(), "Teksty, slajdy, nuty i nagrania do jednego folderu"),
+                             ("💾 Zapisz zestaw", lambda: self.mw.store_set(), "Zapisuje zestaw w bazie"),
+                             ("✚ Nowy zestaw", lambda: (self.mw.new_set(), self.refresh()), "Pusty zestaw"),
+                             ("⚙ Zaawansowany", lambda: self.mw._go_set_adv(), "Pełny zestaw: rodzaj, godzina, miejsce, "
+                              "części stałe z jednej mszy, przeciąganie, zapisane zestawy")):
+            b = QPushButton(txt)
+            b.setToolTip(tip)
+            if txt.startswith("▶"):
+                b.setObjectName("big")
+            b.clicked.connect(fn)
+            bar.addWidget(b)
+        lay.addLayout(bar)
+
+    def _date_changed(self, d):
+        if self.mw.m_date.date() != d:
+            self.mw.m_date.setDate(d)
+        self._day_text()
+
+    def _day_text(self):
+        try:
+            self.day.setText(f"{self.mw.m_okres.currentText()}" + (f"  ·  {self.mw._mass_day}" if getattr(self.mw, '_mass_day', '') else ""))
+        except Exception:
+            self.day.setText("")
+
+    def refresh(self):
+        mw = self.mw
+        msza = mw.set_kind() == 'msza'
+        self.head.setText("Zestaw na Mszę" if msza else (mw.m_name.text().strip() or "Zestaw utworów"))
+        self.date.blockSignals(True)
+        self.date.setDate(mw.m_date.date())
+        self.date.blockSignals(False)
+        self._day_text()
+        while self.grid.count():
+            w = self.grid.takeAt(0).widget()
+            if w:
+                w.hide()
+                w.deleteLater()
+        tree = mw.setlist
+        for r, (part, multi) in enumerate(tree.part_list()):
+            it = tree.parts[part]
+            lab = QLabel(part)
+            lab.setObjectName("massPart")
+            if part in ORDINARY:
+                lab.setStyleSheet("color: #aa2828;")
+            self.grid.addWidget(lab, r, 0, Qt.AlignTop)
+            titles = [it.child(j).text(0) for j in range(it.childCount())]
+            songs = QLabel("<br>".join(H.escape(t) for t in titles) if titles else "<span style='color:#a99'>—</span>")
+            songs.setWordWrap(True)
+            self.grid.addWidget(songs, r, 1, Qt.AlignTop)
+            add = QPushButton("＋ Dodaj" if multi or not titles else "↺ Zmień")
+            add.setToolTip("Wybierz pieśń do tej części (wyszukiwanie po tytule i słowach)")
+            add.clicked.connect(lambda _=False, p=part: self.choose(p))
+            self.grid.addWidget(add, r, 2, Qt.AlignTop)
+            rm = QPushButton("✕")
+            rm.setFixedWidth(32)
+            rm.setToolTip("Usuń pieśni z tej części")
+            rm.setEnabled(bool(titles))
+            rm.clicked.connect(lambda _=False, p=part: self.clear_part(p))
+            self.grid.addWidget(rm, r, 3, Qt.AlignTop)
+
+    def clear_part(self, part):
+        it = self.mw.setlist.parts[part]
+        it.takeChildren()
+        self.mw.setlist._update_labels()
+        self.mw.save_set()
+        self.refresh()
+
+    def choose(self, part):
+        mw = self.mw
+        d = QDialog(self)
+        d.setWindowTitle(f"Pieśń – {part}")
+        lay = QVBoxLayout(d)
+        q = QLineEdit()
+        q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
+        lay.addWidget(q)
+        lst = QListWidget()
+        lay.addWidget(lst, 1)
+        hint = QLabel()
+        hint.setStyleSheet("color: gray;")
+        lay.addWidget(hint)
+
+        def fill():
+            lst.clear()
+            rows = mw.db.search(q.text())
+            # najpierw pieśni pasujące do tej części (tagi / tytuł), potem reszta
+            guess = getattr(mw.setlist, 'guess', None)
+            good = [r for r in rows if guess and guess(r['id']) == part] if not q.text().strip() else []
+            for r in good + [r for r in rows if r not in good]:
+                li = QListWidgetItem(("★ " if r in good else "") + r['title'])
+                li.setData(Qt.UserRole, r['id'])
+                lst.addItem(li)
+            hint.setText("★ – pasuje do tej części (tagi, tytuł). Dwuklik – wybierz." if good else "Dwuklik – wybierz.")
+        q.textChanged.connect(fill)
+        fill()
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lst.itemDoubleClicked.connect(lambda _: d.accept())
+        lay.addWidget(bb)
+        d.resize(520, 600)
+        if d.exec() and lst.currentItem():
+            sid = lst.currentItem().data(Qt.UserRole)
+            song = mw.db.get(sid)
+            if song:
+                mw.setlist.add_song(part, sid, song['title'])
+                mw.save_set()
+                self.refresh()
+
+    def _liturgy(self):
+        mw = self.mw
+        if mw.set_kind() == 'msza':
+            mw.open_liturgy()
+        else:
+            mw._go_liturgy()
+        # po dodaniu pieśni z okna liturgii – odśwież (okno jest niemodalne)
+        QTimer.singleShot(1500, self.refresh)
+
+
 class MassSetTree(QTreeWidget):
     """Zestaw na Mszę: części (stałe nagłówki) i pieśni pod nimi. Pieśni przeciąga się między częściami;
     część stała (np. Kyrie) przyjmuje jedną pozycję – nowa zastępuje poprzednią."""
@@ -2643,7 +2870,7 @@ class MainWindow(QMainWindow):
         self.restore_set()
         self.new_song(ask=False)
         self.resize(1440, 900)
-        v = self.settings.value("view", self.V_START, type=int)
+        v = self.settings.value("view2", self.V_START, type=int)
         self.views.setCurrentIndex(v if 0 <= v < self.views.count() else self.V_START)
         self._view_changed(self.views.currentIndex())
 
@@ -2825,6 +3052,22 @@ class MainWindow(QMainWindow):
         sp.setSizes([320, 520, 600])
         self.advanced = sp
         self._build_views()
+        # stopka na każdej zakładce: licencja (kliknięcie – „O programie i licencja”)
+        try:
+            from modul_i18n import tr as _t
+        except Exception:
+            _t = lambda x: x
+        lic = QLabel(f"<a href='about' style='color:#7a6a55; text-decoration:none'>{APP_NAME} {VERSION} · "
+                     + _t("wolne oprogramowanie – licencja GNU GPL 3.0") + " · " + _t("ikona CC BY-SA 4.0") + " · "
+                     + _t("ikony Font Awesome CC BY 4.0") + " · " + _t("teksty i nuty – prawa ich autorów")
+                     + "</a> · <a href='copy' style='color:#7A2E3A'>" + _t("prawa autorskie i dobre źródła") + "</a>")
+        lic.setToolTip("O programie i licencja · prawa autorskie do pieśni")
+        lic.linkActivated.connect(lambda k: self.copyright_info() if k == 'copy' else self.about())
+        self.statusBar().addPermanentWidget(lic)
+        # listy, których tekst program odczytuje jako wartość (wygląd slajdów, okres) – nie tłumaczyć
+        for c in list(getattr(self, 'w', {}).values()) + [getattr(self, 'm_okres', None)]:
+            if isinstance(c, QComboBox):
+                c.setProperty("i18n_no", True)
 
     def _build_text_tab(self):
         w = QWidget()
@@ -3100,7 +3343,7 @@ class MainWindow(QMainWindow):
         return w
 
     # ---- widoki proste (zakładki u dołu): Start, Teksty, Slajdy, Nuty, Zaawansowane
-    V_START, V_TEXTS, V_SLIDES, V_SCORES, V_ADV = range(5)
+    V_START, V_TEXTS, V_SLIDES, V_SCORES, V_MASS, V_ADV = range(6)
 
     def _build_views(self):
         import modul_widoki as mw
@@ -3119,7 +3362,8 @@ class MainWindow(QMainWindow):
              self._go_set),
             ("🎵", "Edytor melodii", "Wpisz nuty, słowa i akordy jak w MuseScore; posłuchaj (chór i organy) i zapisz w pieśni.",
              self._go_melody),
-            ("✚", "Nowa pieśń", "Wpisz albo wklej tekst nowej pieśni.", self._go_new),
+            ("📖", "Liturgia z dnia", "Czytania, psalm i modlitwy z dzisiejszej Mszy oraz pasujące pieśni z Twojej bazy.",
+             self._go_liturgy),
             ("🧹", "Porządki w bazie", "Duplikaty, kategorie, cofanie ostatnich zmian.", self.tidy_dialog),
             ("📥", "Importuj śpiewnik lub plik", "PDF, DOCX, TXT, nuty MuseScore – także całe śpiewniki.",
              self.import_files),
@@ -3133,10 +3377,11 @@ class MainWindow(QMainWindow):
         self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
         self.v_slides = mw.SlidesPage(self.db, self.set_entries, build_song_deck, SlideView, slide_pixmap,
                                       lambda deck, i: self._open_present(deck, i, True), self.present_setlist)
+        self.v_mass = MassPage(self)
         self.v_scores = mw.ScoresPage(self.db, self.set_entries, self._attachment_pages, self._v_play,
                                       self._v_open, self._v_search, self._v_omr, self._v_melody)
         for w, name in ((self.home, "Start"), (self.v_texts, "Teksty"), (self.v_slides, "Slajdy"),
-                        (self.v_scores, "Nuty"), (self.advanced, "Zaawansowane")):
+                        (self.v_scores, "Nuty"), (self.v_mass, "Msza"), (self.advanced, "Zaawansowane")):
             self.views.addTab(w, name)
         self.views.setCornerWidget(mw.Monogram(26), Qt.BottomRightCorner)
         self.cur_sid, self._prev_view = None, None
@@ -3153,7 +3398,7 @@ class MainWindow(QMainWindow):
     def _view_changed(self, i):
         if hasattr(self, 'toolbar'):
             self.toolbar.setVisible(i == self.V_ADV)
-        self.settings.setValue("view", i)
+        self.settings.setValue("view2", i)
         if self._prev_view == self.V_ADV and self.song and self.song.get('id'):
             self.cur_sid = self.song['id']                # pieśń z edytora idzie do pozostałych zakładek
         self._prev_view = i
@@ -3169,6 +3414,8 @@ class MainWindow(QMainWindow):
                     page.picker.reset_filters()
                     page.picker.select(sid)
                 page.show_song(sid)
+        elif i == self.V_MASS:
+            self.v_mass.refresh()
         elif i == self.V_ADV and self.cur_sid and (not self.song or self.song.get('id') != self.cur_sid):
             if self.db.get(self.cur_sid):
                 self.open_song(self.cur_sid)
@@ -3193,6 +3440,9 @@ class MainWindow(QMainWindow):
         self.tabs.setCurrentIndex(0)
 
     def _go_set(self):
+        self.views.setCurrentIndex(self.V_MASS)
+
+    def _go_set_adv(self):
         self.views.setCurrentIndex(self.V_ADV)
         self.setlist.setFocus()
 
@@ -3432,6 +3682,17 @@ class MainWindow(QMainWindow):
                                           self.statusBar().showMessage("Zmiana wyglądu po ponownym uruchomieniu.", 6000)))
         m_set.addAction(a_perg)
         act(m_set, "Test MuseScore (próbna konwersja z raportem)…", self.test_musescore)
+        m_lang = m_set.addMenu("🌐 Język / Language")
+        try:
+            import modul_i18n
+            cur = self.settings.value("language", "") or modul_i18n.LANG
+            for code, name in modul_i18n.available():
+                a = QAction(name, self, checkable=True)
+                a.setChecked(code == cur)
+                a.triggered.connect(lambda _=False, c=code: self.set_language(c))
+                m_lang.addAction(a)
+        except Exception:
+            pass
         m_tb = m_set.addMenu("Pasek narzędzi")
         m_tb.setIcon(ikony.fa_icon("sliders") if os.path.exists(os.path.join(ikony.ICON_DIR, "sliders.svg")) else QIcon())
         from PySide6.QtGui import QActionGroup
@@ -3468,6 +3729,7 @@ class MainWindow(QMainWindow):
             "B – czarny ekran\nC – czyste tło (bez tekstu)\nEsc – koniec pokazu\n\n"
             "Pilot w telefonie: Pokaz → Pilot w telefonie (Ctrl+P), zeskanuj kod QR.")))
         act(m_help, "O programie i licencja", self.about)
+        act(m_help, "© Prawa autorskie do pieśni, dobre źródła, dokumenty Kościoła…", self.copyright_info)
         ikony.apply_icons(self)
         self.search_icon = self.search.addAction(ikony.fa_icon("magnifying-glass"), QLineEdit.LeadingPosition)
         self.search_icon.setProperty("fa_name", "magnifying-glass")
@@ -3910,6 +4172,30 @@ class MainWindow(QMainWindow):
         lay.addLayout(row)
         d.setMinimumWidth(640 if acc and acc.get('baner') else 560)
         d.exec()
+
+    def copyright_info(self):
+        d = QDialog(self)
+        d.setWindowTitle("Prawa autorskie do pieśni i dobre źródła")
+        lay = QVBoxLayout(d)
+        tb = QTextBrowser()
+        tb.setOpenExternalLinks(True)
+        tb.setHtml(COPYRIGHT_HTML)
+        lay.addWidget(tb)
+        b = QPushButton("Zamknij")
+        b.clicked.connect(d.accept)
+        lay.addWidget(b, 0, Qt.AlignRight)
+        d.resize(760, 720)
+        d.exec()
+
+    def set_language(self, code):
+        self.settings.setValue("language", code)
+        self.settings.sync()
+        import modul_i18n
+        msg = {'pl': "Język zmieni się po ponownym uruchomieniu programu.",
+               'en': "The language will change after restarting the program.",
+               'fr': "La langue changera après le redémarrage du programme.",
+               'es': "El idioma cambiará después de reiniciar el programa."}.get(code, "Restart the program to change the language.")
+        QMessageBox.information(self, APP_NAME, msg)
 
     def tidy_dialog(self):
         """Kafel „Porządki w bazie”: duże przyciski do najczęstszych porządków."""
@@ -4572,6 +4858,38 @@ class MainWindow(QMainWindow):
         self.save_set()
 
     # ---- liturgia dnia
+    def _go_liturgy(self):
+        """Kafel „Liturgia z dnia”: dzisiejsza liturgia i propozycje pieśni (dodawanie do bieżącego zestawu)."""
+        import datetime as _dt
+        import modul_liturgia as ml
+        d = _dt.date.today()
+        try:
+            okres = ml.okres_liturgiczny(d).get('okres')
+        except Exception:
+            okres = self.m_okres.currentText()
+
+        def songs():
+            return [self.db.get(r['id']) for r in self.db.search("")]
+
+        def add(part, sid):
+            song = self.db.get(sid)
+            if not song:
+                return
+            if self.set_kind() != 'msza':
+                QMessageBox.information(self, APP_NAME, "Bieżący zestaw nie jest Mszą – pieśń można dodać w „Zestawie na Mszę”.")
+                return
+            self.setlist.add_song(part, sid, song['title'])
+            self.save_set()
+            self.statusBar().showMessage(f"Dodano do zestawu ({part}): {song['title']}", 5000)
+
+        def open_song(sid):
+            if sid and self._ensure_open(sid):
+                self.views.setCurrentIndex(self.V_ADV)
+
+        dlg = ml.LiturgyDialog(d, self.db, songs, okres or self.m_okres.currentText(), [p for p, _ in MASS_PARTS],
+                               add, open_song, self)
+        dlg.show()
+
     def open_liturgy(self):
         import modul_liturgia as ml
         if self.set_kind() != 'msza':
@@ -6531,6 +6849,13 @@ def main():
     except Exception:
         pass
     migrate_settings()
+    try:                                                   # język interfejsu (pliki i18n/*.json)
+        import modul_i18n
+        lang = QSettings("LiberCanticorum", "LiberCanticorum").value("language", "") or modul_i18n.system_language()
+        modul_i18n.load(lang)
+        modul_i18n.install(app)
+    except Exception as e:
+        print("Tłumaczenia:", e)
     w = MainWindow(default_db_path())
     w.show()
     mig = QSettings("LiberCanticorum", "LiberCanticorum").value("migrated_from", "")
