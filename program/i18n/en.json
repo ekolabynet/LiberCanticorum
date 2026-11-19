@@ -611,6 +611,13 @@
   "Na wejście": "Entrance",
   "Do Maryi": "To Mary",
   "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Parts of the Mass set – order, names and your own parts (e.g. “To Mary”, “Closing”).\nChecked = this part may hold several songs.",
-  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Part name (e.g. “To Mary”, “Closing”):"
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Part name (e.g. “To Mary”, “Closing”):",
+  "✚ Dodaj część Mszy": "✚ Add Mass part",
+  "Nowa część Mszy": "New Mass part",
+  "Zmień nazwę części": "Rename part",
+  "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "New part at the end, e.g. “To Mary”, “Closing”",
+  "Zmień nazwę części „{x}”": "Rename part “{x}”",
+  "Usuń część „{x}” z zestawu": "Remove part “{x}” from the set",
+  "Wstaw nową część po „{x}”": "Insert a new part after “{x}”"
  }
 }

@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.22.0
+# Liber Canticorum 0.22.1
 *wolny śpiewnik dla wspólnot*
 
 *Liber canticorum* to po łacinie „księga pieśni”. *Liber* znaczy „księga”, a zarazem przywodzi na myśl
@@ -12,7 +12,7 @@ z nutami, odtwarzaczem głosów, pilotem w telefonie i śpiewnikiem offline. To 
 Działa na Windows, macOS i Linux. Startuje z pustą bazą: teksty, nuty i nagrania wpisujesz i dodajesz sam.
 
 **Numeracja wersji.** Od wersji 0.9.7 program ma numerację 0.x.y (wcześniejsze wydania nosiły numery 7.x–9.7).
-0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.21.x, 0.22.0 itd.
+0.x oznacza, że program wciąż szybko się rozwija; kolejne wydania to 0.21.x, 0.22.1 itd.
 
 ## Jak wygląda
 
@@ -86,7 +86,9 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 
 ## Krok po kroku: nowe funkcje
 
-**Własne części Mszy (nowość w 0.22).** Zakładka **Msza** → „✎ Części Mszy…”:
+**Własne części Mszy (nowość w 0.22).** Wprost w wykazie zakładki **Msza** przy nazwie każdej części są ikony
+**✎** (zmień nazwę), **🗑** (usuń część z zestawu) i **✚** (wstaw nową część poniżej), a pod wykazem –
+„✚ Dodaj część Mszy”. Pełny edytor (z kolejnością) – „✎ Części Mszy…”:
 1. **✚ Dodaj część…** – np. „Do Maryi”, „Na zakończenie”, „Hymn patronalny” (wstawiana po zaznaczonej).
 2. **✎ Zmień nazwę** (albo dwuklik) – pieśni przechodzą razem z przemianowaną częścią.
 3. **↑ / ↓** – kolejność; **🗑 Usuń** – pieśni z usuniętej części trafiają do pierwszej części.
@@ -195,7 +197,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.22.0/
+LiberCanticorum_0.22.1/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

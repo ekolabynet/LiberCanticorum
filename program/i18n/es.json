@@ -611,6 +611,13 @@
   "Na wejście": "Entrada",
   "Do Maryi": "A María",
   "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Partes del conjunto para la misa – orden, nombres y partes propias (p. ej. «A María», «Final»).\nMarcado = esta parte admite varios cantos.",
-  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nombre de la parte (p. ej. «A María», «Final»):"
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nombre de la parte (p. ej. «A María», «Final»):",
+  "✚ Dodaj część Mszy": "✚ Añadir parte de la misa",
+  "Nowa część Mszy": "Nueva parte de la misa",
+  "Zmień nazwę części": "Renombrar parte",
+  "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "Nueva parte al final, p. ej. «A María», «Final»",
+  "Zmień nazwę części „{x}”": "Renombrar la parte «{x}»",
+  "Usuń część „{x}” z zestawu": "Quitar la parte «{x}»",
+  "Wstaw nową część po „{x}”": "Insertar una parte después de «{x}»"
  }
 }

@@ -611,6 +611,13 @@
   "Na wejście": "Entrée",
   "Do Maryi": "À Marie",
   "Części zestawu na Mszę – kolejność, nazwy i własne części (np. „Do Maryi”, „Na zakończenie”).\nZaznaczone pole = w tej części może być kilka pieśni.": "Parties de l’ensemble pour la messe – ordre, noms et parties personnalisées (p. ex. « À Marie », « Envoi »).\nCoché = plusieurs chants possibles dans cette partie.",
-  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nom de la partie (p. ex. « À Marie », « Envoi ») :"
+  "Nazwa części (np. „Do Maryi”, „Na zakończenie”):": "Nom de la partie (p. ex. « À Marie », « Envoi ») :",
+  "✚ Dodaj część Mszy": "✚ Ajouter une partie",
+  "Nowa część Mszy": "Nouvelle partie de la messe",
+  "Zmień nazwę części": "Renommer la partie",
+  "Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”": "Nouvelle partie à la fin, p. ex. « À Marie », « Envoi »",
+  "Zmień nazwę części „{x}”": "Renommer la partie « {x} »",
+  "Usuń część „{x}” z zestawu": "Retirer la partie « {x} »",
+  "Wstaw nową część po „{x}”": "Insérer une partie après « {x} »"
  }
 }

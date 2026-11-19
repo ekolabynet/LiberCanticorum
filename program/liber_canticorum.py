@@ -53,12 +53,12 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
                                QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFontComboBox,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QInputDialog,
                                QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
-                               QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QSplitter, QTabWidget, QTextBrowser,
+                               QMessageBox, QToolButton, QPlainTextEdit, QPushButton, QSpinBox, QSplitter, QTabWidget, QTextBrowser,
                                QToolBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView)
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik dla wspólnot"
-VERSION = "0.22.0"
+VERSION = "0.22.1"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
 
@@ -2663,11 +2663,29 @@ class MassPage(QWidget):
         for r, part in enumerate(names):
             it = tree.parts[part]
             multi = MASS_MULTI.get(part, True)
+            head = QWidget()
+            hl = QHBoxLayout(head)
+            hl.setContentsMargins(0, 0, 0, 0)
+            hl.setSpacing(2)
             lab = QLabel(part)
             lab.setObjectName("massPart")
             if part in ORDINARY:
                 lab.setStyleSheet("color: #aa2828;")
-            self.grid.addWidget(lab, r, 0, Qt.AlignTop)
+            hl.addWidget(lab)
+            hl.addStretch(1)
+            for txt, tip, fn in (("✎", f"Zmień nazwę części „{part}”", lambda _=False, p=part: self.rename_part(p)),
+                                 ("🗑", f"Usuń część „{part}” z zestawu", lambda _=False, p=part: self.delete_part(p)),
+                                 ("✚", f"Wstaw nową część po „{part}”", lambda _=False, p=part: self.insert_part(p))):
+                b = QToolButton()
+                b.setText(txt)
+                b.setToolTip(tip)
+                b.setAutoRaise(True)
+                b.setFixedSize(34, 34)
+                b.setStyleSheet("QToolButton { font-size: 15pt; }")
+                b.clicked.connect(fn)
+                hl.addWidget(b)
+            hl.addSpacing(10)
+            self.grid.addWidget(head, r, 0, Qt.AlignTop)
             box = QWidget()
             bl = QVBoxLayout(box)
             bl.setContentsMargins(0, 0, 0, 0)
@@ -2703,6 +2721,70 @@ class MassPage(QWidget):
                 row.addStretch(1)
                 bl.addLayout(row)
             self.grid.addWidget(box, r, 1, Qt.AlignTop)
+        if tree.kind == 'msza':
+            add = QPushButton("✚ Dodaj część Mszy")
+            add.setToolTip("Nowa część na końcu zestawu, np. „Do Maryi”, „Na zakończenie”")
+            add.clicked.connect(lambda: self.insert_part(None))
+            self.grid.addWidget(add, len(names), 0, Qt.AlignTop | Qt.AlignLeft)
+
+    # --- części Mszy wprost z wykazu ---
+    def insert_part(self, after):
+        name, ok = QInputDialog.getText(self, "Nowa część Mszy", "Nazwa części (np. „Do Maryi”, „Na zakończenie”):")
+        name = name.strip() if ok else ""
+        if not name:
+            return
+        parts = list(MASS_PARTS)
+        if name in [n for n, _ in parts]:
+            QMessageBox.information(self, APP_NAME, f"Część „{name}” już jest w zestawie.")
+            return
+        k = [n for n, _ in parts].index(after) + 1 if after in [n for n, _ in parts] else len(parts)
+        parts.insert(k, (name, True))
+        self._store_parts(parts)
+
+    def rename_part(self, part):
+        name, ok = QInputDialog.getText(self, "Zmień nazwę części", f"Nowa nazwa części „{part}”:", text=part)
+        name = name.strip() if ok else ""
+        if not name or name == part:
+            return
+        if name in [n for n, _ in MASS_PARTS]:
+            QMessageBox.information(self, APP_NAME, f"Część „{name}” już jest w zestawie.")
+            return
+        parts = [(name if n == part else n, m) for n, m in MASS_PARTS]
+        if part not in [n for n, _ in MASS_PARTS]:
+            parts.append((name, True))
+        self._store_parts(parts, {part: name})
+
+    def delete_part(self, part):
+        it = self.mw.setlist.parts.get(part)
+        n = it.childCount() if it else 0
+        parts = [(x, m) for x, m in MASS_PARTS if x != part]
+        if not parts:
+            return
+        msg = f"Usunąć część „{part}” z zestawu na Mszę?"
+        if n:
+            msg += f"\n\nJej pieśni ({n}) zostaną usunięte z zestawu (same pieśni zostają w bazie)."
+        msg += "\n\nDomyślny układ można przywrócić w „✎ Części Mszy…”."
+        if QMessageBox.question(self, APP_NAME, msg) != QMessageBox.Yes:
+            return
+        if it:
+            it.takeChildren()
+        self._store_parts(parts)
+
+    def _store_parts(self, parts, renamed=None):
+        mw = self.mw
+        tree = mw.setlist
+        if renamed and tree.kind == 'msza':                # pieśni idą za przemianowaną częścią
+            for was, n in renamed.items():
+                if was in tree.parts:
+                    it = tree.parts.pop(was)
+                    it.setData(0, Qt.UserRole + 1, n)
+                    tree.parts[n] = it
+        mw.settings.setValue("mass_parts", json.dumps(parts, ensure_ascii=False))
+        apply_mass_parts(parts)
+        if mw.set_kind() == 'msza':
+            tree.rebuild_parts()
+        mw.save_set()
+        self.refresh()
 
     def remove(self, part, j):
         it = self.mw.setlist.parts[part]
@@ -2791,19 +2873,7 @@ class MassPage(QWidget):
                     renamed[was] = n
         if not parts:
             return
-        tree = mw.setlist
-        if renamed and tree.kind == 'msza':                # pieśni idą za przemianowaną częścią
-            for was, n in renamed.items():
-                if was in tree.parts:
-                    it = tree.parts.pop(was)
-                    it.setData(0, Qt.UserRole + 1, n)
-                    tree.parts[n] = it
-        mw.settings.setValue("mass_parts", json.dumps(parts, ensure_ascii=False))
-        apply_mass_parts(parts)
-        if mw.set_kind() == 'msza':
-            mw.setlist.rebuild_parts()
-        mw.save_set()
-        self.refresh()
+        self._store_parts(parts, renamed)
 
     def clear_part(self, part):
         it = self.mw.setlist.parts[part]
