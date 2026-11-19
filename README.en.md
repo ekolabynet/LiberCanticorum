@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.27.5
+# Liber Canticorum 0.27.6
 *A free songbook for church musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -76,7 +76,7 @@ in **Latin** the window shows the *Proprium Missae* of the 1962 Missal directly 
 Evangelium, Offertorium, Secreta, Communio, Postcommunio – in Latin, from Missale Meum) and suggests songs from it.
 Dates are shown in the interface language.
 
-**Pages with readings (0.27.5).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
+**Pages with readings (0.27.6).** In “Today's liturgy” the button “📋 Pages with readings – choose…” opens a list of
 pages with the readings of the chosen day: Vatican News in all its languages (the “Word of the day” pages in English,
 Italian, French, German, Spanish and Portuguese open directly on that day; the others open the language's home page),
 national missals, Polish missals, the 1962 Ordo. You can add **your own address** with the date in it
@@ -127,7 +127,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.27.5.zip` and run:
+Unpack `LiberCanticorum_0.27.6.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.
@@ -142,7 +142,7 @@ The program is free. If it helps you, the Home screen tiles show how to support:
 - **Centre for the Blind in Laski**, founded by Blessed Mother Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002**; [laski.edu.pl](https://laski.edu.pl/),
 - **A parish of Our Lady of Guadalupe** – outside Poland, find the one nearest to you and support it (the tile opens a map); our own parish is Our Lady Queen of Mexico (of Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920**; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
 - **Schola adHoc** – we love music, especially choral music and the music of the liturgy, and we cannot help singing :-).
-  We serve the parish of Our Lady of Guadalupe in Laski and look after the Mass for abundant grace for families
+  We serve the parish of Our Lady Queen of Mexico in Laski and look after the Mass for abundant grace for families
   ([who we are](https://dowiaryprzezliturgie.pl/adhoc/2026/10/10/kim-jestesmy/), in Polish). Come and sing with us at
   Mass on the first Sunday of the month at noon; rehearsals on Tuesdays at 19:00 in the parish house of the same parish. Live far away, on another continent? Pray with us and send us your intention ;-); [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – new music for the 500th anniversary of the apparitions on Tepeyac hill (in preparation) –
