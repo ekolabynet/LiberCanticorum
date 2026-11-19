@@ -564,9 +564,13 @@ class SearchDialog(QDialog):
         h.addWidget(self.s_info, 1)
         for txt, fn in (("Otwórz zaznaczone", lambda: self.open_score(self.s_tree.currentItem())),
                         ("Wyniki w przeglądarce", lambda: QDesktopServices.openUrl(QUrl(musescore_url(self.q.text())))),
-                        ("Dołącz pobrany plik nut…", self.attach_dialog_fn)):
+                        ("💾  ZAPISZ pobrane nuty w pieśni…", self.attach_dialog_fn)):
             b = QPushButton(txt)
             b.clicked.connect(fn)
+            if txt.startswith("💾"):
+                b.setMinimumHeight(42)
+                b.setStyleSheet("QPushButton { background: #7A2E3A; color: white; font-size: 15px; font-weight: bold;"
+                                " border-radius: 6px; padding: 6px 16px; } QPushButton:hover { background: #8E3846; }")
             h.addWidget(b)
         l.addLayout(h)
         return w

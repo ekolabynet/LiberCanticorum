@@ -878,7 +878,7 @@ class ScoreSearchDialog(QDialog):
                 "<i>organy / fortepian</i> (organ, piano).</li>"
                 "<li>Kliknij <b>Download</b> i wybierz <b>PDF</b> albo <b>MuseScore</b> (.mscz – da się z niego "
                 "zrobić MIDI i odczytać słowa). Pobieranie wymaga darmowego konta w MuseScore.</li>"
-                "<li>Pobrany plik pojawi się poniżej na liście sam – kliknij <b>„Dołącz zaznaczone do pieśni”</b>.</li>"
+                "<li>Pobrany plik pojawi się poniżej na liście sam – kliknij duży przycisk <b>„💾 ZAPISZ nuty w pieśni”</b>.</li>"
                 "</ol>", wordWrap=True)
             ml.addWidget(steps)
             if webengine_installed():
@@ -934,18 +934,25 @@ class ScoreSearchDialog(QDialog):
         self.local.setMinimumHeight(80)
         lay.addWidget(self.local, 1)
         lrow = QHBoxLayout()
-        b_att = QPushButton("Dołącz zaznaczone do pieśni")
+        b_att = QPushButton("💾  ZAPISZ nuty w pieśni")
+        b_att.setToolTip("Zapisuje zaznaczone pliki (albo jedyny plik z listy) jako nuty bieżącej pieśni")
+        b_att.setMinimumHeight(46)
+        b_att.setMinimumWidth(260)
+        b_att.setStyleSheet("QPushButton { background: #7A2E3A; color: white; font-size: 16px; font-weight: bold;"
+                            " border-radius: 6px; padding: 6px 18px; }"
+                            "QPushButton:hover { background: #8E3846; } QPushButton:pressed { background: #5E2330; }")
         b_att.clicked.connect(self.attach_local)
+        self.b_save = b_att
         b_pick = QPushButton("Wskaż plik…")
         b_pick.clicked.connect(self.pick_files)
         b_all = QPushButton("Pokaż też starsze pobrane")
         b_all.clicked.connect(lambda: self.scan_downloads(all_recent=True))
         close = QPushButton("Zamknij")
         close.clicked.connect(self.close)
-        lrow.addWidget(b_att)
         lrow.addWidget(b_pick)
         lrow.addWidget(b_all)
         lrow.addStretch()
+        lrow.addWidget(b_att)
         lrow.addWidget(close)
         lay.addLayout(lrow)
         self.status = QLabel(wordWrap=True)
@@ -984,7 +991,7 @@ class ScoreSearchDialog(QDialog):
         for _, path in sorted(found, reverse=True):
             self.add_local(path, select=True)
         if found:
-            self.status.setText(f"Nowe pliki w Pobranych: {len(found)} – zaznacz i kliknij „Dołącz zaznaczone do pieśni”.")
+            self.status.setText(f"Nowe pliki w Pobranych: {len(found)} – zaznacz i kliknij „💾 ZAPISZ nuty w pieśni”.")
 
     def add_local(self, path, select=False):
         for i in range(self.local.count()):
@@ -1006,7 +1013,7 @@ class ScoreSearchDialog(QDialog):
     def attach_local(self):
         items = self.local.selectedItems() or ([self.local.item(0)] if self.local.count() == 1 else [])
         if not items:
-            self.status.setText("Zaznacz pliki na liście „Pobrane w przeglądarce”.")
+            self.status.setText("Zaznacz pliki na liście „Pobrane pliki” i kliknij „💾 ZAPISZ nuty w pieśni”.")
             return
         got = []
         for it in items:
