@@ -144,7 +144,7 @@ SUPPORT = [
       'tytul': "Ofiara na rzecz parafii",
       'zrodlo': "parafiawlaskach.pl/kontakt"}),
     ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
-     "Kochamy muzykę – zwłaszcza chóralną i tę, która towarzyszy liturgii – i nie możemy nie śpiewać :-). Śpiewem służymy wspólnocie parafii M.B. Królowej Meksyku w Laskach; promienie w naszym logo to zachwyt nad niepojętym działaniem Boga. Opiekujemy się Mszą o bogactwo łaski dla rodzin – byłych, obecnych i przyszłych, we wszystkich ich potrzebach (to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
+     "Kochamy muzykę – zwłaszcza chóralną i tę, która towarzyszy liturgii – i nie możemy nie śpiewać :-). Śpiewem służymy wspólnocie parafii M.B. Królowej Meksyku w Laskach; promienie w naszym logo to zachwyt nad niepojętym działaniem Boga. Jesteśmy odpowiedzialni za Mszę o bogactwo łaski dla rodzin – byłych, obecnych i przyszłych, we wszystkich ich potrzebach (to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
      {'zaangazuj': "Najlepiej wesprzesz nas, śpiewając razem z nami: na Mszy w I niedzielę miesiąca w samo południe w kościele w Laskach (ul. 3 Maja 40/42), a próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! Mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – polecimy ją Bogu na Mszy.",
       'baner': "ikony/adhoc_baner.png"}),

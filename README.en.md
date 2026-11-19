@@ -142,7 +142,7 @@ The program is free. If it helps you, the Home screen tiles show how to support:
 - **Centre for the Blind in Laski**, founded by Blessed Mother Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002**; [laski.edu.pl](https://laski.edu.pl/),
 - **A parish of Our Lady of Guadalupe** – outside Poland, find the one nearest to you and support it (the tile opens a map); our own parish is Our Lady Queen of Mexico (of Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920**; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
 - **Schola adHoc** – we love music, especially choral music and the music of the liturgy, and we cannot help singing :-).
-  We serve the parish of Our Lady Queen of Mexico in Laski and look after the Mass for abundant grace for families
+  We serve the parish of Our Lady Queen of Mexico in Laski and are responsible for the Mass for abundant grace for families
   ([who we are](https://dowiaryprzezliturgie.pl/adhoc/2026/10/10/kim-jestesmy/), in Polish). Come and sing with us at
   Mass on the first Sunday of the month at noon; rehearsals on Tuesdays at 19:00 in the parish house of the same parish. Live far away, on another continent? Pray with us and send us your intention ;-); [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – new music for the 500th anniversary of the apparitions on Tepeyac hill (in preparation) –

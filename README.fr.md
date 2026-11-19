@@ -129,7 +129,7 @@ Le programme est gratuit. S'il vous est utile, les tuiles de l'accueil indiquent
 - **Centre pour aveugles de Laski**, fondé par la bienheureuse Mère Elżbieta Róża Czacka – mBank **02 1140 1010 0000 4399 5800 1002** ; [laski.edu.pl](https://laski.edu.pl/),
 - **Une paroisse Notre-Dame de Guadalupe** – hors de Pologne, cherchez la plus proche et soutenez-la (la tuile ouvre une carte) ; notre paroisse est Notre-Dame Reine du Mexique (de Guadalupe), Laski – PKO BP **18 1020 1026 0000 1102 0016 9920** ; [parafiawlaskach.pl](https://parafiawlaskach.pl/),
 - **Schola adHoc** – nous aimons la musique, surtout chorale et liturgique, et nous ne pouvons pas ne pas chanter :-) ;
-  nous servons la paroisse Notre-Dame Reine du Mexique à Laski et la messe pour l'abondance de grâce pour les familles
+  nous servons la paroisse Notre-Dame Reine du Mexique à Laski et sommes responsables de la messe pour l'abondance de grâce pour les familles
   ([qui sommes-nous](https://dowiaryprzezliturgie.pl/adhoc/2026/10/10/kim-jestesmy/), en polonais). Venez chanter avec nous
   à la messe le premier dimanche du mois à midi ; répétitions le mardi à 19 h à la maison paroissiale de cette paroisse. Vous habitez loin, sur un autre continent ? Priez avec nous et envoyez-nous votre intention ;-) ; [dowiaryprzezliturgie.pl/adhoc](https://dowiaryprzezliturgie.pl/adhoc/),
 - **Guadalupe500.org** – nouvelle musique pour le 500e anniversaire des apparitions sur la colline du Tepeyac
