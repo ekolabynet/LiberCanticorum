@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.4"
+VERSION = "0.29.5"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -147,7 +147,8 @@ SUPPORT = [
     ("ikony/adhoc_znak.png", "Wesprzyj Scholę adHoc",
      "Kochamy muzykę – zwłaszcza chóralną i tę, która towarzyszy liturgii – i nie możemy nie śpiewać :-). Śpiewem służymy wspólnocie parafii M.B. Królowej Meksyku w Laskach; promienie w naszym logo to zachwyt nad niepojętym działaniem Boga. Jesteśmy odpowiedzialni za Mszę o bogactwo łaski dla rodzin – byłych, obecnych i przyszłych, we wszystkich ich potrzebach (to nie jest prosperity gospel :-) ). Modlimy się także za Twoją rodzinę ;-).",
      "https://dowiaryprzezliturgie.pl/adhoc/",
-     {'zaangazuj': "Najlepiej wesprzesz nas, śpiewając razem z nami: na Mszy w I niedzielę miesiąca w samo południe w kościele w Laskach (ul. 3 Maja 40/42), a próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! Mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – polecimy ją Bogu na Mszy.",
+     {'krotko': "Schola adHoc działa przy parafii M.B. Królowej Meksyku w Laskach. Jesteśmy odpowiedzialni za Mszę o bogactwo łaski dla rodzin. Dołącz swoją intencję i pomódl się śpiewem razem z nami :-).",
+      'zaangazuj': "Najlepiej wesprzesz nas, śpiewając razem z nami: na Mszy w I niedzielę miesiąca w samo południe w kościele w Laskach (ul. 3 Maja 40/42), a próby mamy we wtorki o 19:00 w domu parafialnym. Zaproś też znajomych i rodzinę! Mieszkasz daleko – choćby na innym kontynencie? Módl się razem z nami w I niedzielę miesiąca i przyślij swoją intencję (kontakt na stronie scholi) – polecimy ją Bogu na Mszy.",
       'baner': "ikony/adhoc_baner.png"}),
     ("🌹", "Wesprzyj projekt Guadalupe500.org",
      "Nowa muzyka na 500-lecie objawień Matki Bożej na wzgórzu Tepeyac w Meksyku (w przygotowaniu).",
@@ -3830,7 +3831,8 @@ class MainWindow(QMainWindow):
         ]
         if __import__('modul_i18n').LANG == 'la':          # po łacinie (dla tradycjonalistów) – bez kafla gitary :-)
             tiles = [t for t in tiles if t[1] != "Akordy"]
-        self.home = mw.HomePage(tiles, support=[(ic, t, d, (lambda u=u, t=t, d=d, a=a: self._open_support(t, u, d, a)))
+        self.home = mw.HomePage(tiles, support=[(ic, t, a.get('krotko') or d,    # na kafelku krótko, w okienku pełny opis
+                                                 (lambda u=u, t=t, d=d, a=a: self._open_support(t, u, d, a)))
                                                 for ic, t, d, u, a in SUPPORT])
         self._add_lang_button()
         self.v_texts = mw.TextsPage(self.db, self.set_entries, self._go_slides, self._go_edit)
