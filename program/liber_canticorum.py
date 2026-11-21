@@ -53,12 +53,12 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
                                QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFontComboBox,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QInputDialog,
                                QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
-                               QMessageBox, QToolButton, QPlainTextEdit, QPushButton, QSpinBox, QSplitter, QTabWidget, QTextBrowser,
+                               QMessageBox, QToolButton, QPlainTextEdit, QPushButton, QRadioButton, QSpinBox, QSplitter, QTabWidget, QTextBrowser,
                                QToolBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView)
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.29.8"
+VERSION = "0.30.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -946,6 +946,81 @@ def song_blocks(song):
         if ref_lines and cfg.get('powtarzaj_refren') and i < len(verses) - 1:
             out.append((None, ["(Refren)"]))
     return out
+
+
+def export_songbook_pdf(songs, path, title="Śpiewnik", scores_fn=None, font_pt=13, subtitle="", progress=None):
+    """Śpiewnik PDF: spis treści, potem każda pieśń – tekst (refren, zwrotki) i jej nuty (PDF).
+    songs – słowniki pieśni; scores_fn(song) → [(nazwa, bajty PDF)]. Zakładki PDF prowadzą do pieśni."""
+    import io
+    from pypdf import PdfReader, PdfWriter
+    from PySide6.QtGui import QPageLayout
+    from PySide6.QtCore import QBuffer, QIODevice
+
+    def render(html):
+        buf = QBuffer()
+        buf.open(QIODevice.WriteOnly)
+        pw = QPdfWriter(buf)
+        pw.setPageSize(QPageSize(QPageSize.A4))
+        pw.setPageMargins(QMarginsF(18, 16, 18, 16), QPageLayout.Millimeter)
+        pw.setResolution(72)                    # 1 piksel = 1 punkt – rozmiar czcionki jak w punktach
+        pw.setTitle(title)
+        pw.setCreator(f"{APP_NAME} {VERSION}")
+        doc = QTextDocument()
+        f = QFont("DejaVu Sans")
+        f.setPointSizeF(font_pt)
+        doc.setDefaultFont(f)
+        doc.setHtml(html)
+        doc.setPageSize(QSizeF(pw.width(), pw.height()))     # własny podział na strony – bez numerów od 1
+        doc.print_(pw)
+        buf.close()
+        return bytes(buf.data())
+
+    esc = H.escape
+    parts = []                                  # [(tytuł, [PdfReader…])]
+    for n, song in enumerate(songs, 1):
+        if progress and not progress(n - 1, len(songs), song.get('title', '')):
+            return None
+        meta = " · ".join(dict.fromkeys(x for x in (
+            song.get('_czesc') if song.get('_czesc') not in (None, FREE_PART) else '',
+            song.get('spiewnik', ''), song.get('kategoria', '')) if x))
+        h = [f"<h2>{n}. {esc(song.get('title', ''))}</h2>"]
+        if meta:
+            h.append(f"<p style='color:#666'><i>{esc(meta)}</i></p>")
+        for label, lines in song_blocks(song):
+            body = "<br>".join(esc(l) for l in lines)
+            if label == "Refren:":
+                h.append(f"<p style='margin-left:18px'><b>Ref.</b><br><i>{body}</i></p>")
+            else:
+                h.append(f"<p>{('<b>' + esc(label) + '</b><br>') if label else ''}{body}</p>")
+        readers = [PdfReader(io.BytesIO(render("".join(h))))]
+        for _, data in (scores_fn(song) if scores_fn else []):
+            try:
+                readers.append(PdfReader(io.BytesIO(data)))
+            except Exception:
+                pass
+        parts.append((f"{n}. {song.get('title', '')}", readers))
+
+    def toc(starts):
+        rows = "".join(f"<tr><td>{esc(t)}</td><td align='right'>{p_}</td></tr>" for (t, _), p_ in zip(parts, starts))
+        return render(f"<h1>{esc(title)}</h1>" + (f"<p><i>{esc(subtitle)}</i></p>" if subtitle else "") +
+                      f"<table width='100%' cellpadding='3'>{rows}</table>"
+                      f"<p style='color:#888;font-size:small'>{esc(APP_NAME)} – {esc(APP_MOTTO)}</p>")
+    lens = [sum(len(r.pages) for r in rd) for _, rd in parts]
+    toc_len = len(PdfReader(io.BytesIO(toc([999] * len(parts)))).pages)
+    starts, p_ = [], toc_len + 1
+    for L in lens:
+        starts.append(p_)
+        p_ += L
+    wr = PdfWriter()
+    wr.append(PdfReader(io.BytesIO(toc(starts))))
+    for (t, readers), st in zip(parts, starts):
+        for r in readers:
+            wr.append(r)
+        wr.add_outline_item(t, st - 1)
+    wr.add_metadata({"/Title": title, "/Creator": f"{APP_NAME} {VERSION}"})
+    with open(path, "wb") as f:
+        wr.write(f)
+    return path
 
 
 def _with_audio(song):
@@ -3817,6 +3892,8 @@ class MainWindow(QMainWindow):
              lambda: self.views.setCurrentIndex(self.V_SCORES)),
             ("⛪", "Zestaw na Mszę", "Zaplanuj pieśni na Mszę: części, liturgia dnia, eksport i pokaz.",
              self._go_set),
+            ("🎧", "Eksport materiałów do nauki pieśni",
+             "Śpiewnik PDF i na telefon, nuty, nagrania MP3 głosów, wersja dla niewidomych.", self.learn_export),
             ("🎵", "Edytor melodii", "Wpisz nuty, słowa i akordy jak w MuseScore; posłuchaj (chór i organy) i zapisz w pieśni.",
              self._go_melody),
             ("📖", "Liturgia z dnia", "Czytania, psalm i modlitwy z dzisiejszej Mszy oraz pasujące pieśni z Twojej bazy.",
@@ -5521,7 +5598,164 @@ class MainWindow(QMainWindow):
                     out.append((os.path.splitext(a['name'])[0] + ".pdf", pdf))
         return out
 
-    def export_package(self, single=None, blind=False):
+    def learn_export(self):
+        """Uproszczone okno: materiały do nauki pieśni dla scholi i chóru (zestaw albo jedna pieśń)."""
+        import modul_audio
+        st = self.settings
+        val = lambda k, d: st.value(f"learn_{k}", d, type=type(d))
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Eksport materiałów do nauki pieśni")
+        lay = QVBoxLayout(dlg)
+        n_set = len(self.set_entries())
+        g0 = QGroupBox("Co?")
+        f0 = QVBoxLayout(g0)
+        r_set = QRadioButton(f"Bieżący zestaw ({n_set} pieśni)")
+        r_one = QRadioButton("Jedna pieśń:")
+        b_pick = QPushButton("Wybierz pieśń…")
+        chosen = {'song': None}
+        cur = self.song if self.song and self.song.get('id') else None
+        if cur:
+            chosen['song'] = cur
+            b_pick.setText(cur.get('title', '') or "Wybierz pieśń…")
+        r_set.setEnabled(n_set > 0)
+        (r_set if n_set else r_one).setChecked(True)
+        row = QHBoxLayout()
+        row.addWidget(r_one)
+        row.addWidget(b_pick, 1)
+        f0.addWidget(r_set)
+        f0.addLayout(row)
+        lay.addWidget(g0)
+
+        def pick():
+            d = QDialog(dlg)
+            d.setWindowTitle("Wybierz pieśń")
+            dl = QVBoxLayout(d)
+            q = QLineEdit()
+            q.setPlaceholderText("Szukaj: tytuł albo słowa pieśni…")
+            lst = QListWidget()
+            dl.addWidget(q)
+            dl.addWidget(lst, 1)
+
+            def fill():
+                lst.clear()
+                for r in self.db.search(q.text())[:500]:
+                    it = QListWidgetItem(r['title'] + (f"   · {r['spiewnik']}" if r['spiewnik'] else ""))
+                    it.setData(Qt.UserRole, r['id'])
+                    lst.addItem(it)
+                if lst.count():
+                    lst.setCurrentRow(0)
+            q.textChanged.connect(fill)
+            fill()
+            bb_ = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+            bb_.accepted.connect(d.accept)
+            bb_.rejected.connect(d.reject)
+            lst.itemDoubleClicked.connect(lambda _: d.accept())
+            dl.addWidget(bb_)
+            d.resize(480, 560)
+            if d.exec() and lst.currentItem():
+                song = self.db.get(lst.currentItem().data(Qt.UserRole))
+                if song:
+                    chosen['song'] = song
+                    b_pick.setText(song['title'])
+                    r_one.setChecked(True)
+        b_pick.clicked.connect(pick)
+
+        g1 = QGroupBox("Śpiewnik i nuty")
+        f1 = QVBoxLayout(g1)
+        c_pdf = QCheckBox("📕 Śpiewnik PDF – teksty i nuty w jednym pliku, ze spisem treści (do druku)")
+        c_html = QCheckBox("📱 Śpiewnik na telefon i tablet (offline HTML – nuty, akordy z transpozycją, uwagi)")
+        c_sc = QCheckBox("🎼 Nuty PDF osobno dla każdej pieśni")
+        c_docx = QCheckBox("📄 Teksty do edycji (DOCX)")
+        c_scb = QCheckBox("w śpiewnikach także nuty")
+        for cb, k, d in ((c_pdf, "pdf", True), (c_html, "html", True), (c_sc, "sc", False), (c_docx, "docx", False),
+                         (c_scb, "scb", True)):
+            cb.setChecked(val(k, d))
+        c_scb.setStyleSheet("margin-left: 24px;")
+        for cb in (c_pdf, c_html, c_scb, c_sc, c_docx):
+            f1.addWidget(cb)
+        c_scb.setEnabled(c_pdf.isChecked() or c_html.isChecked())
+        for cb in (c_pdf, c_html):
+            cb.toggled.connect(lambda *_: c_scb.setEnabled(c_pdf.isChecked() or c_html.isChecked()))
+        lay.addWidget(g1)
+
+        g2 = QGroupBox("Nagrania MP3 do nauki głosów")
+        f2 = QFormLayout(g2)
+        c_audio = QCheckBox("Twórz nagrania z nut (MuseScore, MusicXML, MIDI)")
+        c_audio.setChecked(val("audio", True))
+        f2.addRow(c_audio)
+        rv = QHBoxLayout()
+        vcb = {}
+        for role, label in (('S', "Sopran"), ('A', "Alt"), ('T', "Tenor"), ('B', "Bas")):
+            cb = QCheckBox(label)
+            cb.setChecked(role in val("voices", "SATB"))
+            vcb[role] = cb
+            rv.addWidget(cb)
+        rv.addStretch(1)
+        f2.addRow("Głosy:", rv)
+        rw = QHBoxLayout()
+        var = {}
+        for key, label in (('full', "całość"), ('bg', "głos z podkładem"), ('solo', "sam głos")):
+            cb = QCheckBox(label)
+            cb.setChecked(key in val("variants", "full,bg").split(','))
+            var[key] = cb
+            rw.addWidget(cb)
+        rw.addStretch(1)
+        f2.addRow("Warianty:", rw)
+        c_slow = QCheckBox("także wolniej (75%) – do pierwszej nauki")
+        c_slow.setChecked(val("slow", False))
+        f2.addRow(c_slow)
+        c_rec = QCheckBox("dołączone nagrania pieśni (np. z próby)")
+        c_rec.setChecked(val("rec", True))
+        f2.addRow(c_rec)
+        aw = list(vcb.values()) + list(var.values()) + [c_slow]
+        for w_ in aw:
+            w_.setEnabled(c_audio.isChecked())
+        c_audio.toggled.connect(lambda on: [w_.setEnabled(on) for w_ in aw])
+        if not modul_audio.soundfont():
+            warn = QLabel("⚠ Brak SoundFontu – nagrania zabrzmią prostym tonem.")
+            warn.setStyleSheet("color: #b05000;")
+            f2.addRow(warn)
+        lay.addWidget(g2)
+
+        c_acc = QCheckBox("♿ Wersja dla niewidomych i słabowidzących (teksty DOCX i TXT z nagłówkami, duża czcionka)")
+        c_acc.setChecked(val("acc", False))
+        lay.addWidget(c_acc)
+
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText("Wybierz folder i zapisz…")
+        b_more = bb.addButton("⚙ Więcej opcji…", QDialogButtonBox.ResetRole)
+        more = {'on': False}
+        b_more.clicked.connect(lambda: (more.update(on=True), dlg.accept()))
+        bb.accepted.connect(dlg.accept)
+        bb.rejected.connect(dlg.reject)
+        lay.addWidget(bb)
+        if not dlg.exec():
+            return
+        for k, v in (("pdf", c_pdf.isChecked()), ("html", c_html.isChecked()), ("sc", c_sc.isChecked()),
+                     ("docx", c_docx.isChecked()), ("scb", c_scb.isChecked()), ("audio", c_audio.isChecked()),
+                     ("voices", "".join(r for r, cb in vcb.items() if cb.isChecked())),
+                     ("variants", ",".join(k for k, cb in var.items() if cb.isChecked())),
+                     ("slow", c_slow.isChecked()), ("rec", c_rec.isChecked()), ("acc", c_acc.isChecked())):
+            st.setValue(f"learn_{k}", v)
+        single = None
+        if r_one.isChecked():
+            single = chosen['song']
+            if not single:
+                QMessageBox.information(self, APP_NAME, "Wybierz pieśń.")
+                return
+        if more['on']:
+            self.export_package(single=single, blind=c_acc.isChecked())
+            return
+        texts = (['docx', 'txt'] if c_acc.isChecked() else []) + (['docx'] if c_docx.isChecked() else [])
+        preset = {'acc': c_acc.isChecked(), 'texts': set(texts), 'scores': c_sc.isChecked(),
+                  'recordings': c_rec.isChecked(), 'audio': c_audio.isChecked(),
+                  'voices': "".join(r for r, cb in vcb.items() if cb.isChecked()),
+                  'variants': [k for k, cb in var.items() if cb.isChecked()], 'slow': c_slow.isChecked()}
+        self.export_package(single=single, blind=c_acc.isChecked(), preset=preset,
+                            extras={'pdf_book': c_pdf.isChecked(), 'html_book': c_html.isChecked(),
+                                    'book_scores': c_scb.isChecked()})
+
+    def export_package(self, single=None, blind=False, preset=None, extras=None):
         """Eksport materiałów zestawu albo pieśni do jednego folderu: teksty (DOCX/TXT/HTML), slajdy (PDF/PPTX),
         nuty (PDF), nagrania do nauki (MP3: całość i wybrane głosy). „Dla niewidomych” to wariant tekstów."""
         import modul_audio
@@ -5687,10 +5921,30 @@ class MainWindow(QMainWindow):
         bb.accepted.connect(dlg.accept)
         bb.rejected.connect(dlg.reject)
         lay.addWidget(bb)
-        if not dlg.exec():
+        if preset is not None:                  # uproszczone okno „Materiały do nauki pieśni” – bez tego okna
+            acc.setChecked(preset.get('acc', False))
+            for k, cb in fmts.items():
+                cb.setChecked(k in preset.get('texts', ()))
+            if preset.get('acc'):
+                size.setValue(18)
+            mode.setCurrentIndex(mode.findData('none'))
+            sl_pdf.setChecked(False)
+            sl_pptx.setChecked(False)
+            sc.setChecked(preset.get('scores', False))
+            sc_one.setChecked(True)
+            rec.setChecked(preset.get('recordings', False))
+            ga.setChecked(bool(preset.get('audio')) and ga.isEnabled())
+            for r, cb in vcb.items():
+                cb.setChecked(r in preset.get('voices', "SATB"))
+            for k, cb in var.items():
+                cb.setChecked(k in preset.get('variants', ('full', 'bg')))
+            t_norm.setChecked(True)
+            t_slow.setChecked(preset.get('slow', False))
+        elif not dlg.exec():
             return
+        extras = extras or {}
         # zapamiętaj wybór
-        for k, cb in fmts.items():
+        for k, cb in (fmts.items() if preset is None else ()):
             st.setValue(f"{pre}_t_{k}", cb.isChecked())
         for k, v in (("acc", acc.isChecked()), ("pt", size.value()), ("s_pdf", sl_pdf.isChecked()),
                      ("s_pptx", sl_pptx.isChecked()), ("n_pdf", sc.isChecked()), ("n_one", sc_one.isChecked()),
@@ -5699,13 +5953,15 @@ class MainWindow(QMainWindow):
                      ("a_var", ",".join(k for k, cb in var.items() if cb.isChecked())), ("a_tn", t_norm.isChecked()),
                      ("a_ts", t_slow.isChecked()), ("a_slow", slow.value()), ("a_bg", bg.value()),
                      ("a_vin", vin.currentData()), ("a_bin", bin_.currentData())):
-            st.setValue(f"{pre}_{k}", v)
+            if preset is None:
+                st.setValue(f"{pre}_{k}", v)
         chosen = [k for k, cb in fmts.items() if cb.isChecked()]
         tempos = ([1.0] if t_norm.isChecked() else []) + ([slow.value() / 100] if t_slow.isChecked() else [])
         audio = ga.isChecked() and ga.isEnabled() and tempos and (
             var['full'].isChecked() or (any(cb.isChecked() for cb in vcb.values()) and
                                         (var['bg'].isChecked() or var['solo'].isChecked())))
-        if not (chosen or audio or sl_pdf.isChecked() or sl_pptx.isChecked() or sc.isChecked() or rec.isChecked()):
+        if not (chosen or audio or sl_pdf.isChecked() or sl_pptx.isChecked() or sc.isChecked() or rec.isChecked()
+                or extras.get('pdf_book') or extras.get('html_book')):
             QMessageBox.information(self, APP_NAME, "Nie wybrano niczego do zapisania.")
             return
         m = self.mass_meta()
@@ -5837,6 +6093,29 @@ class MainWindow(QMainWindow):
                     written.append("slajdy.pptx")
         except Exception as e:
             errors.append(f"slajdy: {e}")
+        # śpiewniki: PDF (teksty + nuty) i offline HTML (telefon, tablet)
+        book_songs = [song for _, song in entries]
+        book_title = single.get('title', 'Pieśń') if single else base
+        if extras.get('pdf_book') and not pd.wasCanceled():
+            try:
+                pth = os.path.join(out, f"{base} – śpiewnik.pdf")
+                if export_songbook_pdf(book_songs, pth, book_title,
+                                       self.song_scores_pdf if extras.get('book_scores', True) else None,
+                                       18 if acc.isChecked() else 13,
+                                       progress=lambda i, n, t: tick(f"Śpiewnik PDF: {t}", 0)):
+                    written.append(pth)
+            except Exception as e:
+                errors.append(f"śpiewnik PDF: {e}")
+        if extras.get('html_book') and not pd.wasCanceled():
+            try:
+                tick("Śpiewnik offline HTML…", 0)
+                pth = os.path.join(out, f"{base} – śpiewnik na telefon.html")
+                with open(pth, "w", encoding="utf-8") as f:
+                    f.write(self.build_songbook('set', extras.get('book_scores', True), book_title,
+                                                songs=book_songs))
+                written.append(pth)
+            except Exception as e:
+                errors.append(f"śpiewnik HTML: {e}")
         pd.setValue(pd.maximum())
         msg = f"Zapisano {len(written)} plików w folderze:\n{out}"
         if errors:
@@ -6555,9 +6834,9 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             return [s for s in (self.db.get(i) for i in ids) if s]
         return [s for s in (self.db.get(r['id']) for r in self.db.search("")) if s]
 
-    def build_songbook(self, scope, scores, title=None):
+    def build_songbook(self, scope, scores, title=None, songs=None):
         import modul_html
-        songs = self._songbook_songs(scope)
+        songs = self._songbook_songs(scope) if songs is None else songs
         if not songs:
             raise ValueError("Brak pieśni do eksportu.")
         title = title or (f"Zestaw {datetime.date.today()}" if scope == 'set' else "Śpiewnik")

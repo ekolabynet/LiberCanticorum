@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.8
+# Liber Canticorum 0.30.0
 *Un recueil de chants liturgiques libre pour les musiciens, les chorales et les communautés de l'Église*
 
 🌐 [Polski](README.md) · [English](README.en.md) · **Français** · [Español](README.es.md)
@@ -66,6 +66,10 @@ Les listes se filtrent par **catégorie**, **source (recueil)** et recherche. Pl
 
 ## Nouveautés pas à pas
 
+**Nouveau en 0.30 – « Export des supports pour apprendre les chants » sur l'écran d'accueil.** Une seule fenêtre
+simple : recueil PDF (paroles et partitions, avec sommaire), recueil pour téléphone (HTML hors ligne), partitions PDF,
+paroles DOCX, enregistrements MP3 par voix (S, A, T, B, aussi plus lent) et version pour les personnes aveugles.
+
 **Nouveau en 0.29 – un recueil hors ligne plus riche pour le téléphone.** Le recueil hors ligne (Fichier → Export du
 recueil HTML hors ligne, ou ⇩ Offline dans la télécommande) permet maintenant de **transposer les accords** par demi-tons
 et affiche le **programme de messe par parties avec les notes pour les musiciens**. C'est un seul fichier ouvert dans
@@ -121,7 +125,7 @@ plein écran par défaut (« ⚙ Plus de réglages »), enregistrement MP3 / OGG
 
 ## Installation
 
-Décompressez `LiberCanticorum_0.29.8.zip` et lancez :
+Décompressez `LiberCanticorum_0.30.0.zip` et lancez :
 - Windows : `Liber Canticorum.bat` (Python de python.org avec « Add python.exe to PATH »),
 - Linux : `Liber Canticorum.desktop` ou `program/start.sh` (Debian/Ubuntu : `sudo apt install python3-venv libportaudio2`),
 - macOS : `Liber Canticorum.command`.

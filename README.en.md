@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.8
+# Liber Canticorum 0.30.0
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -70,6 +70,11 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 
 ## New features step by step
 
+**New in 0.30 – “Export song-learning materials” on the Start screen.** One simple window for the set or a single
+song: a PDF songbook (lyrics and scores in one file, with contents and bookmarks), a phone songbook (offline HTML),
+PDF scores, DOCX lyrics, MP3 learning recordings with a choice of voices (S, A, T, B; full, voice with accompaniment,
+voice alone, also slower) and a version for blind singers. Everything goes into one folder.
+
 **New in 0.29 – a richer offline songbook for the phone.** The offline songbook (File → Export offline HTML songbook,
 or ⇩ Offline in the phone remote) now has **chord transposition** by semitones (sharps or flats, remembered per song)
 and shows the **Mass set divided into parts with notes for musicians** (performer, key, notes, what to watch out for).
@@ -135,7 +140,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.29.8.zip` and run:
+Unpack `LiberCanticorum_0.30.0.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

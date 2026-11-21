@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.29.8
+# Liber Canticorum 0.30.0
 *Wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła*  
 *A free liturgical songbook for musicians, choirs and Church communities*
 
@@ -120,6 +120,11 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Nowość w 0.30 – „Eksport materiałów do nauki pieśni” na ekranie Start.** Jedno proste okno dla zestawu albo
+jednej pieśni: śpiewnik PDF (teksty i nuty w jednym pliku, ze spisem treści i zakładkami), śpiewnik na telefon (offline
+HTML), nuty PDF, teksty DOCX, nagrania MP3 do nauki z wyborem głosów (S, A, T, B; całość, głos z podkładem, sam głos,
+także wolniej) i wersja dla niewidomych. Wszystko trafia do jednego folderu; „⚙ Więcej opcji…” otwiera pełne okno eksportu.
 
 **Nowość w 0.29 – bogatszy śpiewnik offline na telefon.** Śpiewnik offline (Plik → Eksport śpiewnika offline HTML
 albo ⇩ Offline w pilocie) ma teraz **transpozycję akordów** o pół tonu (krzyżyki albo bemole, zapamiętana dla każdej
@@ -287,7 +292,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.29.8/
+LiberCanticorum_0.30.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
