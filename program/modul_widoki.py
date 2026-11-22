@@ -199,6 +199,7 @@ class HomePage(QWidget):
         self.sub = QLabel(info or "Śpiewnik, slajdy i nuty dla scholi i chóru")
         self.sub.setObjectName("homeSub")
         tl.addWidget(self.sub)
+        self.tl = tl
         head.addLayout(tl, 1)
         self.head = head
         outer.addLayout(head)
@@ -230,6 +231,16 @@ class HomePage(QWidget):
 
     def set_info(self, text):
         self.sub.setText(text)
+
+    def add_link(self, text, url):
+        """Link pod podtytułem ekranu Start (np. strona internetowa programu)."""
+        lab = QLabel(f'<a href="{url}">{text}</a>')
+        lab.setObjectName("homeLink")
+        lab.setStyleSheet("font-size: 11pt;")
+        lab.setOpenExternalLinks(True)
+        lab.setToolTip(url)
+        self.tl.addWidget(lab)
+        return lab
 
     def add_corner(self, w):
         """Widżet w prawym górnym rogu ekranu Start (np. wybór języka)."""

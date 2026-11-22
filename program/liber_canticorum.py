@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.32.0"
+VERSION = "0.32.1"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -4785,6 +4785,7 @@ class MainWindow(QMainWindow):
             a.triggered.connect(lambda _=False, c=code: self.set_language(c))
         b.setMenu(m)
         self.home.add_corner(b)
+        self.home.add_link("🌐 Strona internetowa: " + GITHUB_URL.replace("https://", ""), GITHUB_URL)
         self.lang_button = b
 
     def set_language(self, code):
