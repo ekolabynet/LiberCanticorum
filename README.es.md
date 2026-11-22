@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.30.0
+# Liber Canticorum 0.31.0
 *Un cancionero litúrgico libre para músicos, coros y comunidades de la Iglesia*
 
 🌐 [Polski](README.md) · [English](README.en.md) · [Français](README.fr.md) · **Español**
@@ -64,6 +64,10 @@ Las listas se filtran por **categoría**, **fuente (cancionero)** y búsqueda. C
 
 ## Novedades paso a paso
 
+**Novedad en 0.31 – importar cantos desde presentaciones PowerPoint e Impress** (.pptx, .odp, .ppt con
+LibreOffice): una presentación = un canto, una diapositiva = una estrofa, la diapositiva repetida = el estribillo;
+las subcarpetas se convierten en categorías.
+
 **Novedad en 0.30 – «Exportar materiales para aprender los cantos» en la pantalla de inicio.** Una sola ventana
 sencilla: cancionero PDF (letras y partituras, con índice), cancionero para el móvil (HTML sin conexión), partituras
 PDF, letras DOCX, grabaciones MP3 por voces (S, A, T, B, también más lento) y versión para personas ciegas.
@@ -123,7 +127,7 @@ melodía, pantalla completa por defecto («⚙ Más ajustes»), guardar como MP3
 
 ## Instalación
 
-Descomprime `LiberCanticorum_0.30.0.zip` y ejecuta:
+Descomprime `LiberCanticorum_0.31.0.zip` y ejecuta:
 - Windows: `Liber Canticorum.bat` (Python de python.org con «Add python.exe to PATH»),
 - Linux: `Liber Canticorum.desktop` o `program/start.sh` (Debian/Ubuntu: `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

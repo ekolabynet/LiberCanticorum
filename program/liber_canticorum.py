@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.30.0"
+VERSION = "0.31.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -3899,8 +3899,9 @@ class MainWindow(QMainWindow):
             ("📖", "Liturgia z dnia", "Czytania, psalm i modlitwy z dzisiejszej Mszy oraz pasujące pieśni z Twojej bazy.",
              self._go_liturgy),
             ("🧹", "Porządki w bazie", "Duplikaty, kategorie, cofanie ostatnich zmian.", self.tidy_dialog),
-            ("📥", "Importuj śpiewnik lub plik", "PDF, DOCX, TXT, nuty MuseScore – także całe śpiewniki.",
-             self.import_files),
+            ("📥", "Importuj śpiewnik lub plik",
+             "PDF, DOCX, TXT, PowerPoint, nuty MuseScore – także całe śpiewniki i foldery z prezentacjami.",
+             self.import_start),
             ("🎸", "Akordy", "Tekst z akordami dla gitarzystów, z transpozycją.", self._go_chords),
             ("📱", "Pilot w telefonie", "Przełączaj slajdy z telefonu albo tabletu.", self.open_pilot),
             ("⚙", "Zaawansowane", "Pełny edytor: wygląd slajdów, załączniki, wersje, eksport, ustawienia.",
@@ -4190,6 +4191,7 @@ class MainWindow(QMainWindow):
         act(m_song, "♿ Eksport dla niewidomych (DOCX, TXT, HTML, MP3)…", self.export_song_blind, "Ctrl+Shift+D", True)
         tb.addSeparator()
         act(m_file, "Importuj z pliku (DOCX, ODT, PDF, TXT, HTML)…", self.import_files, "Ctrl+I", True)
+        act(m_file, "Importuj folder z prezentacjami (PowerPoint, Impress)…", self.import_presentation_folder)
         act(m_file, "Importuj słowa z nut (MuseScore, MusicXML, PDF z nutami, MIDI)…", self.import_from_scores)
         act(m_file, "Importuj ze strony WWW…", self.import_url, "Ctrl+U", True)
         act(m_file, "Szukaj w śpiewnikach internetowych i nut w MuseScore…", self.search_online, "Ctrl+Shift+F", True)
@@ -7027,7 +7029,8 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
     def import_files(self):
         last = self.settings.value("import_dir", os.path.expanduser("~"))
         paths, _ = QFileDialog.getOpenFileNames(self, "Import pieśni", last,
-                                                "Teksty (*.docx *.odt *.pdf *.txt *.html *.htm *.json);;"
+                                                "Teksty (*.docx *.odt *.pdf *.txt *.html *.htm *.json *.pptx *.pptm *.ppt *.odp);;"
+                                                "Prezentacje (*.pptx *.pptm *.ppsx *.ppt *.pps *.odp);;"
                                                 "Nuty ze słowami (*.mscz *.mscx *.musicxml *.mxl *.xml *.pdf *.mid *.kar);;Wszystkie (*)")
         if not paths:
             return
@@ -7110,7 +7113,8 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             song = {'title': sg['title'], 'refren': sg['refren'], 'zwrotki_raw': sg['zwrotki_raw'],
                     'uwagi': sg['uwagi'], 'tagi': sg.get('tagi', ''), 'kategoria': sg.get('kategoria', ''),
                     'zrodlo': source, 'youtube': sg.get('youtube', ''), 'akordy': sg.get('akordy', ''),
-                    'config': dict(self.default_cfg(), numeruj=sg['zwrotki_raw'].count("\n\n") > 0)}
+                    'config': dict(self.default_cfg(),
+                                   numeruj=sg.get('numeruj', sg['zwrotki_raw'].count("\n\n") > 0))}
             try:
                 label = (sg.get('uwagi') or '').split(" | ")[0] or source or sg['title']
                 if sg.get('_akcja') == 'merge' and sg.get('_cel') and self.db.get(sg['_cel']):
@@ -7247,7 +7251,89 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         self.import_collection(coll, os.path.basename(path))
         return True
 
+    def import_start(self):
+        """Kafelek Start: pojedyncze pliki albo cały folder z prezentacjami."""
+        box = QMessageBox(self)
+        box.setWindowTitle("Import")
+        box.setText("Co chcesz zaimportować?")
+        b_files = box.addButton("📄 Pliki (PDF, DOCX, TXT, PowerPoint, nuty)…", QMessageBox.AcceptRole)
+        b_dir = box.addButton("📂 Cały folder z prezentacjami (PowerPoint, Impress)…", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is b_files:
+            self.import_files()
+        elif box.clickedButton() is b_dir:
+            self.import_presentation_folder()
+
+    def import_presentation_folder(self):
+        import modul_prezentacje as mp
+        last = self.settings.value("import_dir", os.path.expanduser("~"))
+        folder = QFileDialog.getExistingDirectory(self, "Folder z prezentacjami pieśni (podfoldery = kategorie)", last)
+        if not folder:
+            return
+        self.settings.setValue("import_dir", folder)
+        items = mp.find_presentations(folder)
+        if not items:
+            QMessageBox.information(self, APP_NAME, "W tym folderze nie ma prezentacji (.pptx, .ppt, .odp).")
+            return
+        self.import_presentations(items, os.path.basename(os.path.normpath(folder)))
+
+    def import_presentations(self, items, source=""):
+        """items: [(ścieżka, kategoria)] – każda prezentacja to jedna pieśń, slajd to zwrotka, powtórzony slajd to refren."""
+        import modul_prezentacje as mp
+        from PySide6.QtWidgets import QProgressDialog
+        pd = QProgressDialog("Czytam prezentacje…", "Przerwij", 0, len(items), self)
+        pd.setWindowTitle("Import prezentacji")
+        pd.setMinimumDuration(300)
+        songs, errors, seen, dup = [], [], {}, 0
+        for i, (path, cat) in enumerate(items):
+            if pd.wasCanceled():
+                return
+            pd.setValue(i)
+            pd.setLabelText(os.path.basename(path))
+            QApplication.processEvents()
+            try:
+                sg = mp.song_from_file(path, cat)
+            except Exception as e:
+                errors.append(f"{os.path.basename(path)}: {e}")
+                continue
+            if not (sg['refren'].strip() or sg['zwrotki_raw'].strip()):
+                errors.append(f"{os.path.basename(path)}: brak tekstu na slajdach")
+                continue
+            key = (fold(sg['title']), fold(sg['refren'] + sg['zwrotki_raw']))
+            where = os.path.join(cat, os.path.basename(path)) if cat else os.path.basename(path)
+            if key in seen:                         # ta sama pieśń w kilku folderach – raz, z kategorią z podfolderu
+                dup += 1
+                first = songs[seen[key]]
+                if cat and not first['kategoria']:
+                    first['kategoria'] = cat
+                    first['uwagi'] = " | ".join(x for x in (where, sg['uwagi']) if x)
+                continue
+            seen[key] = len(songs)
+            sg['uwagi'] = " | ".join(x for x in (where, sg['uwagi']) if x)
+            songs.append(sg)
+        pd.setValue(len(items))
+        if not songs:
+            QMessageBox.warning(self, APP_NAME, "Nie odczytano żadnej pieśni.\n\n" + "\n".join(errors[:12]))
+            return
+        head = f"Prezentacje: {len(songs)} pieśni"
+        if dup:
+            head += f" (pominięto {dup} powtórzonych w kilku folderach)"
+        if errors:
+            head += f"; nie odczytano {len(errors)} plików"
+        if errors:
+            QMessageBox.information(self, APP_NAME, "Tych plików nie udało się odczytać:\n  " + "\n  ".join(errors[:20]) +
+                                    ("\n  …" if len(errors) > 20 else ""))
+        self.import_collection({'naglowek': head, 'kategoria': '', 'piesni': songs}, source or "prezentacje")
+
     def import_paths(self, paths):
+        import modul_prezentacje as mp
+        pres = [p for p in paths if mp.is_presentation(p)]
+        if pres:
+            self.import_presentations([(p, "") for p in pres], os.path.basename(os.path.dirname(pres[0])))
+            paths = [p for p in paths if p not in pres]
+            if not paths:
+                return
         if len(paths) == 1 and paths[0].lower().endswith('.pdf'):
             import modul_slowa_z_nut as sn
             QApplication.setOverrideCursor(Qt.WaitCursor)

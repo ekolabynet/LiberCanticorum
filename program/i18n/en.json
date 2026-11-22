@@ -1193,6 +1193,16 @@
   "♿ Wersja dla niewidomych i słabowidzących (teksty DOCX i TXT z nagłówkami, duża czcionka)": "♿ Version for blind and partially sighted singers (DOCX and TXT lyrics with headings, large print)",
   "⚙ Więcej opcji…": "⚙ More options…",
   "Śpiewnik PDF: {a}": "PDF songbook: {a}",
-  "Śpiewnik offline HTML…": "Offline HTML songbook…"
+  "Śpiewnik offline HTML…": "Offline HTML songbook…",
+  "Importuj folder z prezentacjami (PowerPoint, Impress)…": "Import a folder of presentations (PowerPoint, Impress)…",
+  "PDF, DOCX, TXT, PowerPoint, nuty MuseScore – także całe śpiewniki i foldery z prezentacjami.": "PDF, DOCX, TXT, PowerPoint, MuseScore scores – also whole songbooks and folders of presentations.",
+  "Co chcesz zaimportować?": "What do you want to import?",
+  "📄 Pliki (PDF, DOCX, TXT, PowerPoint, nuty)…": "📄 Files (PDF, DOCX, TXT, PowerPoint, scores)…",
+  "📂 Cały folder z prezentacjami (PowerPoint, Impress)…": "📂 A whole folder of presentations (PowerPoint, Impress)…",
+  "Folder z prezentacjami pieśni (podfoldery = kategorie)": "Folder of song presentations (subfolders = categories)",
+  "W tym folderze nie ma prezentacji (.pptx, .ppt, .odp).": "There are no presentations (.pptx, .ppt, .odp) in this folder.",
+  "Czytam prezentacje…": "Reading presentations…",
+  "Import prezentacji": "Presentation import",
+  "Tych plików nie udało się odczytać:\n  {a}": "These files could not be read:\n  {a}"
  }
 }

@@ -375,7 +375,7 @@ class CollectionDialog(QDialog):
     def _label(self, i):
         s = self.coll['piesni'][i]
         nz = len([v for v in s['zwrotki_raw'].split("\n\n") if v.strip()])
-        info = f"{s.get('numer', '')}. {s['title']}   ({nz} zwr." + (", refren" if s['refren'] else "") + \
+        info = (f"{s['numer']}. " if s.get('numer') else "") + f"{s['title']}   ({nz} zwr." + (", refren" if s['refren'] else "") + \
                (", nagranie" if s.get('youtube') else "") + ")"
         act, target = self.actions[i]
         if act == 'merge':
