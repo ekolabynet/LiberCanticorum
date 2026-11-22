@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.31.0
+# Liber Canticorum 0.32.0
 *Wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła*  
 *A free liturgical songbook for musicians, choirs and Church communities*
 
@@ -126,7 +126,10 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 LibreOffice) to jedna pieśń, każdy slajd to zwrotka, a powtarzający się slajd to refren. Podfoldery (np. KOLĘDY,
 MARYJNE) stają się kategoriami, tytuł pochodzi z nazwy pliku, slajd tytułowy jest pomijany, a tekst pisany wersalikami
 zamienia się na zwykłą pisownię (z wielką literą w imionach Bożych – do sprawdzenia). Ta sama pieśń z kilku folderów
-trafia do bazy raz. Przed importem widać listę z podglądem: można odznaczyć pliki albo dołączyć pieśń do istniejącej.
+trafia do bazy raz. Można też wskazać cały folder spakowany ZIP. Przed importem otwiera się **przegląd**: tabela pieśni z filtrem
+(kategoria, nowe, dołączane, podobne w bazie, bez kategorii), zaznaczanie wielu naraz (Ctrl/Shift) i przyciski:
+📂 kategoria, 📚 źródło (śpiewnik), 🏷 tagi, ➕ nowa, 🔗 dołącz do podobnej z bazy, ⛔ pomiń, ✂ **rozdziel** (gdy w jednym
+pliku jest kilka pieśni – program sam podpowiada, gdzie zaczyna się kolejna) i ✎ tytuł.
 Zwrotkę rozłożoną na dwa slajdy trzeba potem połączyć w edytorze.
 
 **Nowość w 0.30 – „Eksport materiałów do nauki pieśni” na ekranie Start.** Jedno proste okno dla zestawu albo
@@ -300,7 +303,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.31.0/
+LiberCanticorum_0.32.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS

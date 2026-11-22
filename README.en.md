@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.31.0
+# Liber Canticorum 0.32.0
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -73,7 +73,9 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 **New in 0.31 – import songs from PowerPoint and Impress presentations.** File → *Import a folder of presentations*.
 Each presentation (.pptx, .pptm, .odp; old .ppt via LibreOffice) becomes one song: every slide is a verse and a repeated
 slide is the refrain. Subfolders become categories, the title comes from the file name, and ALL-CAPS text is converted
-to normal case. You review the list with a preview before importing.
+to normal case. A zipped folder works too. Before importing, a review table lets you filter, select many songs at
+once and set the category, source (songbook), tags and action (new / merge with a similar song / skip), and split a
+file that contains several songs.
 
 **New in 0.30 – “Export song-learning materials” on the Start screen.** One simple window for the set or a single
 song: a PDF songbook (lyrics and scores in one file, with contents and bookmarks), a phone songbook (offline HTML),
@@ -145,7 +147,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.31.0.zip` and run:
+Unpack `LiberCanticorum_0.32.0.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

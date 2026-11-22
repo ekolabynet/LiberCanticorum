@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.31.0
+# Liber Canticorum 0.32.0
 *Un recueil de chants liturgiques libre pour les musiciens, les chorales et les communautés de l'Église*
 
 🌐 [Polski](README.md) · [English](README.en.md) · **Français** · [Español](README.es.md)
@@ -129,7 +129,7 @@ plein écran par défaut (« ⚙ Plus de réglages »), enregistrement MP3 / OGG
 
 ## Installation
 
-Décompressez `LiberCanticorum_0.31.0.zip` et lancez :
+Décompressez `LiberCanticorum_0.32.0.zip` et lancez :
 - Windows : `Liber Canticorum.bat` (Python de python.org avec « Add python.exe to PATH »),
 - Linux : `Liber Canticorum.desktop` ou `program/start.sh` (Debian/Ubuntu : `sudo apt install python3-venv libportaudio2`),
 - macOS : `Liber Canticorum.command`.

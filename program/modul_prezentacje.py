@@ -72,7 +72,7 @@ def slides_pptx(path):
                     continue
                 block = []
                 for p in sp.iter(_A + 'p'):
-                    block += _pptx_paragraph(p).split('\n')
+                    block += re.split(r'[\n\x0b\u2028]', _pptx_paragraph(p).replace('_x000B_', '\n'))
                 if any(x.strip() for x in block):
                     if lines:
                         lines.append('')
@@ -110,7 +110,7 @@ def slides_odp(path):
             block = []
             for el in frame.iter():
                 if el.tag in (_O_TEXT + 'p', _O_TEXT + 'h'):
-                    block += _odp_text(el).split('\n')
+                    block += re.split(r'[\n\x0b\u2028]', _odp_text(el))
             if any(x.strip() for x in block):
                 if lines:
                     lines.append('')
@@ -212,7 +212,9 @@ def song_from_slides(slides, title, category="", source=""):
     """→ słownik pieśni jak w modul_zbior (title, refren, zwrotki_raw, uwagi, kategoria…)."""
     blocks = []
     for sl in slides:
-        lines = [re.sub(r"\s{2,}", " ", l.replace('\xa0', ' ').replace('\t', ' ')).strip() for l in sl]
+        # znaki z czcionek symboli (np. gwiazdka Wingdings jako koniec półwersu) – usunięte
+        lines = [re.sub(r"\s{2,}", " ", re.sub(r"[\uf000-\uf0ff]", " ", l).replace('\xa0', ' ').replace('\t', ' ')).strip(" ")
+                 for l in sl]
         lines = [l for l in lines if l]                   # puste wiersze w slajdzie nie dzielą zwrotki
         if lines:
             blocks.append(lines)
@@ -261,7 +263,8 @@ def song_from_slides(slides, title, category="", source=""):
         t = title_from_filename(t + ".x")
     return {'title': t or "Bez tytułu", 'refren': "\n".join(ref or []), 'zwrotki_raw': "\n\n".join(verses),
             'uwagi': " | ".join(notes), 'kategoria': category, 'tagi': '', 'youtube': '',
-            'numer': '', 'slajdy': len(slides), 'numeruj': bool(numbered)}
+            'numer': '', 'slajdy': len(slides), 'numeruj': bool(numbered),
+            '_slajdy': [list(sl) for sl in slides]}
 
 
 def song_from_file(path, category="", source=""):
@@ -283,3 +286,48 @@ def find_presentations(folder):
             if is_presentation(p):
                 out.append((p, cat))
     return out
+
+
+# ---------------------------------------------------------------- folder spakowany ZIP
+def _zip_name(info):
+    """Nazwa pliku z archiwum: UTF-8, stare kodowanie Windows (cp852/cp1250) albo zapis „#U015a”."""
+    n = info.filename
+    if not info.flag_bits & 0x800:
+        raw = n.encode('cp437', errors='replace')
+        for enc in ('utf-8', 'cp852', 'cp1250'):
+            try:
+                n = raw.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+    return re.sub(r'#U([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), n)
+
+
+def extract_presentations(zip_path, dest):
+    """Rozpakowuje z archiwum tylko prezentacje (bez plików wykonywalnych, skrótów itp.), z zachowaniem podfolderów.
+    Ścieżki „..” i bezwzględne są odrzucane. Zwraca liczbę plików."""
+    n = 0
+    with zipfile.ZipFile(zip_path) as z:
+        for info in z.infolist():
+            if info.is_dir():
+                continue
+            name = _zip_name(info).replace('\\', '/')
+            parts = [p for p in name.split('/') if p not in ('', '.')]
+            if not parts or '..' in parts or ':' in parts[0] or not is_presentation(parts[-1]):
+                continue
+            if info.file_size > 200 * 1024 * 1024:
+                continue
+            target = os.path.join(dest, *parts)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with z.open(info) as src, open(target, 'wb') as out:
+                shutil.copyfileobj(src, out)
+            n += 1
+    return n
+
+
+def zip_has_presentations(zip_path):
+    try:
+        with zipfile.ZipFile(zip_path) as z:
+            return any(is_presentation(_zip_name(i).split('/')[-1]) for i in z.infolist() if not i.is_dir())
+    except Exception:
+        return False

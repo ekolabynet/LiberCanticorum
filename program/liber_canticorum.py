@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.31.0"
+VERSION = "0.32.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -7030,7 +7030,7 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         last = self.settings.value("import_dir", os.path.expanduser("~"))
         paths, _ = QFileDialog.getOpenFileNames(self, "Import pieśni", last,
                                                 "Teksty (*.docx *.odt *.pdf *.txt *.html *.htm *.json *.pptx *.pptm *.ppt *.odp);;"
-                                                "Prezentacje (*.pptx *.pptm *.ppsx *.ppt *.pps *.odp);;"
+                                                "Prezentacje (*.pptx *.pptm *.ppsx *.ppt *.pps *.odp *.zip);;"
                                                 "Nuty ze słowami (*.mscz *.mscx *.musicxml *.mxl *.xml *.pdf *.mid *.kar);;Wszystkie (*)")
         if not paths:
             return
@@ -7086,13 +7086,20 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
 
     def import_collection(self, coll, source=""):
         """Import wielu pieśni z jednej strony / pliku (np. dział śpiewnika internetowego)."""
-        import modul_zbior as zb
+        import modul_przeglad as mpz
+        import modul_prezentacje as mp
         if not self.maybe_save():
             return
         cats = sorted(set(DEFAULT_CATEGORIES) | {c for c, _ in self.db.categories() if c})
-        dlg = zb.CollectionDialog(coll, lambda sg: self.db.find_similar(sg['title'], sg.get('refren', ''),
-                                                                        sg.get('zwrotki_raw', '')),
-                                  cats, source, self, get_fn=self.db.get)
+        try:
+            extra = json.loads(QSettings("LiberCanticorum", "LiberCanticorum").value("extra_sources", "[]") or "[]")
+        except Exception:
+            extra = []
+        srcs = sorted({s for s, _ in self.db.sources() if s} | {n for _, n in SPIEWNIKI_ADRESY} | set(extra), key=fold)
+        dlg = mpz.ReviewDialog(coll, lambda sg: self.db.find_similar(sg['title'], sg.get('refren', ''),
+                                                                     sg.get('zwrotki_raw', '')),
+                               cats, source, self, get_fn=self.db.get, sources=srcs,
+                               rebuild_fn=lambda sl, t, c: mp.song_from_slides(sl, t, c))
         if not dlg.exec():
             return
         songs = dlg.chosen()
@@ -7113,6 +7120,7 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             song = {'title': sg['title'], 'refren': sg['refren'], 'zwrotki_raw': sg['zwrotki_raw'],
                     'uwagi': sg['uwagi'], 'tagi': sg.get('tagi', ''), 'kategoria': sg.get('kategoria', ''),
                     'zrodlo': source, 'youtube': sg.get('youtube', ''), 'akordy': sg.get('akordy', ''),
+                    'spiewnik': sg.get('spiewnik', ''),
                     'config': dict(self.default_cfg(),
                                    numeruj=sg.get('numeruj', sg['zwrotki_raw'].count("\n\n") > 0))}
             try:
@@ -7258,12 +7266,41 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         box.setText("Co chcesz zaimportować?")
         b_files = box.addButton("📄 Pliki (PDF, DOCX, TXT, PowerPoint, nuty)…", QMessageBox.AcceptRole)
         b_dir = box.addButton("📂 Cały folder z prezentacjami (PowerPoint, Impress)…", QMessageBox.AcceptRole)
+        b_zip = box.addButton("🗜 Folder spakowany (ZIP)…", QMessageBox.AcceptRole)
         box.addButton(QMessageBox.Cancel)
         box.exec()
         if box.clickedButton() is b_files:
             self.import_files()
         elif box.clickedButton() is b_dir:
             self.import_presentation_folder()
+        elif box.clickedButton() is b_zip:
+            last = self.settings.value("import_dir", os.path.expanduser("~"))
+            path, _ = QFileDialog.getOpenFileName(self, "Folder z prezentacjami spakowany ZIP", last, "ZIP (*.zip)")
+            if path:
+                self.settings.setValue("import_dir", os.path.dirname(path))
+                self.import_presentation_zip(path)
+
+    def import_presentation_zip(self, path):
+        """Archiwum ZIP z prezentacjami: rozpakowanie samych prezentacji do folderu tymczasowego i import jak z folderu."""
+        import modul_prezentacje as mp
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix="lc_zip_") as tmp:
+            try:
+                QApplication.setOverrideCursor(Qt.WaitCursor)
+                n = mp.extract_presentations(path, tmp)
+            except Exception as e:
+                QMessageBox.critical(self, APP_NAME, f"Nie udało się otworzyć archiwum:\n{e}")
+                return
+            finally:
+                QApplication.restoreOverrideCursor()
+            if not n:
+                QMessageBox.information(self, APP_NAME, "W archiwum nie ma prezentacji (.pptx, .ppt, .odp).")
+                return
+            root = tmp
+            subs = [d for d in os.listdir(tmp) if os.path.isdir(os.path.join(tmp, d))]
+            if len(subs) == 1 and not [f for f in os.listdir(tmp) if os.path.isfile(os.path.join(tmp, f))]:
+                root = os.path.join(tmp, subs[0])          # ZIP z jednym folderem w środku
+            self.import_presentations(mp.find_presentations(root), os.path.splitext(os.path.basename(path))[0])
 
     def import_presentation_folder(self):
         import modul_prezentacje as mp
@@ -7328,6 +7365,12 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
 
     def import_paths(self, paths):
         import modul_prezentacje as mp
+        zips = [p for p in paths if p.lower().endswith('.zip') and mp.zip_has_presentations(p)]
+        for z in zips:
+            self.import_presentation_zip(z)
+        paths = [p for p in paths if p not in zips]
+        if not paths:
+            return
         pres = [p for p in paths if mp.is_presentation(p)]
         if pres:
             self.import_presentations([(p, "") for p in pres], os.path.basename(os.path.dirname(pres[0])))
