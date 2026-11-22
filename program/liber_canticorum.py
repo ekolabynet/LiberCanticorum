@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.32.1"
+VERSION = "0.33.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -289,6 +289,7 @@ DEFAULT_CFG = {
     'max_font': 80, 'font': 'Arial',
     'kolor_tekstu': '#ffffff', 'kolor_refrenu': '#ffff99', 'kolor_tla': '#000000',
     'tlo': '', 'przyciemnienie': 25, 'cien': True, 'margines_x': 7, 'margines_y': 5,
+    'wersaliki': False,
 }
 
 # =====================================================================
@@ -543,6 +544,8 @@ def build_song_deck(song):
     all_items = song_slide_items(song)
     if not all_items:
         return [], 0
+    if cfg.get('wersaliki'):                        # cały tekst slajdów WIELKIMI LITERAMI (tekst w bazie bez zmian)
+        all_items = [[(k, t.upper()) for k, t in it] for it in all_items]
     if cfg['auto_size']:
         sizes = [fit_px(it, cfg, W, H) for it in all_items]
         if cfg['jednolity_rozmiar']:
@@ -3686,6 +3689,8 @@ class MainWindow(QMainWindow):
         hl3.addWidget(self.w['przyciemnienie'])
         hl3.addStretch()
         g.addLayout(hl3, r, 2, 1, 2)
+        r += 1
+        chk('wersaliki', "WERSALIKI – tekst slajdów wielkimi literami", r, 0)
         r += 1
         chk('refren_osobno', "Refren na osobnym slajdzie", r, 0)
         chk('powtarzaj_refren', "Powtarzaj refren", r, 1)

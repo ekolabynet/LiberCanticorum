@@ -1237,6 +1237,7 @@
   "Rozdziel": "Split",
   "Powstanie pieśni: {n}": "Songs to create: {n}",
   "Każdy wiersz to jedna pieśń. Zaznacz wiersze (Ctrl albo Shift – wiele naraz) i użyj przycisków pod listą.<br><b>➕ Nowa</b> – doda pieśń do bazy. <b>🔗 Dołącz</b> – taka pieśń już jest w bazie: tekst trafi do niej jako wersja, nic nie zostanie nadpisane. <b>⛔ Pomiń</b> – nie importuj. <b>✂ Rozdziel</b> – gdy w jednym pliku jest kilka pieśni.": "Each row is one song. Select rows (Ctrl or Shift for several) and use the buttons below the list.<br><b>➕ New</b> – adds the song to the database. <b>🔗 Merge</b> – this song is already in the database: the lyrics are added to it as a version, nothing is overwritten. <b>⛔ Skip</b> – do not import. <b>✂ Split</b> – when one file contains several songs.",
-  "<a href=\"{a}\">🌐 Strona internetowa: {b}</a>": "<a href=\"{a}\">🌐 Website: {b}</a>"
+  "<a href=\"{a}\">🌐 Strona internetowa: {b}</a>": "<a href=\"{a}\">🌐 Website: {b}</a>",
+  "WERSALIKI – tekst slajdów wielkimi literami": "ALL CAPS – slide text in capital letters"
  }
 }
