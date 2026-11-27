@@ -1262,6 +1262,8 @@
   "Kółko myszy / przewijanie dwoma palcami zmienia slajd": "Mouse wheel / two-finger scroll changes the slide",
   "Kliknięcie w podgląd slajdu w oknie programu też przełącza pokaz": "Clicking the slide preview in the program window also advances the show",
   "Klawisze działają w czasie pokazu w całym programie (także gdy rzutnik jest na drugim ekranie, a pracujesz na laptopie) – oprócz pól do pisania. Kilka klawiszy oddziel przecinkami. Pilot do prezentacji zwykle wysyła PgDown / PgUp, B i F5 / Esc.": "During the show the keys work everywhere in the program (also when the projector is on a second screen and you work on the laptop) – except in text fields. Separate several keys with commas. Presentation clickers usually send PgDown / PgUp, B and F5 / Esc.",
-  "Pokaz: strzałki, spacja, PgDown/PgUp albo stuknięcie w gładzik zmieniają slajd – także w tym oknie. Esc kończy. Ustawienia → Klawisze i mysz w pokazie.": "Show: arrows, space, PgDown/PgUp or a touchpad tap change the slide – also in this window. Esc ends. Settings → Keys and mouse during the show."
+  "Pokaz: strzałki, spacja, PgDown/PgUp albo stuknięcie w gładzik zmieniają slajd – także w tym oknie. Esc kończy. Ustawienia → Klawisze i mysz w pokazie.": "Show: arrows, space, PgDown/PgUp or a touchpad tap change the slide – also in this window. Esc ends. Settings → Keys and mouse during the show.",
+  "📱 Prowadzący – pilot pokazu": "📱 Presenter – show remote",
+  "🎼 Muzyk – tablet z tekstem, akordami i nutami": "🎼 Musician – tablet with lyrics, chords and scores"
  }
 }

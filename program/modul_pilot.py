@@ -77,6 +77,7 @@ class PilotServer(QObject):
     command = Signal(dict)
     uploaded = Signal(int, str, bytes)               # id pieśni, nazwa pliku, dane
     songbook_wanted = Signal(str, bool)              # zakres ('all' | 'set'), z nutami
+    song_wanted = Signal(int)                        # id pieśni – tekst, akordy i nuty dla widoku muzyka
 
     def __init__(self, db_path, parent=None):
         super().__init__(parent)
@@ -92,6 +93,8 @@ class PilotServer(QObject):
         self.page_cache = {}                         # id załącznika -> [jpeg]
         self.songbooks = {}                          # (zakres, nuty) -> (bajty, nazwa pliku)
         self.songbook_events = {}
+        self.song_cache = {}                         # id pieśni -> słownik dla widoku muzyka
+        self.song_events = {}
 
     def provide_songbook(self, scope, scores, data, filename):
         """Wywołuje okno po zbudowaniu śpiewnika (wątek okna)."""
@@ -108,6 +111,27 @@ class PilotServer(QObject):
         with self.lock:
             self.songbooks.clear()
             self.page_cache.clear()
+            self.song_cache.clear()
+
+    def provide_song(self, sid, data):
+        """Wywołuje okno (wątek okna) z danymi pieśni dla widoku muzyka."""
+        with self.lock:
+            self.song_cache[sid] = data
+            ev = self.song_events.get(sid)
+        if ev:
+            ev.set()
+
+    def _get_song(self, sid, timeout=20):
+        with self.lock:
+            if sid in self.song_cache:
+                return self.song_cache[sid]
+            ev = self.song_events.setdefault(sid, threading.Event())
+            ev.clear()
+        self.song_wanted.emit(sid)
+        ev.wait(timeout)
+        with self.lock:
+            self.song_events.pop(sid, None)
+            return self.song_cache.get(sid)
 
     def _get_songbook(self, scope, scores, timeout=300):
         key = (scope, scores)
@@ -233,6 +257,12 @@ class PilotServer(QObject):
                 qs = urllib.parse.parse_qs(u.query)
                 if u.path in ("/", "/index.html"):
                     return self._send(200, PAGE.replace("__FAVICON__", favicon_uri()), "text/html; charset=utf-8")
+                if u.path == "/akordy.js":                  # transpozycja akordów – ten sam kod co w śpiewniku offline
+                    try:
+                        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "akordy.js"), "rb") as f:
+                            return self._send(200, f.read(), "text/javascript; charset=utf-8", cache=True)
+                    except OSError:
+                        return self._send(404, "")
                 if not self._authorized(qs):
                     return self._send(401, {"error": "pin"})
                 if u.path == "/api/state":
@@ -246,6 +276,13 @@ class PilotServer(QObject):
                     except (ValueError, IndexError):
                         return self._send(404, {"error": "brak"})
                     return self._send(200, data, "image/jpeg", cache=True)
+                if u.path.startswith("/api/song/"):
+                    try:
+                        sid = int(u.path.rsplit("/", 1)[-1])
+                    except ValueError:
+                        return self._send(400, {"error": "id"})
+                    data = server._get_song(sid)
+                    return self._send(200 if data else 404, data or {"error": "brak"})
                 if u.path == "/api/songs":
                     return self._send(200, server.search((qs.get("q") or [""])[0]))
                 parts = u.path.strip("/").split("/")
@@ -383,6 +420,15 @@ class PilotDialog(QDialog):
         self.setWindowTitle("Pilot w telefonie")
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel("<b>Zeskanuj kod aparatem telefonu</b> (telefon i komputer w tej samej sieci Wi-Fi):"))
+        who = QHBoxLayout()
+        self.b_pilot = QPushButton("📱 Prowadzący – pilot pokazu")
+        self.b_music = QPushButton("🎼 Muzyk – tablet z tekstem, akordami i nutami")
+        for b in (self.b_pilot, self.b_music):
+            b.setCheckable(True)
+            b.clicked.connect(lambda _=False, b=b: self._who(b))
+            who.addWidget(b)
+        self.b_pilot.setChecked(True)
+        lay.addLayout(who)
         self.qr = QrWidget(server.url())
         lay.addWidget(self.qr, 1)
         self.addr = QLabel()
@@ -414,8 +460,14 @@ class PilotDialog(QDialog):
             pass
         self.refresh()
 
+    def _who(self, b):
+        self.b_pilot.setChecked(b is self.b_pilot)
+        self.b_music.setChecked(b is self.b_music)
+        self.refresh()
+
     def refresh(self):
-        self.qr.set_text(self.server.url())
+        music = getattr(self, 'b_music', None) is not None and self.b_music.isChecked()
+        self.qr.set_text(self.server.url() + ("&widok=muzyk" if music else ""))
         self.addr.setText(f"Adres: <b>{self.server.url(False)}</b> &nbsp; PIN: <b>{self.server.token}</b>")
 
     def new_pin(self):
@@ -483,13 +535,41 @@ li{padding:12px 10px;border-bottom:1px solid #262a31;display:flex;justify-conten
 li small{color:var(--mut)}
 li button{flex:none}
 #pin{max-width:320px;margin:40px auto;text-align:center}
+/* ---- widok muzyka (tablet): tekst / akordy / nuty bieżącej pieśni, rzutnik obok */
+#t7{padding:0}
+.mu{display:flex;min-height:calc(100vh - 100px)}
+.mlist{width:250px;flex:none;border-right:1px solid #262a31;overflow:auto;max-height:calc(100vh - 160px);position:sticky;top:92px}
+.mlist div{padding:9px 10px;border-bottom:1px solid #20242a;font-size:14px;cursor:pointer}
+.mlist div.now{background:#3a3220;color:var(--acc)}.mlist div.look{outline:1px dashed var(--acc)}
+.mlist small{display:block;color:var(--mut);font-size:12px}.mlist .pt{color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:10px 10px 2px;border:0;cursor:default}
+.mmain{flex:1;min-width:0;padding:10px 14px 90px}
+.mbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.mbar .seg{display:flex;border-radius:10px;overflow:hidden}.mbar .seg button{border-radius:0}
+.mbar .btn.sel{background:var(--acc);color:#1b1408}
+.mh{font-size:20px;margin:2px 0 4px}.msub{color:var(--mut);font-size:13px;margin-bottom:8px}
+.mnote{border:1px solid #3a3f4a;border-radius:10px;padding:6px 10px;margin:0 0 10px;font-size:15px}.mnote b{color:var(--acc)}
+.mtx{font-size:var(--mfs,22px);line-height:1.4}
+.mtx .bl{padding:4px 8px;margin:0 -8px 10px;border-radius:8px;border-left:4px solid transparent;transition:background .25s}
+.mtx .bl.ref{font-style:italic;color:#f2e6c4}
+.mtx .bl.on{background:#2c2a20;border-left-color:var(--acc)}
+.mtx .lab{color:var(--mut);font-size:.7em;margin-right:.3em}
+.chd{font-size:var(--mfs,22px);line-height:1.25}
+.chd .ln{display:flex;align-items:flex-end;gap:1em;min-height:1.3em}.chd .bd{flex:1;min-width:0}
+.chd .sg{display:inline-flex;flex-direction:column;vertical-align:bottom}
+.chd .c{color:#ff8a65;font-weight:700;font-size:.85em;white-space:pre;padding-right:3px}
+.chd .tx{white-space:pre-wrap}.chd .sd{white-space:nowrap;color:#ff8a65;font-weight:700}.chd .gap-line{min-height:.7em}
+.msc img{width:100%;display:block;background:#fff;margin-bottom:8px;border-radius:4px}
+.mfoot{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:#0e0f12;border-top:1px solid #2a2e36;z-index:6}
+.mfoot .big{padding:12px 0;font-size:18px;flex:1}
+.mfoot .mini{width:120px;aspect-ratio:16/9;background:#000 center/contain no-repeat;border-radius:4px;border:1px solid #333;flex:none}
+@media (max-width:760px){.mlist{display:none}.mfoot .mini{width:80px}}
 .msg{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000d;padding:10px 16px;border-radius:20px;display:none;z-index:9}
 </style></head><body>
 <div id="pin" hidden><img src="__FAVICON__" width="72" alt=""><h2>Pilot – Liber Canticorum</h2><p>Podaj PIN widoczny w programie na komputerze:</p>
 <input id="pinIn" inputmode="numeric" maxlength="6" placeholder="PIN"><p><button class="big go" style="width:100%" onclick="savePin()">Połącz</button></p></div>
 <div id="app" hidden>
 <header><span class="dot" id="dot"></span><h1 id="title">Liber Canticorum</h1><small id="mode"></small><button class="btn" onclick="tab('t6')">⇩ Offline</button></header>
-<nav><button class="act" data-t="t1">Pokaz</button><button data-t="t2">Slajdy</button><button data-t="t3">Pieśni</button><button data-t="t5">Nuty</button><button data-t="t4">Zestaw</button></nav>
+<nav><button class="act" data-t="t1">Pokaz</button><button data-t="t7">🎼 Muzyk</button><button data-t="t2">Slajdy</button><button data-t="t3">Pieśni</button><button data-t="t5">Nuty</button><button data-t="t4">Zestaw</button></nav>
 <section id="t1" class="act">
  <div class="cur" id="cur"></div>
  <div class="meta"><span id="pos"></span><span id="flags"></span></div>
@@ -498,6 +578,16 @@ li button{flex:none}
  <div class="row"><button class="btn" id="bBlack" onclick="cmd('black')">Czarny ekran</button><button class="btn" id="bClean" onclick="cmd('clean')">Czyste tło</button><button class="btn" id="bShow" onclick="cmd(S.presenting?'stop':'start')">Start</button></div>
 </section>
 <section id="t2"><div class="grid" id="grid"></div></section>
+<section id="t7"><div class="mu"><div class="mlist" id="mlist"></div><div class="mmain">
+ <div class="mbar"><span class="seg"><button class="btn" data-m="text">Tekst</button><button class="btn" data-m="chords">Akordy</button><button class="btn" data-m="scores">Nuty</button></span>
+  <button class="btn" onclick="mfs(-2)">A−</button><button class="btn" onclick="mfs(2)">A+</button>
+  <span id="mtr" hidden><button class="btn" onclick="mtr(-1)">−½</button> <b id="mkey" style="color:#ff8a65"></b> <button class="btn" onclick="mtr(1)">+½</button><button class="btn" id="mfl" onclick="mflat()">♭</button></span>
+  <select id="msel" class="btn" hidden onchange="mScore(+this.value)"></select>
+  <button class="btn" id="mback" hidden onclick="mFollow()">↩ Wróć do rzutnika</button>
+  <button class="btn" id="mproj" hidden onclick="mProject()">📽 Na rzutnik</button></div>
+ <div class="mh" id="mh"></div><div class="msub" id="msub"></div><div id="mnote"></div><div id="mbody"></div></div></div>
+ <div class="mfoot"><button class="big" onclick="cmd('prev_song')" title="Poprzednia pieśń">⏮</button><button class="big" onclick="cmd('prev')">◀</button>
+  <div class="mini" id="mmini" onclick="tab('t1')"></div><button class="big go" onclick="cmd('next')">▶</button><button class="big" onclick="cmd('next_song')" title="Następna pieśń">⏭</button></div></section>
 <section id="t3"><input id="q" placeholder="Szukaj pieśni (tytuł, słowa)…" oninput="search()"><ul id="songs"></ul></section>
 <section id="t4"><button class="big go" style="width:100%" onclick="cmd('open_set')">▶ Pokaz całego zestawu</button><ul id="set"></ul></section>
 <section id="t5"><div class="meta"><span id="attTitle"></span></div><ul id="atts"></ul>
@@ -514,6 +604,7 @@ li button{flex:none}
 <div id="pv" style="position:fixed;inset:0;background:#fff;z-index:20;display:none" onclick="pvStep(event)"><img id="pvImg" style="width:100%;height:100%;object-fit:contain"><span id="pvCnt" style="position:absolute;left:8px;bottom:6px;color:#555;font-size:13px"></span><button class="btn" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation();pvClose()">✕</button></div>
 </div>
 <div class="msg" id="msg"></div>
+<script src="/akordy.js"></script>
 <script>
 const qs=new URLSearchParams(location.search);
 let PIN=qs.get('k')||localStorage.getItem('liber_pin')||'';
@@ -527,6 +618,61 @@ async function api(path,opt={}){opt.headers=Object.assign({'X-Pin':PIN},opt.head
 async function cmd(c,arg){try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
  try{await api('/api/cmd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd:c,arg:arg})});setTimeout(poll,150);}catch(e){if(e!=='pin')msg('Brak połączenia');}}
 function img(i){return `url(/api/img/${i}.jpg?v=${S.ver}&k=${PIN})`;}
+// ---------------- widok muzyka
+const MU={mode:localStorage.getItem('mu_mode')||'text',fs:+(localStorage.getItem('mu_fs')||22),fl:localStorage.getItem('mu_fl')==='1',
+ follow:true,look:null,song:null,sver:null,score:0,cache:{}};
+document.querySelectorAll('.mbar .seg button').forEach(b=>b.onclick=()=>{MU.mode=b.dataset.m;localStorage.setItem('mu_mode',MU.mode);mDraw();});
+function mfs(d){MU.fs=Math.max(14,Math.min(48,MU.fs+d));localStorage.setItem('mu_fs',MU.fs);mDraw();}
+function trKey(){return 'mu_tr_'+(MU.song&&MU.song.id);}
+function mtr(d){let k=+(localStorage.getItem(trKey())||0);k=((k+d)%12+18)%12-6;localStorage.setItem(trKey(),k);mDraw();}
+function mflat(){MU.fl=!MU.fl;localStorage.setItem('mu_fl',MU.fl?'1':'0');mDraw();}
+function mFollow(){MU.follow=true;MU.look=null;mSync(true);}
+function mProject(){const k=MU.look;if(k===null)return;MU.follow=true;MU.look=null;cmd('goto_entry',k);}
+function mList(){const el=$('mlist');const L=S.setlist||[];const N=S.set_notes||[];let h='',last='';
+ L.forEach((s,i)=>{const m=/^(.*?): (.*)$/.exec(s.title)||[0,'',s.title];if(m[1]&&m[1]!==last){h+=`<div class="pt">${esc(m[1])}</div>`;last=m[1];}
+  const n=N[i]||{};const sub=[n.tonacja&&('Tonacja: '+n.tonacja),n.wykonawca,n.zwroc||n.uwagi].filter(Boolean).join(' · ');
+  h+=`<div data-i="${i}" class="${i===S.set_index?'now':''} ${i===MU.look?'look':''}">${esc(m[2])}${sub?`<small>${esc(sub)}</small>`:''}</div>`;});
+ if(!L.length)h='<div class="pt" style="text-transform:none">Zestaw jest pusty – tablet pokazuje bieżącą pieśń z rzutnika.</div>';
+ el.innerHTML=h;el.querySelectorAll('div[data-i]').forEach(d=>d.onclick=()=>{const i=+d.dataset.i;
+  if(i===S.set_index){mFollow();return;}MU.follow=false;MU.look=i;mLoad((S.setlist[i]||{}).id);});}
+async function mLoad(id,force){if(!id){MU.song=null;mDraw();return;}
+ if(!force&&MU.cache[id]){MU.song=MU.cache[id];MU.score=0;mDraw();return;}
+ try{const r=await api('/api/song/'+id);if(!r.ok)throw 0;MU.cache[id]=await r.json();if(MU.follow||MU.look!==null){MU.song=MU.cache[id];MU.score=0;mDraw();}}catch(e){if(e!=='pin')msg('Nie udało się pobrać pieśni');}}
+function mSync(force){mList();$('mmini').style.backgroundImage=S.count?img(S.index):'none';
+ if(S.song_ver!==MU.sver){MU.sver=S.song_ver;MU.cache={};force=true;}
+ if(MU.follow&&(force||!MU.song||MU.song.id!==S.song_id))mLoad(S.song_id,force);
+ else if(MU.follow)mHi();}
+function fold(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
+function mHi(){const bl=[...document.querySelectorAll('.mtx .bl')];if(!bl.length||!MU.follow)return;
+ const items=S.slide_items||[];let first=null;
+ bl.forEach(b=>{const f=fold(b.dataset.t);const on=items.some(it=>{const t=fold(it.text).replace(/^\d+ /,'').slice(0,40);
+  return t.length>3&&(it.kind==='ref'?b.classList.contains('ref'):!b.classList.contains('ref'))&&f.includes(t.slice(0,25));});
+  b.classList.toggle('on',on);if(on&&!first)first=b;});
+ if(first&&first!==MU.lastHi){MU.lastHi=first;first.scrollIntoView({behavior:'smooth',block:'center'});}}
+async function mScore(i){MU.score=i;mDraw();}
+async function mDraw(){const s=MU.song;document.documentElement.style.setProperty('--mfs',MU.fs+'px');
+ document.querySelectorAll('.mbar .seg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===MU.mode));
+ $('mback').hidden=MU.follow;$('mproj').hidden=MU.follow||MU.look===null;
+ const n=(!MU.follow&&MU.look!==null?(S.set_notes||[])[MU.look]:(S.set_notes||[])[S.set_index])||{};
+ const NF=[['wykonawca','Wykonawca'],['tonacja','Tonacja'],['uwagi','Uwagi'],['zwroc','Na co zwrócić uwagę']].filter(([f])=>n[f]);
+ $('mnote').innerHTML=NF.length?`<div class="mnote">${NF.map(([f,l])=>`<div><b>${l}:</b> ${esc(n[f])}</div>`).join('')}</div>`:'';
+ $('mtr').hidden=true;$('msel').hidden=true;
+ if(!s){$('mh').textContent='Brak pieśni';$('msub').textContent='Otwórz pieśń albo pokaz zestawu na komputerze.';$('mbody').innerHTML='';return;}
+ $('mh').textContent=s.title;$('msub').textContent=[s.cat,s.src].filter(Boolean).join(' · ');
+ let mode=MU.mode;const hasCh=window.Chords&&Chords.hasChords(s.chords);
+ if(mode==='chords'&&!hasCh)mode='text';if(mode==='scores'&&!(s.scores||[]).length)mode=hasCh?'chords':'text';
+ if(mode!==MU.mode)$('msub').textContent+=(MU.mode==='chords'?'  · brak akordów':'  · brak nut')+' – pokazuję '+(mode==='text'?'tekst':'akordy');
+ if(mode==='text'){MU.lastHi=null;$('mbody').innerHTML='<div class="mtx">'+s.blocks.map(b=>`<div class="bl ${b.kind}" data-t="${esc(b.lines.join(' '))}">${b.label?`<span class="lab">${esc(b.label)}</span>`:''}${b.lines.map(esc).join('<br>')}</div>`).join('')+'</div>';mHi();}
+ else if(mode==='chords'){const k=+(localStorage.getItem(trKey())||0);const txt=k?Chords.transposeText(s.chords,k,MU.fl):s.chords;
+  $('mtr').hidden=false;$('mkey').textContent=(Chords.firstChord(txt)||'·')+(k?` (${k>0?'+':''}${k})`:'');$('mfl').classList.toggle('sel',MU.fl);
+  $('mbody').innerHTML='<div class="chd">'+Chords.chordproHtml(txt)+'</div>';}
+ else{const sc=s.scores[Math.min(MU.score,s.scores.length-1)];
+  if(s.scores.length>1){$('msel').hidden=false;$('msel').innerHTML=s.scores.map((a,i)=>`<option value="${i}" ${i===MU.score?'selected':''}>${esc(a.name)}</option>`).join('');}
+  $('mbody').innerHTML='<p class="msub">Ładuję nuty…</p>';
+  try{const r=await api(`/api/att/${sc.id}/pages`);const n=(await r.json()).pages;
+   $('mbody').innerHTML=n?'<div class="msc">'+[...Array(n).keys()].map(i=>`<img loading="lazy" src="/api/att/${sc.id}/page/${i}.jpg?k=${PIN}" alt="strona ${i+1}">`).join('')+'</div>'
+    :'<p class="msub">Brak podglądu tych nut – w programie na komputerze zrób podgląd (MuseScore).</p>';}catch(e){}}}
+let wakeM=null;async function mWake(on){try{if(on&&!wakeM)wakeM=await navigator.wakeLock.request('screen');if(!on&&wakeM){await wakeM.release();wakeM=null;}}catch(e){}}
 function render(){
  $('dot').classList.toggle('on',true);
  $('title').textContent=S.title||'Liber Canticorum';
@@ -545,6 +691,7 @@ function render(){
   li.innerHTML=`<span>${i+1}. ${esc(s.title)}</span><button class="btn">Pokaż</button>`;li.querySelector('button').onclick=()=>{cmd('open_song',s.id);tab('t1');};sl.appendChild(li);});
  if(!(S.setlist||[]).length)sl.innerHTML='<li><small>Zestaw jest pusty – ułóż go w programie na komputerze.</small></li>';
  renderAtts();
+ if($('t7').classList.contains('act'))mSync();
 }
 let attVer=null;
 function renderAtts(){const key=JSON.stringify([S.song_id,S.attachments]);if(key===attVer)return;attVer=key;
@@ -576,12 +723,18 @@ let st=null;async function search(){clearTimeout(st);st=setTimeout(async()=>{con
  li.querySelector('button').onclick=()=>{cmd('open_song',s.id);tab('t1');msg('Otwieram: '+s.title);};ul.appendChild(li);});
  if(!L.length)ul.innerHTML='<li><small>Brak wyników</small></li>';},250);}
 function tab(t){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('act',b.dataset.t===t));
- document.querySelectorAll('section').forEach(s=>s.classList.toggle('act',s.id===t));}
+ document.querySelectorAll('section').forEach(s=>s.classList.toggle('act',s.id===t));
+ try{localStorage.setItem('pilot_tab',t);}catch(e){}
+ mWake(t==='t7');if(t==='t7')mSync(true);}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab(b.dataset.t);if(b.dataset.t==='t3'&&!$('songs').children.length)search();});
 let tx=null;$('cur').addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
 $('cur').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>40)cmd(dx<0?'next':'prev');});
-document.addEventListener('keydown',e=>{if($('pv').style.display==='block')return;if(['ArrowRight','PageDown',' '].includes(e.key))cmd('next');if(['ArrowLeft','PageUp'].includes(e.key))cmd('prev');});
-function start(){$('pin').hidden=true;$('app').hidden=false;poll();clearInterval(timer);timer=setInterval(poll,800);}
+document.addEventListener('keydown',e=>{if($('pv').style.display==='block'||e.target.tagName==='INPUT')return;
+ if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();cmd(e.ctrlKey?'next_song':'next');}
+ if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();cmd(e.ctrlKey?'prev_song':'prev');}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('t7').classList.contains('act'))mWake(true);});
+function start(){$('pin').hidden=true;$('app').hidden=false;poll();clearInterval(timer);timer=setInterval(poll,800);
+ const t=qs.get('widok')==='muzyk'?'t7':(localStorage.getItem('pilot_tab')||'');if(t&&$(t))setTimeout(()=>tab(t),300);}
 if(PIN)start();else $('pin').hidden=false;
 </script></body></html>
 """

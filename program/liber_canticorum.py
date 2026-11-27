@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.34.0"
+VERSION = "0.35.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -2290,6 +2290,10 @@ class PresentWindow(SlideView):
             self.show_index(self.i - 1)
         elif a in ('next_song', 'prev_song') and self.deck:
             sid, j, step = self.deck[self.i].song_id, self.i, 1 if a == 'next_song' else -1
+            if step < 0 and not sid:                       # na przerwie: do poprzedniej pieśni
+                while j > 0 and not self.deck[j].song_id:
+                    j -= 1
+                sid = self.deck[j].song_id
             if step < 0:                                   # najpierw na początek bieżącej pieśni
                 while j > 0 and self.deck[j - 1].song_id == sid:
                     j -= 1
@@ -2300,6 +2304,8 @@ class PresentWindow(SlideView):
                         j -= 1
             else:
                 while j < len(self.deck) - 1 and self.deck[j].song_id == sid:
+                    j += 1
+                while j < len(self.deck) - 1 and not self.deck[j].song_id:     # przerwa między pieśniami
                     j += 1
             self.show_index(j)
         elif a == 'first':
@@ -7121,6 +7127,7 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             self.pilot.command.connect(self.on_pilot_command)
             self.pilot.uploaded.connect(self.on_pilot_upload)
             self.pilot.songbook_wanted.connect(self.on_pilot_songbook)
+            self.pilot.song_wanted.connect(self.on_pilot_song)
             try:
                 self.pilot.start()
             except Exception as e:
@@ -7159,9 +7166,33 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
         if ver != self._pilot_ver:
             images = modul_pilot.render_thumbs(deck, paint_slide)
             self._pilot_ver = ver
-        sid = deck[idx].song_id if deck and 0 <= idx < len(deck) and deck[idx].song_id else (self.song or {}).get('id')
+        sid = deck[idx].song_id if deck and 0 <= idx < len(deck) and deck[idx].song_id else None
+        if not sid and deck and 0 <= idx < len(deck):     # przerwa między pieśniami – muzycy widzą następną
+            sid = next((sl.song_id for sl in deck[idx:] if sl.song_id), None)
+        sid = sid or (self.song or {}).get('id')
         song = self.db.get(sid) if sid else None
         atts = [{'id': a['id'], 'name': a['name'], 'kind': a['kind']} for a in self.db.attachments(sid)] if sid else []
+        entries, notes = self.set_entries(), self.setlist.all_notes()
+        set_notes, seen = [], {}
+        for part, e_sid in entries:                     # uwagi dla muzyków równolegle do pozycji zestawu
+            j = seen.get(part, 0)
+            seen[part] = j + 1
+            nn = notes.get(part) or []
+            set_notes.append({k: v for k, v in ((nn[j] if j < len(nn) else {}) or {}).items() if v})
+        set_index = -1
+        if deck and self.present_set:                   # pozycja zestawu = kolejny ciąg slajdów jednej pieśni
+            runs, prev = [], None
+            nxt = next((k for k in range(idx, len(deck)) if deck[k].song_id), idx)
+            for k, sl in enumerate(deck[:nxt + 1]):
+                if sl.song_id and sl.song_id != prev:
+                    runs.append(sl.song_id)
+                prev = sl.song_id
+            starts = self._set_run_starts(deck)
+            if len(starts) == len(entries) and runs:
+                set_index = len(runs) - 1
+        if set_index < 0 and sid:
+            set_index = next((k for k, (_, e) in enumerate(entries) if e == sid), -1)
+        cur_items = deck[idx].items if deck and 0 <= idx < len(deck) else []
         state = {
             'ver': ver, 'presenting': self.present is not None, 'set_mode': bool(self.present_set),
             'index': idx, 'count': len(deck), 'black': bool(self.present and self.present.black),
@@ -7171,12 +7202,65 @@ td:nth-child(7){{color:#a02020;font-weight:bold}}@media print{{body{{margin:0}}}
             'setlist': [{'id': sid, 'title': (f"{part}: " if part != FREE_PART else "") + (self.db.get(sid) or {}).get('title', '')}
                         for part, sid in self.set_entries()],
             'song_id': sid, 'song_title': song['title'] if song else '', 'attachments': atts,
+            'set_index': set_index, 'set_notes': set_notes,
+            'slide_items': [{'kind': k, 'text': t} for k, t in cur_items],
+            'song_ver': hash(tuple((song or {}).get(k, '') for k in ('title', 'refren', 'zwrotki_raw', 'akordy'))) & 0xffffffff,
         }
         self.pilot.publish(state, images)
+
+    @staticmethod
+    def _set_run_starts(deck):
+        """Indeksy pierwszych slajdów kolejnych pieśni w pokazie zestawu."""
+        out, prev = [], None
+        for k, sl in enumerate(deck):
+            if sl.song_id and sl.song_id != prev:
+                out.append(k)
+            prev = sl.song_id
+        return out
+
+    def on_pilot_song(self, sid):
+        """Tekst, akordy i nuty pieśni dla widoku muzyka na tablecie (wątek okna)."""
+        song = self.db.get(sid)
+        if not song:
+            self.pilot.provide_song(sid, None)
+            return
+        blocks = []
+        for label, lines in song_blocks(dict(song, config=dict(song.get('config') or {}, powtarzaj_refren=False))):
+            kind = 'ref' if label == "Refren:" else 'verse'
+            num = re.match(r"Zwrotka (\d+):", label or "")
+            blocks.append({'kind': kind, 'label': "Ref." if kind == 'ref' else (num.group(1) + "." if num else ""),
+                           'lines': lines})
+        view = ('.pdf', '.png', '.jpg', '.jpeg') + SCORE_EXT
+        atts = [{'id': a['id'], 'name': a['opis'] or a['name']} for a in self.db.attachments(sid)
+                if a['name'].lower().endswith(view)]
+        self.pilot.provide_song(sid, {'id': sid, 'title': song['title'], 'blocks': blocks,
+                                      'chords': song.get('akordy', '') or '', 'scores': atts,
+                                      'cat': song.get('kategoria', ''), 'src': song.get('spiewnik', '')})
 
     def on_pilot_command(self, c):
         cmd, arg = c.get('cmd'), c.get('arg')
         p = self.present
+        if cmd in ('next_song', 'prev_song') and p:
+            p.do_action(cmd)
+            self.pilot_publish()
+            return
+        if cmd == 'goto_entry' and isinstance(arg, int):
+            entries = self.set_entries()
+            if not 0 <= arg < len(entries):
+                return
+            if not (p and self.present_set):
+                self.present_setlist()
+                p = self.present
+            if p:
+                starts = self._set_run_starts(p.deck)
+                if len(starts) == len(entries):
+                    p.show_index(starts[arg])
+                else:
+                    k = next((i for i, sl in enumerate(p.deck) if sl.song_id == entries[arg][1]), None)
+                    if k is not None:
+                        p.show_index(k)
+            self.pilot_publish()
+            return
         if cmd in ('next', 'prev', 'goto'):
             if not p:
                 start = int(arg) if cmd == 'goto' and isinstance(arg, int) else max(0, self.thumbs.currentRow())

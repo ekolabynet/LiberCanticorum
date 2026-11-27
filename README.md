@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.34.0
+# Liber Canticorum 0.35.0
 *Wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła*  
 *A free liturgical songbook for musicians, choirs and Church communities*
 
@@ -120,6 +120,14 @@ Wygląd: jasny pergamin bez ozdobników, w prawym dolnym rogu inicjał „C” z
 (Ustawienia → „Wygląd: jasny pergamin” – można wyłączyć).
 
 ## Krok po kroku: nowe funkcje
+
+**Nowość w 0.35 – widok łączony: slajdy na rzutniku, tekst / akordy / nuty na tablecie.** W pilocie (Pokaz → 📱 Pilot)
+jest zakładka **🎼 Muzyk**, a w oknie pilota osobny kod QR „🎼 Muzyk”. Tablet pokazuje bieżącą pieśń z rzutnika:
+**tekst** z podświetloną zwrotką, która jest właśnie na ekranie, **akordy** z transpozycją albo **nuty** (wszystkie
+strony jedna pod drugą). Gdy rzutnik przechodzi do następnej pieśni, tablet przechodzi razem z nim. Na szerokim ekranie
+z lewej jest zestaw z uwagami dla muzyków (tonacja, wykonawca, na co zwrócić uwagę); stuknięcie podgląda inną pieśń bez
+zmiany rzutnika, a „📽 Na rzutnik” ją wyświetla. Na dole: ⏮ ◀ ▶ ⏭ i miniatura slajdu. Ekran tabletu nie gaśnie.
+Wszystko działa w sieci lokalnej, z PIN-em, bez internetu.
 
 **Nowość w 0.34 – sterowanie pokazem z laptopa.** W czasie pokazu strzałki, spacja, PgDown/PgUp, pilot do prezentacji
 i stuknięcie w gładzik zmieniają slajd z każdego miejsca programu – także gdy rzutnik jest na drugim ekranie, a pracujesz
@@ -312,7 +320,7 @@ Pole **„Słowa na dole”** włącza i wyłącza duże słowa bieżącej frazy
 Po rozpakowaniu w folderze są tylko programy do uruchamiania i ten folder `program`:
 
 ```
-LiberCanticorum_0.34.0/
+LiberCanticorum_0.35.0/
 ├── Liber Canticorum.bat       ← Windows (po 1. starcie obok pojawi się skrót z ikoną)
 ├── Liber Canticorum.desktop   ← Linux (ikona pojawi się po 1. starcie)
 ├── Liber Canticorum.command   ← macOS
