@@ -1,6 +1,6 @@
 <p align="center"><img src="program/ikony/liber_canticorum_128.png" width="128" alt="Liber Canticorum"></p>
 
-# Liber Canticorum 0.33.0
+# Liber Canticorum 0.34.0
 *A free liturgical songbook for musicians, choirs and Church communities*
 
 🌐 [Polski](README.md) · **English** · [Français](README.fr.md) · [Español](README.es.md)
@@ -69,6 +69,10 @@ The song lists can be filtered by **category**, **source (songbook)** and search
 (Shift/Ctrl+click) lets you merge them, set a category, tags or source for all of them at once.
 
 ## New features step by step
+
+**New in 0.34 – control the show from the laptop.** During the show, arrows, space, PgDown/PgUp, a presentation clicker
+and a touchpad tap change the slide from anywhere in the program, also when the projector is a second screen.
+Ctrl+→ / Ctrl+← jumps to the next / previous song of the set. Configure in Settings → ⌨ Keys and mouse during the show.
 
 **New in 0.33 – ALL CAPS slides.** Slide settings have an “ALL CAPS” option: slides, the show, the remote and slide
 exports show the text in capitals, while the database keeps normal spelling.
@@ -150,7 +154,7 @@ default (“⚙ More settings” for the rest), save as MP3 / OGG / FLAC / WAV.
 
 ## Installation
 
-Unpack `LiberCanticorum_0.33.0.zip` and run:
+Unpack `LiberCanticorum_0.34.0.zip` and run:
 - Windows: `Liber Canticorum.bat` (Python from python.org with “Add python.exe to PATH” is required),
 - Linux: `Liber Canticorum.desktop` or `program/start.sh` (Debian/Ubuntu may need `sudo apt install python3-venv libportaudio2`),
 - macOS: `Liber Canticorum.command`.

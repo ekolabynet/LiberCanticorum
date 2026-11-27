@@ -45,7 +45,7 @@ from html.parser import HTMLParser
 import tempfile
 import threading
 
-from PySide6.QtCore import Qt, QRectF, QSizeF, QMarginsF, QTimer, Signal, QSettings, QSize, QUrl, QStringListModel
+from PySide6.QtCore import Qt, QEvent, QKeyCombination, QRectF, QSizeF, QMarginsF, QTimer, Signal, QSettings, QSize, QUrl, QStringListModel
 from PySide6.QtGui import (QAction, QColor, QDesktopServices, QFont, QGuiApplication, QIcon, QImage,
                            QKeySequence, QPainter, QPageSize, QPdfWriter, QPixmap, QTextBlockFormat,
                            QTextCharFormat, QTextCursor, QTextDocument, QTextOption)
@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
 
 APP_NAME = "Liber Canticorum"
 APP_MOTTO = "wolny śpiewnik liturgiczny dla muzyków, chórów i wspólnot Kościoła"
-VERSION = "0.33.0"
+VERSION = "0.34.0"
 GITHUB_URL = "https://github.com/ekolabynet/LiberCanticorum"
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 BG_DIR = os.path.join(APP_DIR, "tla")
@@ -2109,6 +2109,145 @@ class SlideView(QWidget):
         p.end()
 
 
+# ---------------------------------------------------------------- klawisze i mysz w czasie pokazu
+SHOW_ACTIONS = [
+    ('next', "Następny slajd", "Right, Down, Space, PgDown, Return, Enter, N"),
+    ('prev', "Poprzedni slajd", "Left, Up, PgUp, Backspace, P"),
+    ('next_song', "Następna pieśń (pokaz zestawu)", "Ctrl+Right, Ctrl+PgDown"),
+    ('prev_song', "Poprzednia pieśń (pokaz zestawu)", "Ctrl+Left, Ctrl+PgUp"),
+    ('first', "Pierwszy slajd", "Home"),
+    ('last', "Ostatni slajd", "End"),
+    ('black', "Czarny ekran – wł./wył.", "B, ., W"),
+    ('clean', "Czyste tło bez tekstu – wł./wył.", "C"),
+    ('end', "Zakończ pokaz", "Esc, Q"),
+]
+SHOW_MOUSE = {'left': 'next', 'right': 'prev', 'wheel': True, 'preview': True}
+
+
+def show_keymap(settings):
+    """{QKeySequence → akcja} z ustawień (klawisze_pokazu), z domyślnymi dla brakujących akcji."""
+    try:
+        saved = json.loads(settings.value("show_keys", "{}") or "{}")
+    except Exception:
+        saved = {}
+    out = {}
+    for key, _, default in SHOW_ACTIONS:
+        for part in (saved.get(key, default) or "").split(","):
+            seq = QKeySequence(part.strip())
+            if not seq.isEmpty():
+                out.setdefault(seq.toString(), key)
+    return out
+
+
+def show_mouse(settings):
+    try:
+        return dict(SHOW_MOUSE, **json.loads(settings.value("show_mouse", "{}") or "{}"))
+    except Exception:
+        return dict(SHOW_MOUSE)
+
+
+def key_event_seq(e):
+    mods = e.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier | Qt.AltModifier | Qt.MetaModifier)
+    k = e.key()
+    if k in (Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta):
+        return ""
+    try:
+        return QKeySequence(QKeyCombination(mods, Qt.Key(k))).toString()   # bez KeypadModifier (strzałki w Windows)
+    except Exception:
+        return QKeySequence(k).toString()
+
+
+class ShowKeysDialog(QDialog):
+    """Ustawienia → Klawisze i mysz w pokazie: kilka klawiszy na akcję (np. pilot do prezentacji wysyła PgDown/PgUp)."""
+
+    def __init__(self, settings, parent=None):
+        super().__init__(parent)
+        self.settings = settings
+        self.setWindowTitle("Klawisze i mysz w pokazie")
+        lay = QVBoxLayout(self)
+        info = QLabel("Klawisze działają w czasie pokazu w całym programie (także gdy rzutnik jest na drugim ekranie, "
+                      "a pracujesz na laptopie) – oprócz pól do pisania. Kilka klawiszy oddziel przecinkami. "
+                      "Pilot do prezentacji zwykle wysyła PgDown / PgUp, B i F5 / Esc.")
+        info.setWordWrap(True)
+        lay.addWidget(info)
+        try:
+            saved = json.loads(settings.value("show_keys", "{}") or "{}")
+        except Exception:
+            saved = {}
+        g = QGridLayout()
+        self.edits = {}
+        for r, (key, label, default) in enumerate(SHOW_ACTIONS):
+            e = QLineEdit(saved.get(key, default))
+            e.setPlaceholderText(default)
+            e.setMinimumWidth(260)
+            rec = QPushButton("⌨ Naciśnij…")
+            rec.setToolTip("Dopisz klawisz, naciskając go")
+            rec.clicked.connect(lambda _=False, e=e: self._record(e))
+            self.edits[key] = e
+            g.addWidget(QLabel(label + ":"), r, 0)
+            g.addWidget(e, r, 1)
+            g.addWidget(rec, r, 2)
+        lay.addLayout(g)
+        m = show_mouse(settings)
+        gm = QGroupBox("Mysz i gładzik")
+        fm = QFormLayout(gm)
+        opts = [("Następny slajd", 'next'), ("Poprzedni slajd", 'prev'), ("Nic", '')]
+        self.left, self.right = QComboBox(), QComboBox()
+        for cb, cur in ((self.left, m['left']), (self.right, m['right'])):
+            for t, v in opts:
+                cb.addItem(t, v)
+            cb.setCurrentIndex(max(0, cb.findData(cur)))
+        fm.addRow("Kliknięcie / stuknięcie w gładzik:", self.left)
+        fm.addRow("Prawy przycisk (stuknięcie dwoma palcami):", self.right)
+        self.wheel = QCheckBox("Kółko myszy / przewijanie dwoma palcami zmienia slajd")
+        self.wheel.setChecked(bool(m['wheel']))
+        fm.addRow(self.wheel)
+        self.preview = QCheckBox("Kliknięcie w podgląd slajdu w oknie programu też przełącza pokaz")
+        self.preview.setChecked(bool(m['preview']))
+        fm.addRow(self.preview)
+        lay.addWidget(gm)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.RestoreDefaults)
+        bb.accepted.connect(self._save)
+        bb.rejected.connect(self.reject)
+        bb.button(QDialogButtonBox.RestoreDefaults).setText("Przywróć domyślne")
+        bb.button(QDialogButtonBox.RestoreDefaults).clicked.connect(self._defaults)
+        lay.addWidget(bb)
+
+    def _record(self, edit):
+        d = QDialog(self)
+        d.setWindowTitle("Naciśnij klawisz")
+        l = QVBoxLayout(d)
+        l.addWidget(QLabel("Naciśnij klawisz (albo przycisk pilota do prezentacji)…"))
+        got = {}
+
+        def kp(e):
+            seq = key_event_seq(e)
+            if seq:
+                got['k'] = seq
+                d.accept()
+        d.keyPressEvent = kp
+        d.resize(360, 90)
+        if d.exec() and got.get('k'):
+            cur = [x.strip() for x in edit.text().split(",") if x.strip()]
+            if got['k'] not in cur:
+                edit.setText(", ".join(cur + [got['k']]))
+
+    def _defaults(self):
+        for key, _, default in SHOW_ACTIONS:
+            self.edits[key].setText(default)
+        self.left.setCurrentIndex(self.left.findData('next'))
+        self.right.setCurrentIndex(self.right.findData('prev'))
+        self.wheel.setChecked(True)
+        self.preview.setChecked(True)
+
+    def _save(self):
+        self.settings.setValue("show_keys", json.dumps({k: e.text().strip() for k, e in self.edits.items()}))
+        self.settings.setValue("show_mouse", json.dumps({'left': self.left.currentData(), 'right': self.right.currentData(),
+                                                         'wheel': self.wheel.isChecked(),
+                                                         'preview': self.preview.isChecked()}))
+        self.accept()
+
+
 class PresentWindow(SlideView):
     changed = Signal(int)
     closed = Signal()
@@ -2141,31 +2280,60 @@ class PresentWindow(SlideView):
         if emit:
             self.changed.emit(self.i)
 
-    def keyPressEvent(self, e):
-        k = e.key()
-        if k in (Qt.Key_Right, Qt.Key_Down, Qt.Key_Space, Qt.Key_PageDown, Qt.Key_Return, Qt.Key_Enter, Qt.Key_N):
+    keymap, mouse = {}, dict(SHOW_MOUSE)
+
+    def do_action(self, a):
+        """Akcja pokazu: next, prev, next_song, prev_song, first, last, black, clean, end."""
+        if a == 'next':
             self.show_index(self.i + 1)
-        elif k in (Qt.Key_Left, Qt.Key_Up, Qt.Key_PageUp, Qt.Key_Backspace, Qt.Key_P):
+        elif a == 'prev':
             self.show_index(self.i - 1)
-        elif k == Qt.Key_Home:
+        elif a in ('next_song', 'prev_song') and self.deck:
+            sid, j, step = self.deck[self.i].song_id, self.i, 1 if a == 'next_song' else -1
+            if step < 0:                                   # najpierw na początek bieżącej pieśni
+                while j > 0 and self.deck[j - 1].song_id == sid:
+                    j -= 1
+                if j == self.i and j > 0:
+                    j -= 1
+                    sid = self.deck[j].song_id
+                    while j > 0 and self.deck[j - 1].song_id == sid:
+                        j -= 1
+            else:
+                while j < len(self.deck) - 1 and self.deck[j].song_id == sid:
+                    j += 1
+            self.show_index(j)
+        elif a == 'first':
             self.show_index(0)
-        elif k == Qt.Key_End:
+        elif a == 'last':
             self.show_index(len(self.deck) - 1)
-        elif k in (Qt.Key_B, Qt.Key_Period, Qt.Key_W):
+        elif a == 'black':
             self.black = not self.black
             self.update()
-        elif k == Qt.Key_C:
+        elif a == 'clean':
             self.set_clean(not self.clean)
-        elif k in (Qt.Key_Escape, Qt.Key_Q, Qt.Key_F5):
+        elif a == 'end':
+            self.close()
+        else:
+            return False
+        return True
+
+    def keyPressEvent(self, e):
+        a = self.keymap.get(key_event_seq(e))
+        if a:
+            self.do_action(a)
+        elif e.key() == Qt.Key_F5:
             self.close()
         else:
             super().keyPressEvent(e)
 
     def mousePressEvent(self, e):
-        self.show_index(self.i + (1 if e.button() == Qt.LeftButton else -1))
+        a = self.mouse.get('left' if e.button() == Qt.LeftButton else 'right')
+        if a:
+            self.do_action(a)
 
     def wheelEvent(self, e):
-        self.show_index(self.i + (1 if e.angleDelta().y() < 0 else -1))
+        if self.mouse.get('wheel') and abs(e.angleDelta().y()) >= 60:
+            self.do_action('next' if e.angleDelta().y() < 0 else 'prev')
 
     def closeEvent(self, e):
         self.closed.emit()
@@ -4218,9 +4386,13 @@ class MainWindow(QMainWindow):
         act(m_show, "Pokaz zestawu", self.present_setlist, "Ctrl+F5")
         act(m_show, "Czyste tło na rzutniku (bez tekstu) – wł./wył.", self.toggle_clean, "Ctrl+Shift+C")
         act(m_show, "📱 Pilot w telefonie / tablecie…", self.open_pilot, "Ctrl+P", True)
+        act(m_show, "⌨ Klawisze i mysz w pokazie…", lambda: ShowKeysDialog(self.settings, self).exec())
         m_show.addSeparator()
         self.screen_menu = m_show.addMenu("Ekran pokazu")
         self.screen_menu.aboutToShow.connect(self.fill_screen_menu)
+        act(m_set, "⌨ Klawisze i mysz w pokazie (strzałki, pilot, gładzik)…",
+            lambda: ShowKeysDialog(self.settings, self).exec())
+        m_set.addSeparator()
         act(m_set, "Ścieżka do MuseScore (AppImage, .exe…) – podgląd plików .mscz…", self.set_musescore_path)
         act(m_set, "Ścieżka do Audiveris (rozpoznawanie nut ze skanu)…", self.set_audiveris_path)
         a_perg = QAction("Wygląd: jasny pergamin (po ponownym uruchomieniu)", self, checkable=True)
@@ -5187,7 +5359,11 @@ class MainWindow(QMainWindow):
         if self.present:
             self.present.close()
         self.present_set = is_set
+        PresentWindow.keymap, PresentWindow.mouse = show_keymap(self.settings), show_mouse(self.settings)
         self.present = PresentWindow(deck, start, self.pick_screen())
+        QApplication.instance().installEventFilter(self)
+        self.statusBar().showMessage("Pokaz: strzałki, spacja, PgDown/PgUp albo stuknięcie w gładzik zmieniają slajd – "
+                                     "także w tym oknie. Esc kończy. Ustawienia → Klawisze i mysz w pokazie.", 12000)
         self.present.changed.connect(self.on_present_changed)
         self.present.closed.connect(self.on_present_closed)
         self.present.showFullScreen()
@@ -5223,6 +5399,33 @@ class MainWindow(QMainWindow):
     def on_present_closed(self):
         self.present = None
         self.present_set = False
+        QApplication.instance().removeEventFilter(self)
+
+    _TYPING = ('QLineEdit', 'QTextEdit', 'QPlainTextEdit', 'QAbstractSpinBox', 'QKeySequenceEdit')
+
+    def eventFilter(self, obj, e):
+        """W czasie pokazu klawisze i stuknięcia w podgląd sterują rzutnikiem z każdego okna programu."""
+        pr = getattr(self, 'present', None)
+        if pr is None or obj is pr:
+            return False
+        t = e.type()
+        if t == QEvent.KeyPress and isinstance(obj, QWidget) and obj.window() is self:
+            fw = QApplication.focusWidget()
+            typing = fw is not None and any(fw.inherits(c) for c in self._TYPING) and \
+                not getattr(fw, 'isReadOnly', lambda: False)()
+            if typing or QApplication.activeModalWidget() is not None:
+                return False
+            a = pr.keymap.get(key_event_seq(e))
+            if a and not e.isAutoRepeat():
+                pr.do_action(a)
+                return True
+            return False
+        if t == QEvent.MouseButtonPress and obj is self.view and pr.mouse.get('preview'):
+            a = pr.mouse.get('left' if e.button() == Qt.LeftButton else 'right')
+            if a:
+                pr.do_action(a)
+                return True
+        return False
 
     # ================= zestaw =================
     def add_to_set(self):
